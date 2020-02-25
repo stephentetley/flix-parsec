@@ -15,7 +15,7 @@
  */
 
 
-namespace SmallParser {
+namespace TextParser {
     
     type alias SrcPos = Int32
 

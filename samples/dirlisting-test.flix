@@ -1,6 +1,6 @@
 @test
 def ukTimeStamp01(): Result[String, String] = 
-    SmallParser.run(DirListing.pUkTimeStamp(), "11/04/2019  08:49") 
+    TextParser.run(DirListing.pUkTimeStamp(), "11/04/2019  08:49") 
         |> Result.map(DirListing.printTimeStamp)
 
 
@@ -12,10 +12,10 @@ pub def mapError(f: e -> e1, a: Result[a,e]): Result[a,e1] =
         case Ok(x) => Ok(x)
     }
 
-@test
-def readAll01(): Result[String,String] = 
-    let path = Path.new(src());
-    Internal.readAll(path)
+// @test
+// def readAll01(): Result[String,String] = 
+//     let path = Path.new(src());
+//     Internal.readAll(path)
 
 @test
 def exists01(): Result[Bool,String] = 
@@ -25,7 +25,7 @@ def exists01(): Result[Bool,String] =
 @test
 def parseLines01(): Result[List[String], String] = 
     let path = Path.new(src());
-    SmallParser.parseLines(SmallParser.restOfInput(), path)
+    TextParser.parseLines(TextParser.restOfInput(), path)
 
 @test
 def readLines01(): Result[List[String], String] = 
@@ -35,10 +35,10 @@ def readLines01(): Result[List[String], String] =
 
 // pub def getFiles(path: Path): Result[List[Option[File]], String] = 
 //     let parser = 
-//        SmallParser.optional(
+//        TextParser.optional(
 //                 DirListing.pFile()       
 //         );
-//     SmallParser.parseLines(parser, path) 
+//     TextParser.parseLines(parser, path) 
 
 pub def showOptionFiles(xs: List[Option[File]]): Unit = 
     match xs {

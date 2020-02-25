@@ -30,45 +30,45 @@ namespace DirListing {
     pub def printTimeStamp(ts: TimeStamp): String = 
         "${ Int32.toString(ts.day)}/${Int32.toString(ts.month)}/${ Int32.toString(ts.year)} ${ Int32.toString(ts.hour)}:${Int32.toString(ts.minute)}"
 
-    pub def pUkTimeStamp(): SmallParser.Parser[TimeStamp] = 
-        SmallParser.pipe5(
-            SmallParser.seqLeft(SmallParser.int32(), SmallParser.char('/')),
-            SmallParser.seqLeft(SmallParser.int32(), SmallParser.char('/')),
-            SmallParser.int32(),
-            SmallParser.seqLeft(SmallParser.int32(), SmallParser.char(':')),
-            SmallParser.int32(),
+    pub def pUkTimeStamp(): TextParser.Parser[TimeStamp] = 
+        TextParser.pipe5(
+            TextParser.seqLeft(TextParser.int32(), TextParser.char('/')),
+            TextParser.seqLeft(TextParser.int32(), TextParser.char('/')),
+            TextParser.int32(),
+            TextParser.seqLeft(TextParser.int32(), TextParser.char(':')),
+            TextParser.int32(),
             (d, mon, y, h, min) -> { day=d, month=mon, year=y, hour=h, minute=min }
         )
 
-    pub def fileStats(): SmallParser.Parser[(TimeStamp, Int64)] = 
-        SmallParser.tuple2(
+    pub def fileStats(): TextParser.Parser[(TimeStamp, Int64)] = 
+        TextParser.tuple2(
             pUkTimeStamp(),
-            SmallParser.int64()
+            TextParser.int64()
         )
     
     /// Note - Windows Dir Listing can run to muliple lines - not handled yet...
-    pub def fileName(): SmallParser.Parser[String] = 
-        SmallParser.fmap(String.trim, SmallParser.restOfLine())
+    pub def fileName(): TextParser.Parser[String] = 
+        TextParser.fmap(String.trim, TextParser.restOfLine())
 
-    pub def pFile(): SmallParser.Parser[File] = 
-        SmallParser.pipe3(
-            SmallParser.horizon(13),
-            SmallParser.bounded(fileStats(), 36),
+    pub def pFile(): TextParser.Parser[File] = 
+        TextParser.pipe3(
+            TextParser.horizon(13),
+            TextParser.bounded(fileStats(), 36),
             fileName(),
             (_, x, name) -> { 
                 let (ts, size) = x; 
                 { name=name, size=size, modified=ts } 
             }
         )
-    pub def pFolder(): SmallParser.Parser[Folder] = 
-        SmallParser.pipe3(
-            SmallParser.horizon(13),
-            SmallParser.bounded(pUkTimeStamp(), 36),
+    pub def pFolder(): TextParser.Parser[Folder] = 
+        TextParser.pipe3(
+            TextParser.horizon(13),
+            TextParser.bounded(pUkTimeStamp(), 36),
             fileName(),
             (_, ts, name) -> { name=name, modified=ts }
         )
 
-    pub def ignoreLine(): SmallParser.Parser[Option[a]] = 
-        SmallParser.fmap(_ -> None, SmallParser.restOfLine())
+    pub def ignoreLine(): TextParser.Parser[Option[a]] = 
+        TextParser.fmap(_ -> None, TextParser.restOfLine())
 
 }
