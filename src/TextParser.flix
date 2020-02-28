@@ -180,7 +180,7 @@ namespace TextParser {
 
 
     pub def ignore(p: Parser[ans]): Parser[unit] = 
-        fmap(_ -> None, p)
+        fmap(_ -> (), p)
 
     ///
     /// lookahead - run the parser but don't consume input on success
@@ -537,10 +537,15 @@ namespace TextParser {
                 case Some(s) => Ok(s, end)
             })
 
-    
-    pub def restOfLine(): Parser[String] = 
-        let endp = alt(newline(), endOfInput());
+    /// Parser any characaters before the end of line (or end of input).
+
+    pub def restOfLine(consumeEol: Bool): Parser[String] = 
+        let endp = alt(newline1(consumeEol), endOfInput());
         manyCharsTill(anyChar(), endp)
+
+    def newline1(consumeEol: Bool): Parser[Unit] = 
+        if (consumeEol) newline() else lookahead(newline())
+
 
     pub def notFollowedBy(p: Parser[ans]): Parser[Unit] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) {

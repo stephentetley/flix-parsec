@@ -33,21 +33,26 @@ def readLines01(): Result[List[String], String] =
     Path.readLines( path) |> mapError(_ -> "io error")
 
 
-// pub def getFiles(path: Path): Result[List[Option[File]], String] = 
+// pub def getFiles(path: Path): Result[List[Option[DirListingRow]], String] = 
 //     let parser = 
 //        TextParser.optional(
 //                 DirListing.pFile()       
 //         );
 //     TextParser.parseLines(parser, path) 
 
-pub def showOptionFiles(xs: List[Option[File]]): Unit = 
+pub def showOptionFiles(xs: List[Option[DirListingLine]]): Unit = 
+    let getName = x -> match x {
+        case FolderLine(s, _, _) => s
+        case FileLine(s, _, _, _) => s
+    };
     match xs {
         case Nil => ()
-        case Some(x) :: rs => { Console.printLine(x.name); showOptionFiles(rs) }
+        case Some(x) :: rs => { Console.printLine(getName(x)); showOptionFiles(rs) }
         case None :: rs => showOptionFiles(rs)
     }
 
-// @test
-// def showFiles01(): Result[Unit, String] = 
-//     getFiles(Path.new("sws.txt"))
-//         |> Result.map(showOptionFiles)
+@test
+def parseFile01(): Result[Int32, String] = 
+    let path = FilePath.new("G:\work\Projects\edm2\prep-for-edms_feb2020\stw_dir.txt");
+    TextParser.parseFile(DirListing.directoryListing(), path, Charset.utf_16le())
+        |> Result.map(x -> List.length(x))

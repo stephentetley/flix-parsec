@@ -259,3 +259,34 @@ def restOfInput03(): Bool =
         case Err(_) => false
     }
 
+def makeString(xs: List[String]): String = 
+    let sb = StringBuilder.new();
+    List.foldLeft((_,s) -> StringBuilder.appendLine(sb, s), (), xs);
+    StringBuilder.toString(sb)
+
+@test 
+def restOfLine01(): Bool = 
+    let src = makeString("123    " :: "Hello" :: Nil);
+    let p = TextParser.pipe2(
+                TextParser.restOfLine(true),
+                TextParser.symbol("Hello"),
+                (_,y) -> y == "Hello"
+            );
+    match TextParser.parseString(p, src) {
+        case Ok(x) => x
+        case Err(_) => false
+    }
+
+@test 
+def restOfLine02(): Bool = 
+    let src = makeString("123    " :: "Hello" :: Nil);
+    let p = TextParser.pipe3(
+                TextParser.restOfLine(false),
+                TextParser.newline(),
+                TextParser.symbol("Hello"),
+                (_,_,z) -> z == "Hello"
+            );
+    match TextParser.parseString(p, src) {
+        case Ok(x) => x
+        case Err(_) => false
+    }
