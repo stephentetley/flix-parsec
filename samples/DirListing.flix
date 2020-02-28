@@ -116,13 +116,13 @@ namespace DirListing {
         )
 
     pub def directoryDirective(): TextParser.Parser[String] = 
-        let indent = TextParser.manyChars(TextParser.char(' '));
+        let indent = TextParser.count(4, TextParser.char(' '));
         TextParser.pipe3(
             indent,
             TextParser.symbol("Directory:"),
             multilineName(),
             (_,_,z) -> z
-        )
+        ) |> TextParser.nestError("directoryDirective")
 
 
     def directoryHeadings1(): TextParser.Parser[Unit] = 
@@ -140,11 +140,11 @@ namespace DirListing {
             directoryHeadings1(),
             underline,
             (_,_) -> ()
-        )
+        ) |> TextParser.nestError("directoryHeadings")
     
     def blankLine(): TextParser.Parser[Unit] = TextParser.newline()
     
-    def blankLines(): TextParser.Parser[Unit] = 
+    pub def blankLines(): TextParser.Parser[Unit] = 
         TextParser.ignore(TextParser.many(blankLine()))
 
     pub def dirListingFolder(): TextParser.Parser[DirListingFolder] = 
@@ -156,8 +156,6 @@ namespace DirListing {
         )
 
     pub def directoryListing() : TextParser.Parser[List[DirListingFolder]] = 
-        TextParser.many(
-            TextParser.seqLeft(dirListingFolder(), TextParser.spaces())
-        )
+        TextParser.many1(dirListingFolder())
 
 }

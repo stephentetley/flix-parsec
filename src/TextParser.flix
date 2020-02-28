@@ -168,6 +168,13 @@ namespace TextParser {
                 case Err(_) => Err(msg)
                 case Ok(ans, pos1) => Ok(ans, pos1)
             })
+    
+    pub def nestError(msg: String, p: Parser[ans]): Parser[ans] = 
+        Parser((inp, pos) -> match apply1(p, inp, pos) { 
+                case Err(inner) => Err(msg + "[" + inner + "]")
+                case Ok(ans, pos1) => Ok(ans, pos1)
+            })
+
 
     pub def option(one: ans, p: Parser[ans]): Parser[ans] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) { 
@@ -292,7 +299,7 @@ namespace TextParser {
 
     pub def many1(p: Parser[ans]): Parser[List[ans]] = 
         bind(p, v1 -> 
-            bind(many(p), vs -> return(v1 :: vs))) |> swapError("many1")
+            bind(many(p), vs -> return(v1 :: vs))) |> nestError("many1")
 
 
     def manyHelper(p: Parser[ans], inp: String, pos: SrcPos, sk: (List[ans], SrcPos) -> ListAnswer[ans]): ListAnswer[ans] = 
@@ -328,13 +335,13 @@ namespace TextParser {
 
     pub def sepBy1(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
         bind(p, v1 -> 
-            bind(many(seqRight(sep,p)), vs -> return(v1 :: vs))) |> swapError("sepBy1")
+            bind(many(seqRight(sep,p)), vs -> return(v1 :: vs))) |> nestError("sepBy1")
 
     pub def endBy(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
         many(seqLeft(p, sep))
 
     pub def endBy1(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
-        many1(seqLeft(p, sep)) |> swapError("endBy1")
+        many1(seqLeft(p, sep)) |> nestError("endBy1")
 
     pub def sepEndBy(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
         Parser((inp, pos) -> sepEndByHelper(p, sep, inp, pos, (xs,pos1)-> Ok(xs, pos1)))
@@ -555,13 +562,13 @@ namespace TextParser {
 
 
     pub def oneOf(cs: Array[Char]): Parser[Char] = 
-        satisfy(ch -> Internal.arrayMemberOf(ch, cs)) |> swapError("oneOf")
+        satisfy(ch -> Internal.arrayMemberOf(ch, cs)) |> nestError("oneOf")
 
     pub def noneOf(cs: Array[Char]): Parser[Char] = 
-        satisfy(ch -> !Internal.arrayMemberOf(ch, cs)) |> swapError("noneOf")
+        satisfy(ch -> !Internal.arrayMemberOf(ch, cs)) |> nestError("noneOf")
 
     pub def char(c: Char): Parser[Char] = 
-        satisfy(ch -> ch == c) |> swapError("char")
+        satisfy(ch -> ch == c) |> nestError("char")
     
 
     /// 
