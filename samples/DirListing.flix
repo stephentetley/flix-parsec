@@ -92,7 +92,6 @@ namespace DirListing {
             multilineName(49),
             (stats, name) -> { 
                 let (timestamp, size) = stats; 
-                Console.printLine("File: " + name);
                 FileLine(name, mode, timestamp, size)
             }
         )
@@ -101,7 +100,7 @@ namespace DirListing {
         TextParser.pipe2(
             TextParser.bounded(pUkTimeStamp(), 36),
             multilineName(49),
-            (timestamp, name) -> { Console.printLine("Folder: " + name); FolderLine(name, mode, timestamp) }
+            (timestamp, name) -> FolderLine(name, mode, timestamp)
         )
 
     pub def ignoreLine(): TextParser.Parser[Option[a]] = 
@@ -115,7 +114,7 @@ namespace DirListing {
     
     def pMode() : TextParser.Parser[Mode] = TextParser.bounded(mode1(), 13)
 
-    pub def isDir (mode: Mode) : Bool = 
+    pub def isDirectory (mode: Mode) : Bool = 
         let Mode(str) = mode;
         match String.toList(str) { 
             case x :: _ => x == 'd'
@@ -125,7 +124,7 @@ namespace DirListing {
     pub def dirListingLine(): TextParser.Parser[DirListingLine] = 
         TextParser.bind(
             pMode(),
-            x -> if (isDir(x)) pFolder(x) else pFile(x)            
+            x -> if (isDirectory(x)) pFolder(x) else pFile(x)            
         ) |> TextParser.nestError("dirListingLine") 
 
     pub def directoryDirective(): TextParser.Parser[String] = 
@@ -163,18 +162,19 @@ namespace DirListing {
             |> TextParser.nestError("blankLines1")
 
     pub def dirListingFolder(): TextParser.Parser[DirListingFolder] = 
-        TextParser.pipe3(
+        TextParser.pipe4(
             directoryDirective(),
             TextParser.seqRight(blankLines1(), directoryHeadings()),
             TextParser.manyTill(dirListingLine(), blankLines1()),
-            (x, _, zs) -> { path = x, contents = zs }
+            TextParser.position(),
+            (x, _, zs, pos) -> { Console.printLine("pos: " + Int32.toString(pos)); { path = x, contents = zs } }
         ) |> TextParser.nestError("dirListingFolder")
 
     pub def directoryListing() : TextParser.Parser[List[DirListingFolder]] = 
         TextParser.pipe3(
             TextParser.byteOrderMark(),
             blankLines1(),
-            TextParser.sepEndBy(dirListingFolder(), TextParser.endOfInput()),
+            TextParser.manyTill(dirListingFolder(), TextParser.endOfInput()),
             (_,_,z) -> z
         ) |> TextParser.nestError("directoryListing")
 

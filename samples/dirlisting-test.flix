@@ -52,10 +52,16 @@ pub def showOptionFiles(xs: List[Option[DirListingLine]]): Unit =
     }
 
 @test
-def parseFile01(): Result[Int32, String] = 
+def parseFile01(): Unit = 
     let path = "D:\coding\flix\text-parser\samples\test-data\dir.txt";
-    DirListing.parseDirListing(path)
-        |> Result.map(x -> List.length(x))
+    let write1 = Console.printLine << DirListing.toString;
+    match DirListing.parseDirListing(path) {
+        case Err(msg) => Console.printLine(msg)
+        case Ok(xs) => match xs { 
+            case Nil => Console.printLine("empty results")
+            case _ => Internal.listForeach(write1, xs)
+        }
+    } 
 
 @test
 def parseFile01a(): Result[DirListingFolder, String] = 
