@@ -41,7 +41,11 @@ namespace Internal {
 
     pub def prefix(c: Char, s: String): String = Char.toString(c) + s
 
-
+    pub def listForeach(f: a -> Unit, xs: List[a]): Unit = 
+        match xs { 
+            case Nil => ()
+            case x :: rs => { f(x); listForeach(f, rs) }
+        }
 
 
 }

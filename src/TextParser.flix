@@ -409,7 +409,7 @@ namespace TextParser {
             case Ok(end1, pos1) => sk(Nil, end1, pos1)
             case Err(_) => match apply1(p, inp, pos) {
                 case Err(_) => fk()
-                case Ok(a, pos1) => primitiveManyTillHelper(p, endp, inp, pos1, fk, (xs, end2, pos2) -> sk(a :: xs, end2, pos2))
+                case Ok(x, pos1) => primitiveManyTillHelper(p, endp, inp, pos1, fk, (xs, end2, pos2) -> sk(x :: xs, end2, pos2))
             }
         }
 
@@ -624,6 +624,11 @@ namespace TextParser {
             _ -> (),
             alt(char('\n'), seqLeft(char('\r'), optional(char('\n'))))            
         ) 
+
+    ///
+    /// Either at end-of-input or only whitespace rremeing before end-of-input.
+    /// 
+    pub def endOfContent(): Parser[Unit] = seqRight(spaces(), endOfInput())
 
     pub def tab(): Parser[Char] = char('\t')
 

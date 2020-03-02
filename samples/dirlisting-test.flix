@@ -53,8 +53,8 @@ pub def showOptionFiles(xs: List[Option[DirListingLine]]): Unit =
 
 @test
 def parseFile01(): Result[Int32, String] = 
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    TextParser.parseFile(DirListing.directoryListing(), path, Charset.utf_16le())
+    let path = "D:\coding\flix\text-parser\samples\test-data\dir.txt";
+    DirListing.parseDirListing(path)
         |> Result.map(x -> List.length(x))
 
 @test
@@ -168,3 +168,15 @@ def dirListingLine02(): Result[List[DirListingLine], String] =
     TextParser.run(TextParser.many1(DirListing.dirListingLine()), s)
 
 
+@test
+def parseFile02(): Unit = 
+    let path = "D:\coding\flix\text-parser\samples\test-data\long_names_dir.txt";
+    let write1 = Console.printLine << DirListing.toString;
+    match DirListing.parseDirListing(path) {
+        case Err(msg) => Console.printLine(msg)
+        case Ok(xs) => match xs { 
+            case Nil => Console.printLine("empty results")
+            case _ => Internal.listForeach(write1, xs)
+        }
+    }   
+        

@@ -39,7 +39,19 @@ type alias DirListingFolder = { path: String, contents: List[DirListingLine] }
 
 namespace DirListing {
 
+    pub def dirListingLineToString(x: dirListingLine): String = match x {
+        case FolderLine(name, _, _) => name
+        case FileLine(name, _, _, sz) => name + " " + Int64.toString(sz)
+    }
 
+    pub def toString(x: DirListingFolder): String = 
+        let sb = StringBuilder.new();
+        StringBuilder.appendLine(sb, "");
+        StringBuilder.appendLine(sb, "Directory: " + x.path);
+        StringBuilder.appendInt32(sb, List.length(x.contents));
+        StringBuilder.appendLine(sb, " items");
+        List.foldLeft((_,x1) -> StringBuilder.appendLine(sb, dirListingLineToString(x1)), (), x.contents);
+        StringBuilder.toString(sb)
 
     pub def printTimeStamp(ts: TimeStamp): String = 
         "${ Int32.toString(ts.day)}/${Int32.toString(ts.month)}/${ Int32.toString(ts.year)} ${ Int32.toString(ts.hour)}:${Int32.toString(ts.minute)}"
@@ -61,11 +73,11 @@ namespace DirListing {
         )
     
     /// Note - Windows Dir Listing can run to muliple lines
-    pub def multilineName(): TextParser.Parser[String] = 
+    pub def multilineName(offset: Int32): TextParser.Parser[String] = 
         let line1 = TextParser.restOfLine(true);
         let lineCont = 
             TextParser.seqRight(
-                TextParser.many1(TextParser.char(' ')),
+                TextParser.count(offset, TextParser.char(' ')),
                 TextParser.restOfLine(true)
             );
         TextParser.pipe2(
@@ -77,9 +89,10 @@ namespace DirListing {
     def pFile(mode: Mode): TextParser.Parser[DirListingLine] = 
         TextParser.pipe2(
             TextParser.bounded(fileStats(), 36),
-            multilineName(),
+            multilineName(49),
             (stats, name) -> { 
                 let (timestamp, size) = stats; 
+                Console.printLine("File: " + name);
                 FileLine(name, mode, timestamp, size)
             }
         )
@@ -87,8 +100,8 @@ namespace DirListing {
     def pFolder(mode: Mode): TextParser.Parser[DirListingLine] = 
         TextParser.pipe2(
             TextParser.bounded(pUkTimeStamp(), 36),
-            multilineName(),
-            (timestamp, name) -> FolderLine(name, mode, timestamp)
+            multilineName(49),
+            (timestamp, name) -> { Console.printLine("Folder: " + name); FolderLine(name, mode, timestamp) }
         )
 
     pub def ignoreLine(): TextParser.Parser[Option[a]] = 
@@ -120,7 +133,7 @@ namespace DirListing {
         TextParser.pipe3(
             indent,
             TextParser.symbol("Directory:"),
-            multilineName(),
+            multilineName(4),
             (_,_,z) -> z
         ) |> TextParser.nestError("directoryDirective")
 
@@ -136,10 +149,11 @@ namespace DirListing {
         
     pub def directoryHeadings(): TextParser.Parser[Unit] = 
         let underline = TextParser.many1Chars(TextParser.oneOf([' ', '-']));
-        TextParser.pipe2(
+        TextParser.pipe3(
             directoryHeadings1(),
-            underline,
-            (_,_) -> ()
+            underline, 
+            TextParser.newline(),
+            (_,_,_) -> ()
         ) |> TextParser.nestError("directoryHeadings")
     
     def blankLine(): TextParser.Parser[Unit] = TextParser.newline()
@@ -160,8 +174,13 @@ namespace DirListing {
         TextParser.pipe3(
             TextParser.byteOrderMark(),
             blankLines1(),
-            TextParser.many1(dirListingFolder()),
+            TextParser.sepEndBy(dirListingFolder(), TextParser.endOfInput()),
             (_,_,z) -> z
-        )
+        ) |> TextParser.nestError("directoryListing")
 
+
+    pub def parseDirListing(path: String): Result[List[DirListingFolder], String] = 
+        let path1 = FilePath.new(path);
+        TextParser.parseFile(DirListing.directoryListing(), path1, Charset.utf_16le())
+            
 }
