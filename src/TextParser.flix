@@ -195,7 +195,7 @@ namespace TextParser {
     /// 
     pub def lookahead(p: Parser[a]): Parser[a] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) {
-            case Err(_) => Err("lookahead")
+            case Err(msg) => Err("lookahead[" + msg + "]")
             case Ok(a,_) => Ok(a, pos)
         })
 
@@ -207,7 +207,7 @@ namespace TextParser {
 
     pub def alt(p: Parser[ans], q: Parser[ans]): Parser[ans] =
         Parser((inp, pos) -> match (apply1(p, inp, pos), apply1(q, inp, pos)) {
-            case (Err(_), Err(_)) => Err("alt")
+            case (Err(msg1), Err(msg2)) => Err("alt[" + msg1 + ", " + msg2 + "]")
             case (Err(_), b) => b
             case (a, Err(_)) => a
             case (Ok(a, pos1a), Ok(b, pos1b)) => 
@@ -276,16 +276,16 @@ namespace TextParser {
         bind(p, ans -> if (test(ans)) return(ans) else fail())
 
     pub def count(i: Int32, p: Parser[ans]): Parser[List[ans]] = 
-        Parser((inp, pos) -> countHelper(i, p, inp, pos, () -> Err("count"), (xs, pos1)-> Ok(xs, pos1)))
+        Parser((inp, pos) -> countHelper(i, p, inp, pos, msg -> Err("count[" + msg + "]"), (xs, pos1)-> Ok(xs, pos1)))
 
     type alias ListAnswer[ans] = Result[(List[ans], SrcPos), ErrMsg]
 
-    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: SrcPos, fk: Unit -> ListAnswer[ans], sk: (List[ans], SrcPos) -> ListAnswer[ans]): ListAnswer[ans] = 
+    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: SrcPos, fk: ErrMsg -> ListAnswer[ans], sk: (List[ans], SrcPos) -> ListAnswer[ans]): ListAnswer[ans] = 
         if (i <= 0)
             sk(Nil, pos)
         else 
             match apply1(p, inp, pos) {
-                case Err(_) => fk()
+                case Err(msg) => fk(msg)
                 case Ok(a, pos1) => countHelper(i-1, p, inp, pos1, fk, (xs,posk) -> sk(a :: xs, posk))
             }
     
@@ -612,14 +612,18 @@ namespace TextParser {
     pub def hexDigit(): Parser[Char] = 
         oneOf(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'])
 
-    // newline() needs testing
+    ///
+    /// Byte order mark '\ufeff'
+    ///
+    pub def byteOrderMark(): Parser[Char] = char('\ufeff')
+    
+    // newline() needs testing  - to test
 
     pub def newline(): Parser[Unit] = 
-        pipe2(
-            alt(char('\r'), char('\n')),
-            optional(char('\n')),
-            (_,_) -> ()
-        )
+        fmap(
+            _ -> (),
+            alt(char('\n'), seqLeft(char('\r'), optional(char('\n'))))            
+        ) 
 
     pub def tab(): Parser[Char] = char('\t')
 

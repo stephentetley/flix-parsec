@@ -60,7 +60,65 @@ def parseFile01(): Result[Int32, String] =
 @test
 def parseFile01a(): Result[DirListingFolder, String] = 
     let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    TextParser.parseFile(DirListing.dirListingFolder(), path, Charset.utf_16le())
+    let p1 = TextParser.pipe3(
+        TextParser.byteOrderMark(),
+        DirListing.blankLines1(),
+        DirListing.dirListingFolder(),
+        (_,_,z) -> z
+    );
+    TextParser.parseFile(p1, path, Charset.utf_16le())
+
+@test
+def parseFile01b(): Result[String, String] = 
+    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    let p1 = TextParser.pipe3(
+        TextParser.byteOrderMark(),
+        DirListing.blankLines1(),
+        TextParser.restOfLine(true),
+        (_,_,z) -> z
+    );
+    TextParser.parseFile(p1, path, Charset.utf_16le())
+
+
+@test
+def parseFile01c(): Result[String, String] = 
+    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    let p1 = TextParser.pipe4(        
+        TextParser.byteOrderMark(),
+        TextParser.restOfLine(true),
+        TextParser.restOfLine(true),
+        TextParser.restOfLine(true),
+        (_, _, _, z2) -> z2
+    );
+    TextParser.parseFile(p1, path, Charset.utf_16le())
+
+
+
+@test
+def fileLength01(): Result[Int32, String] =  
+    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    File.readFile(path, Charset.utf_16le()) 
+        |> Result.map(s -> String.length(s))
+
+@test
+def fileChar01(): Result[Bool, String] =  
+    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    File.readFile(path, Charset.utf_16le()) 
+        |> Result.map(s -> String.charAt(1, s) == '\r')
+
+@test
+def fileChar02(): Result[Bool, String] =  
+    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    File.readFile(path, Charset.utf_16le()) 
+        |> Result.map(s -> String.charAt(0, s) == '\ufeff')
+
+
+@test
+def fileChar03(): Result[Char, String] =  
+    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    File.readFile(path, Charset.utf_16le()) 
+        |> Result.map(s -> String.charAt(9, s))
+
 
 
 @test
@@ -75,21 +133,24 @@ def makeString(xs: List[String]): String =
 
 @test
 def directoryDirective02(): Result[String, String] =  
-    let p1 = TextParser.seqRight(DirListing.blankLines(), DirListing.directoryDirective());
+    let p1 = TextParser.seqRight(DirListing.blankLines1(), DirListing.directoryDirective());
     let s = makeString("" :: "" :: "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW" :: Nil);
     TextParser.run(p1, s)
 
 
 @test
 def directoryDirective03(): Result[String, String] =  
-    let p1 = TextParser.seqRight(DirListing.blankLines(), TextParser.seqLeft(DirListing.directoryDirective(), DirListing.blankLines()));
+    let p1 = TextParser.seqRight(
+                DirListing.blankLines1(), 
+                TextParser.seqLeft(DirListing.directoryDirective(), DirListing.blankLines1())
+            );
     let s = makeString("" :: "" :: "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW" :: "" :: "" :: Nil);
     TextParser.run(p1, s)
 
 
 @test
 def directoryHeadings01(): Result[Unit, String] =  
-    let p1 = TextParser.seqRight(DirListing.blankLines(), DirListing.directoryHeadings());
+    let p1 = TextParser.seqRight(DirListing.blankLines1(), DirListing.directoryHeadings());
     let s = makeString("" :: "" :: "Mode                LastWriteTime         Length Name                            " :: "----                -------------         ------ ----                            " :: Nil);
     TextParser.run(p1, s)
 

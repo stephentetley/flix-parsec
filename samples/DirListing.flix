@@ -72,7 +72,7 @@ namespace DirListing {
             line1, 
             TextParser.many(lineCont),
             (x, xs) -> List.foldLeft((ss,s) -> ss + s, x, xs) |> String.trim
-        )
+        ) |> TextParser.nestError("multilineName") 
 
     def pFile(mode: Mode): TextParser.Parser[DirListingLine] = 
         TextParser.pipe2(
@@ -113,7 +113,7 @@ namespace DirListing {
         TextParser.bind(
             pMode(),
             x -> if (isDir(x)) pFolder(x) else pFile(x)            
-        )
+        ) |> TextParser.nestError("dirListingLine") 
 
     pub def directoryDirective(): TextParser.Parser[String] = 
         let indent = TextParser.count(4, TextParser.char(' '));
@@ -144,18 +144,24 @@ namespace DirListing {
     
     def blankLine(): TextParser.Parser[Unit] = TextParser.newline()
     
-    pub def blankLines(): TextParser.Parser[Unit] = 
-        TextParser.ignore(TextParser.many(blankLine()))
+    pub def blankLines1(): TextParser.Parser[Unit] = 
+        TextParser.ignore(TextParser.many1(blankLine())) 
+            |> TextParser.nestError("blankLines1")
 
     pub def dirListingFolder(): TextParser.Parser[DirListingFolder] = 
         TextParser.pipe3(
-            TextParser.seqRight(blankLines(), directoryDirective()),
-            TextParser.seqRight(blankLines(), directoryHeadings()),
-            TextParser.manyTill(dirListingLine(), blankLines()),
+            directoryDirective(),
+            TextParser.seqRight(blankLines1(), directoryHeadings()),
+            TextParser.manyTill(dirListingLine(), blankLines1()),
             (x, _, zs) -> { path = x, contents = zs }
-        )
+        ) |> TextParser.nestError("dirListingFolder")
 
     pub def directoryListing() : TextParser.Parser[List[DirListingFolder]] = 
-        TextParser.many1(dirListingFolder())
+        TextParser.pipe3(
+            TextParser.byteOrderMark(),
+            blankLines1(),
+            TextParser.many1(dirListingFolder()),
+            (_,_,z) -> z
+        )
 
 }
