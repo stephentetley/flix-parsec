@@ -8,9 +8,9 @@ namespace Internal {
         case _: ##java.lang.StringIndexOutOfBoundsException => None
     }
 
-    pub def trySlice(b: Int32, e: Int32, s: String) : Option[String] = try {
+    pub def trySlice(b: Int32, e: Int32, s: String) : Option[String] & Pure = try {
         import java.lang.String.substring(Int32,Int32);
-        let s1 = s.substring(b, e);
+        let s1 = s.substring(b, e) as & Pure;
         Some(s1)
     } catch {
         case _: ##java.lang.IndexOutOfBoundsException => None
@@ -18,12 +18,12 @@ namespace Internal {
 
     /// Being added to Array
     pub def arrayMemberOf(x: a, a: Array[a]): Bool = 
-        arrayMemberOfHelper(x, a, 0)
+        arrayMemberOfHelper(x, a, 0) as & Pure
 
     ///
     /// Helper function for `arrayMemberOf`.
     ///
-    def arrayMemberOfHelper(x: a, a: Array[a], i: Int): Bool = 
+    def arrayMemberOfHelper(x: a, a: Array[a], i: Int): Bool & Impure = 
         if (i >= Array.length(a))
             false
         else { 
@@ -33,19 +33,21 @@ namespace Internal {
                 arrayMemberOfHelper(x, a, i+1)
         }
 
+    pub def makeString(cs: List[Char]): String = 
+        makeStringHelper(cs) as & Pure
 
-    pub def makeString(chars: List[Char]): String = 
+    def makeStringHelper(chars: List[Char]): String & Impure = 
         let sb = StringBuilder.new();
         List.foldLeft((_,x) -> StringBuilder.appendChar(sb, x), (), chars);
         StringBuilder.toString(sb)
 
     pub def prefix(c: Char, s: String): String = Char.toString(c) + s
 
-    pub def listForeach(f: a -> Unit, xs: List[a]): Unit = 
-        match xs { 
-            case Nil => ()
-            case x :: rs => { f(x); listForeach(f, rs) }
-        }
+    // pub def listForeach(f: a -> Unit, xs: List[a]): Unit = 
+    //     match xs { 
+    //         case Nil => ()
+    //         case x :: rs => { f(x); listForeach(f, rs) }
+    //     }
 
 
 }

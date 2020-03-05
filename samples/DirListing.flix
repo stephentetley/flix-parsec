@@ -44,7 +44,9 @@ namespace DirListing {
         case FileLine(name, _, _, sz) => name + " " + Int64.toString(sz)
     }
 
-    pub def toString(x: DirListingFolder): String = 
+    pub def toString(x: DirListingFolder): String = toStringHelper(x) as & Pure
+
+    def toStringHelper(x: DirListingFolder): String & Impure = 
         let sb = StringBuilder.new();
         StringBuilder.appendLine(sb, "");
         StringBuilder.appendLine(sb, "Directory: " + x.path);
@@ -147,7 +149,7 @@ namespace DirListing {
         )
         
     pub def directoryHeadings(): TextParser.Parser[Unit] = 
-        let underline = TextParser.many1Chars(TextParser.oneOf([' ', '-']));
+        let underline = TextParser.many1Chars(TextParser.oneOf(' ' ::  '-' :: Nil));
         TextParser.pipe3(
             directoryHeadings1(),
             underline, 
@@ -162,12 +164,11 @@ namespace DirListing {
             |> TextParser.nestError("blankLines1")
 
     pub def dirListingFolder(): TextParser.Parser[DirListingFolder] = 
-        TextParser.pipe4(
+        TextParser.pipe3(
             directoryDirective(),
             TextParser.seqRight(blankLines1(), directoryHeadings()),
             TextParser.manyTill(dirListingLine(), blankLines1()),
-            TextParser.position(),
-            (x, _, zs, pos) -> { Console.printLine("pos: " + Int32.toString(pos)); { path = x, contents = zs } }
+            (x, _, zs) -> { path = x, contents = zs }
         ) |> TextParser.nestError("dirListingFolder")
 
     pub def directoryListing() : TextParser.Parser[List[DirListingFolder]] = 
@@ -179,7 +180,7 @@ namespace DirListing {
         ) |> TextParser.nestError("directoryListing")
 
 
-    pub def parseDirListing(path: String): Result[List[DirListingFolder], String] = 
+    pub def parseDirListing(path: String): Result[List[DirListingFolder], String] & Impure = 
         let path1 = FilePath.new(path);
         TextParser.parseFile(DirListing.directoryListing(), path1, Charset.utf_16le())
             

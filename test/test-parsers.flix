@@ -130,7 +130,7 @@ def sepEndBy103(): Result[List[Char], String] =
 @test
 def choice01(): Result[Char, String] = 
     let parser = 
-        TextParser.choice([TextParser.digit(), TextParser.char('#')]);
+        TextParser.choice(TextParser.digit() :: TextParser.char('#') :: Nil);
     TextParser.run(parser, "#") 
 
 @test
@@ -152,12 +152,12 @@ def notFollowedBy01(): Result[Char, String] =
 
 @test
 def oneOf01(): Result[Char, String] = 
-    let parser = TextParser.oneOf(['a', 'b', 'c']);
+    let parser = TextParser.oneOf('a' :: 'b' :: 'c' :: Nil);
     TextParser.run(parser, "c")
 
 @test
 def noneOf01(): Result[Char, String] = 
-    let parser = TextParser.noneOf(['a', 'b', 'c']);
+    let parser = TextParser.noneOf('a' :: 'b' :: 'c' :: Nil);
     TextParser.run(parser, "d")
 
 
@@ -259,13 +259,13 @@ def restOfInput03(): Bool =
         case Err(_) => false
     }
 
-def makeString(xs: List[String]): String = 
+def makeString(xs: List[String]): String & Impure = 
     let sb = StringBuilder.new();
     List.foldLeft((_,s) -> StringBuilder.appendLine(sb, s), (), xs);
     StringBuilder.toString(sb)
 
 @test 
-def restOfLine01(): Bool = 
+def restOfLine01(): Bool & Impure = 
     let src = makeString("123    " :: "Hello" :: Nil);
     let p = TextParser.pipe2(
                 TextParser.restOfLine(true),
@@ -278,7 +278,7 @@ def restOfLine01(): Bool =
     }
 
 @test 
-def restOfLine02(): Bool = 
+def restOfLine02(): Bool & Impure = 
     let src = makeString("123    " :: "Hello" :: Nil);
     let p = TextParser.pipe3(
                 TextParser.restOfLine(false),

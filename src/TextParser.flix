@@ -83,7 +83,7 @@ namespace TextParser {
     pub def run(parser: Parser[a], input: String): Result[a, ErrMsg] = parseString(parser, input)
     
 
-    pub def parseFile(parser: Parser[a], path: FilePath, cs: Charset): Result[a, ErrMsg] = 
+    pub def parseFile(parser: Parser[a], path: FilePath, cs: Charset): Result[a, ErrMsg] & Impure = 
         match File.readFile(path, cs) {
             case Err(_) => Err("io error")
             case Ok(text) => run(parser, text)
@@ -94,7 +94,7 @@ namespace TextParser {
     ///
     /// All lines must parse, otherwise the parse fails.
     ///
-    pub def parseLines(parser: Parser[a], path: Path): Result[List[a], ErrMsg] = 
+    pub def parseLines(parser: Parser[a], path: Path): Result[List[a], ErrMsg] & Impure = 
         let failk = (n,msg) -> Err("Failed at line: " + Int32.toString(n) + "; " + msg);
         match Path.exists(path) {
             case Ok(true) => match Path.readLines(path) {
@@ -124,7 +124,7 @@ namespace TextParser {
     /// All lines must parse successfully, otherwise the parse fails, but parsing a line does not 
     /// have to generate a result. This parser can be used to skip lines.
     ///
-    pub def chooseParseLines(parser: Parser[Option[a]], path: Path): Result[List[a], ErrMsg] = 
+    pub def chooseParseLines(parser: Parser[Option[a]], path: Path): Result[List[a], ErrMsg] & Impure = 
         let failk = (n,msg) -> Err("Failed at line: " + Int32.toString(n) + "; " + msg);
         match Path.exists(path) {
             case Ok(true) => match Path.readLines(path) {
@@ -138,7 +138,7 @@ namespace TextParser {
     ///
     /// Helper for `chooseParseLines`
     ///
-    def chooseParseLinesHelper(parser: Parser[Option[a]], n: Int32, src: List[String], fk:(Int32, String) -> Result[List[a], ErrMsg], sk: List[a] -> Result[List[a], ErrMsg]): Result[List[a], ErrMsg] = 
+    def chooseParseLinesHelper(parser: Parser[Option[a]], n: Int32, src: List[String], fk:(Int32, String) -> Result[List[a], ErrMsg], sk: List[a] -> Result[List[a], ErrMsg]): Result[List[a], ErrMsg] & Impure = 
         match src {
             case Nil => sk(Nil)
             case x :: rs => match parseString(parser, x) {
@@ -374,14 +374,12 @@ namespace TextParser {
             case Ok(None, pos1) => chooseHelper(p, inp, pos1, (xs,posk) -> sk(xs, posk))
         }
 
-    pub def choice(ps: Array[Parser[ans]]): Parser[ans] = choiceHelper(Array.toList(ps))
-
-    def choiceHelper(ps: List[Parser[ans]]): Parser[ans] = 
+    pub def choice(ps: List[Parser[ans]]): Parser[ans] = 
         Parser((inp, pos) -> match ps {
                 case Nil => Err("choice")
                 case p :: rs =>  match apply1(p, inp, pos) {
                     case Ok(a, pos1) => Ok(a, pos1)
-                    case Err(_) => apply1(choiceHelper(rs), inp, pos)
+                    case Err(_) => apply1(choice(rs), inp, pos)
                 }
             })
 
@@ -561,11 +559,11 @@ namespace TextParser {
         })
 
 
-    pub def oneOf(cs: Array[Char]): Parser[Char] = 
-        satisfy(ch -> Internal.arrayMemberOf(ch, cs)) |> nestError("oneOf")
+    pub def oneOf(cs: List[Char]): Parser[Char]= 
+        satisfy(ch -> List.memberOf(ch, cs)) |> nestError("oneOf")
 
-    pub def noneOf(cs: Array[Char]): Parser[Char] = 
-        satisfy(ch -> !Internal.arrayMemberOf(ch, cs)) |> nestError("noneOf")
+    pub def noneOf(cs: List[Char]): Parser[Char] = 
+        satisfy(ch -> !List.memberOf(ch, cs)) |> nestError("noneOf")
 
     pub def char(c: Char): Parser[Char] = 
         satisfy(ch -> ch == c) |> nestError("char")
@@ -607,10 +605,12 @@ namespace TextParser {
     pub def digit(): Parser[Char] = satisfy(Char.isDigit)
 
     pub def octDigit(): Parser[Char] = 
-        oneOf(['0', '1', '2', '3', '4', '5', '6', '7'])
+        let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: Nil;
+        oneOf(xs)
 
     pub def hexDigit(): Parser[Char] = 
-        oneOf(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f'])
+        let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: 'A' :: 'B' :: 'C' :: 'D' :: 'E' ::'F' ::'a' :: 'b' :: 'c' :: 'd' :: 'e' :: 'f' :: Nil;
+        oneOf(xs)
 
     ///
     /// Byte order mark '\ufeff'
