@@ -21,49 +21,76 @@ namespace TextParser {
 
     type alias ErrMsg = String
 
+    type alias SrcPos = (Int32, Int32)
+
+    pub opaque type ParseError = 
+        { message: String
+        , linenum: Int32
+        , column: Int32 
+        }
+
+    def makeParseError(src: String, pos: Int32, msg: String): ParseError = 
+        let pair = Internal.textPos(pos, 4, src) |> x -> Option.getWithDefault(x, (1,1));
+        let lin = fst(pair);
+        let col = snd(pair);
+        let ans = { message = msg, linenum = lin, column = col };
+        ParseError(ans)
+
+    def nestErrorMessage(outer: String, e: ParseError): ParseError = 
+        let ParseError(err) = e;
+        let msg = outer + "[" + err.message + "]";
+        ParseError({ message = msg | err })
+
+    def swapErrorMessage(msg: String, e: ParseError): ParseError = 
+        let ParseError(err) = e;
+        ParseError({ message = msg | err })
+
+    pub def showParserError(e: ParseError): String = 
+        let ParseError(err) = e;
+        "Line: " + Int32.toString(err.linenum) + ", column: " + Int32.toString(err.column) + " -- " + err.message
 
     pub enum Parser[ans] {
-        case Parser((String, Index) -> Result[(ans, Index), ErrMsg])
+        case Parser((String, Index) -> Result[(ans, Index), ParseError])
     }
 
-    pub def fail() : Parser[ans] = Parser((_,_) -> Err("fail"))
+    pub def fail() : Parser[ans] = Parser((inp, pos) -> Err(makeParseError(inp, pos, "fail")))
 
     pub def return(x: ans): Parser[ans] = Parser((_, pos) -> Ok(x, pos))
 
-    def apply1(parser: Parser[ans], inp: String, pos: Index): Result[(ans, Index), ErrMsg] = 
+    def apply1(parser: Parser[ans], inp: String, pos: Index): Result[(ans, Index), ParseError] = 
         let Parser(f) = parser;
         f(inp, pos)
         
 
     pub def bind(ma: Parser[a], k: a -> Parser[b]) : Parser[b] = 
         Parser((inp, pos) -> match apply1(ma, inp, pos) { 
-                case Err(msg) => Err(msg)
+                case Err(e) => Err(e)
                 case Ok(ans, pos1) => apply1(k(ans), inp, pos1)
             })
 
     pub def fmap(f: a -> b, ma: Parser[a]) : Parser[b] = 
         Parser((inp, pos) -> match apply1(ma, inp, pos) { 
-                case Err(msg) => Err(msg)
+                case Err(e) => Err(e)
                 case Ok(ans, pos1) => Ok(f(ans), pos1)
             })
 
     
-    pub def parseString(parser: Parser[a], input: String): Result[a, ErrMsg] = 
+    pub def parseString(parser: Parser[a], input: String): Result[a, ParseError] = 
         let Parser(f) = parser;
         match f(input, 0) {
-            case Err(msg) => Err(msg)
+            case Err(e) => Err(e)
             case Ok((a, _)) => Ok(a)
         }
 
     ///
     /// Alias for `parseString`.
     ///
-    pub def run(parser: Parser[a], input: String): Result[a, ErrMsg] = parseString(parser, input)
+    pub def run(parser: Parser[a], input: String): Result[a, ParseError] = parseString(parser, input)
     
 
-    pub def parseFile(parser: Parser[a], path: FilePath, cs: Charset): Result[a, ErrMsg] & Impure = 
+    pub def parseFile(parser: Parser[a], path: FilePath, cs: Charset): Result[a, ParseError] & Impure = 
         match File.readFile(path, cs) {
-            case Err(_) => Err("io error")
+            case Err(_) => Err(makeParseError("", 0, "io error"))
             case Ok(text) => run(parser, text)
         }
 
@@ -72,25 +99,25 @@ namespace TextParser {
     ///
     /// All lines must parse, otherwise the parse fails.
     ///
-    pub def parseLines(parser: Parser[a], path: Path): Result[List[a], ErrMsg] & Impure = 
-        let failk = (n,msg) -> Err("Failed at line: " + Int32.toString(n) + "; " + msg);
+    pub def parseLines(parser: Parser[a], path: Path): Result[List[a], ParseError] & Impure = 
+        let failk = (n,e) -> Err(makeParseError("", n, "Failed at line: " + Int32.toString(n) + "; " + showParserError(e)));
         match Path.exists(path) {
             case Ok(true) => match Path.readLines(path) {
                 case Ok(xs) => parseLinesHelper(parser, 1, xs, failk, vs -> Ok(vs))
-                case Err(_) => Err("readLines failed")
+                case Err(_) => Err(makeParseError("", 0, "io error"))
             }
-            case Ok(false) => Err("Missing file:" + Result.getWithDefault(Path.getName(path), "???"))
-            case Err(_) => Err("Exception")
+            case Ok(false) => Err(makeParseError("", 0, "Missing file"))
+            case Err(_) => Err(makeParseError("", 0, "exception"))
         }   
 
     ///
     /// Helper for `parseLines`
     ///
-    def parseLinesHelper(parser: Parser[a], n: Int32, src: List[String], fk:(Int32, String) -> Result[List[a], ErrMsg], sk: List[a] -> Result[List[a], ErrMsg]): Result[List[a], ErrMsg] = 
+    def parseLinesHelper(parser: Parser[a], n: Int32, src: List[String], fk: (Int32, ParseError) -> Result[List[a], ParseError], sk: List[a] -> Result[List[a], ParseError]): Result[List[a], ParseError] = 
         match src {
             case Nil => sk(Nil)
             case x :: rs => match parseString(parser, x) {
-                case Err(msg) => fk(n, msg)
+                case Err(e) => fk(n, e)
                 case Ok(a) => parseLinesHelper(parser, n+1, rs, fk, vs -> sk(a :: vs))
             }
         }
@@ -102,25 +129,25 @@ namespace TextParser {
     /// All lines must parse successfully, otherwise the parse fails, but parsing a line does not 
     /// have to generate a result. This parser can be used to skip lines.
     ///
-    pub def chooseParseLines(parser: Parser[Option[a]], path: Path): Result[List[a], ErrMsg] & Impure = 
-        let failk = (n,msg) -> Err("Failed at line: " + Int32.toString(n) + "; " + msg);
+    pub def chooseParseLines(parser: Parser[Option[a]], path: Path): Result[List[a], ParseError] & Impure = 
+        let failk = (n,e) -> Err(makeParseError("", n, "Failed at line: " + Int32.toString(n) + "; " + showParserError(e)));
         match Path.exists(path) {
             case Ok(true) => match Path.readLines(path) {
                 case Ok(xs) => chooseParseLinesHelper(parser, 1, xs, failk, vs -> Ok(vs))
-                case Err(_) => Err("readLines failed")
+                case Err(_) => Err(makeParseError("", 0, "readLines failed"))
             }
-            case Ok(false) => Err("Missing file:" + Result.getWithDefault(Path.getName(path), "???"))
-            case Err(_) => Err("Exception")
+            case Ok(false) => Err(makeParseError("", 0, "Missing file"))
+            case Err(_) => Err(makeParseError("", 0, "Exception"))
         }   
 
     ///
     /// Helper for `chooseParseLines`
     ///
-    def chooseParseLinesHelper(parser: Parser[Option[a]], n: Int32, src: List[String], fk:(Int32, String) -> Result[List[a], ErrMsg], sk: List[a] -> Result[List[a], ErrMsg]): Result[List[a], ErrMsg] & Impure = 
+    def chooseParseLinesHelper(parser: Parser[Option[a]], n: Int32, src: List[String], fk:(Int32, ParseError) -> Result[List[a], ParseError], sk: List[a] -> Result[List[a], ParseError]): Result[List[a], ParseError] & Impure = 
         match src {
             case Nil => sk(Nil)
             case x :: rs => match parseString(parser, x) {
-                case Err(msg) => fk(n, msg)
+                case Err(e) => fk(n, e)
                 case Ok(None) => chooseParseLinesHelper(parser, n+1, rs, fk, vs -> sk(vs))
                 case Ok(Some(a)) => chooseParseLinesHelper(parser, n+1, rs, fk, vs -> sk(a :: vs))
             }
@@ -167,7 +194,7 @@ namespace TextParser {
 
     pub def bounded(p: Parser[a], length: Int32): Parser[a] = 
         Parser((inp, pos) -> match Internal.trySlice(0, pos+length, inp) {
-            case None => Err("bounded")
+            case None => Err(makeParseError(inp, pos, "bounded"))
             case Some(s) => match apply1(p, s, pos) {
                 case Err(msg) => Err(msg)
                 case Ok(a, _) => Ok(a, pos+length)
@@ -175,17 +202,17 @@ namespace TextParser {
         })
 
     pub def throwError(msg: String): Parser[ans] = 
-        Parser((_,_) -> Err(msg))
+        Parser((inp, pos) -> Err(makeParseError(inp, pos, msg)))
 
     pub def swapError(msg: String, p: Parser[ans]): Parser[ans] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) { 
-                case Err(_) => Err(msg)
+                case Err(e) => Err(swapErrorMessage(msg,e))
                 case Ok(ans, pos1) => Ok(ans, pos1)
             })
     
     pub def nestError(msg: String, p: Parser[ans]): Parser[ans] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) { 
-                case Err(inner) => Err(msg + "[" + inner + "]")
+                case Err(e) => Err(nestErrorMessage(msg, e))
                 case Ok(ans, pos1) => Ok(ans, pos1)
             })
 
@@ -209,7 +236,7 @@ namespace TextParser {
     /// 
     pub def lookahead(p: Parser[a]): Parser[a] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) {
-            case Err(msg) => Err("lookahead[" + msg + "]")
+            case Err(e) => Err(nestErrorMessage("lookahead", e))
             case Ok(a,_) => Ok(a, pos)
         })
 
@@ -221,7 +248,7 @@ namespace TextParser {
 
     pub def alt(p: Parser[ans], q: Parser[ans]): Parser[ans] =
         Parser((inp, pos) -> match (apply1(p, inp, pos), apply1(q, inp, pos)) {
-            case (Err(msg1), Err(msg2)) => Err("alt[" + msg1 + ", " + msg2 + "]")
+            case (Err(_), Err(_)) => Err(makeParseError(inp, pos, "alt"))
             case (Err(_), b) => b
             case (a, Err(_)) => a
             case (Ok(a, pos1a), Ok(b, pos1b)) => 
@@ -314,16 +341,16 @@ namespace TextParser {
         bind(p, ans -> if (test(ans)) return(ans) else fail())
 
     pub def count(i: Int32, p: Parser[ans]): Parser[List[ans]] = 
-        Parser((inp, pos) -> countHelper(i, p, inp, pos, msg -> Err("count[" + msg + "]"), (xs, pos1)-> Ok(xs, pos1)))
+        Parser((inp, pos) -> countHelper(i, p, inp, pos, e -> Err(nestErrorMessage("count", e)), (xs, pos1) -> Ok(xs, pos1)))
 
-    type alias ListAnswer[ans] = Result[(List[ans], Index), ErrMsg]
+    type alias ListAnswer[ans] = Result[(List[ans], Index), ParseError]
 
-    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: Index, fk: ErrMsg -> ListAnswer[ans], sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
+    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: Index, fk: ParseError -> ListAnswer[ans], sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
         if (i <= 0)
             sk(Nil, pos)
         else 
             match apply1(p, inp, pos) {
-                case Err(msg) => fk(msg)
+                case Err(e) => fk(e)
                 case Ok(a, pos1) => countHelper(i-1, p, inp, pos1, fk, (xs,posk) -> sk(a :: xs, posk))
             }
     
@@ -346,10 +373,10 @@ namespace TextParser {
             case Ok(a, pos1) => manyHelper(p, inp, pos1, (xs,posk) -> sk(a :: xs, posk))
         }
 
-    type alias SkipAnswer = Result[(Unit, Index), ErrMsg]
+    type alias SkipAnswer = Result[(Unit, Index), ParseError]
 
     pub def skipMany(p: Parser[ans]): Parser[Unit] = 
-        Parser((inp, pos) -> skipManyHelper(p, inp, pos, pos1-> Ok((), pos1)))
+        Parser((inp, pos) -> skipManyHelper(p, inp, pos, pos1 -> Ok((), pos1)))
 
     pub def skipMany1(p: Parser[ans]): Parser[Unit] = 
         seqRight(p, skipMany(p))
@@ -395,7 +422,7 @@ namespace TextParser {
 
     pub def sepEndBy1(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) {
-            case Err(_) => Err("sepEndBy1")
+            case Err(e) => Err(nestErrorMessage("sepEndBy1", e))
             case Ok(a, pos1) => match apply1(sep, inp, pos1) {
                 case Err(_) => Ok(a :: Nil, pos1)
                 case Ok(_, pos2) => sepEndByHelper(p, sep, inp, pos2, (xs,posk) -> Ok(a :: xs, posk))
@@ -414,7 +441,7 @@ namespace TextParser {
 
     pub def choice(ps: List[Parser[ans]]): Parser[ans] = 
         Parser((inp, pos) -> match ps {
-                case Nil => Err("choice")
+                case Nil => Err(makeParseError(inp, pos, "choice"))
                 case p :: rs =>  match apply1(p, inp, pos) {
                     case Ok(a, pos1) => Ok(a, pos1)
                     case Err(_) => apply1(choice(rs), inp, pos)
@@ -423,38 +450,38 @@ namespace TextParser {
 
     pub def anyChar(): Parser[Char] = 
         Parser((inp, pos) -> match Internal.charAtSafe(pos, inp) {
-                case None => Err("anyChar")
+                case None => Err(makeParseError(inp, pos, "anyChar"))
                 case Some(ch) => Ok(ch, pos+1)
             })
 
     pub def satisfy(test: Char -> Bool): Parser[Char] = 
         Parser((inp, pos) -> match Internal.charAtSafe(pos, inp) {
-                case None => Err("satisfy")
+                case None => Err(makeParseError(inp, pos, "satisfy (no input)"))
                 case Some(ch) => 
-                    if (test(ch)) Ok(ch, pos+1) else Err("satisfy")
+                    if (test(ch)) Ok(ch, pos+1) else Err(makeParseError(inp, pos, "satisfy"))
             }) 
 
-    def primitiveManyTill(p: Parser[a], endp: Parser[e], f: (List[a], e) -> ans, errMsg: String): Parser[ans] =
-        let fk = _ -> Err(errMsg);
+    def primitiveManyTill(p: Parser[a], endp: Parser[e], f: (List[a], e) -> ans): Parser[ans] =
+        let fk = e -> Err(e);
         let sk = (xs, end1, pos) -> Ok(f(xs, end1), pos);
         Parser((inp, pos) -> primitiveManyTillHelper(p, endp, inp, pos, fk, sk))
 
     
-    def primitiveManyTillHelper(p: Parser[a], endp: Parser[e], inp: String, pos: Index, fk: Unit -> Result[ans, ErrMsg], sk: (List[a], e, Index) -> Result[ans, ErrMsg]): Result[ans, ErrMsg] = 
+    def primitiveManyTillHelper(p: Parser[a], endp: Parser[e], inp: String, pos: Index, fk: ParseError -> Result[ans, ParseError], sk: (List[a], e, Index) -> Result[ans, ParseError]): Result[ans, ParseError] = 
         match apply1(endp, inp, pos) {
             case Ok(end1, pos1) => sk(Nil, end1, pos1)
             case Err(_) => match apply1(p, inp, pos) {
-                case Err(_) => fk()
+                case Err(e) => fk(e)
                 case Ok(x, pos1) => primitiveManyTillHelper(p, endp, inp, pos1, fk, (xs, end2, pos2) -> sk(x :: xs, end2, pos2))
             }
         }
 
     pub def manyTill(p: Parser[a], endp: Parser[e]): Parser[List[a]] =
-        primitiveManyTill(p, endp, (xs,_) -> xs, "manyTill")
+        primitiveManyTill(p, endp, (xs,_) -> xs) 
 
 
     pub def manyTillApply(p: Parser[a], endp: Parser[e], f: (List[a], e) -> ans): Parser[ans] =
-        primitiveManyTill(p, endp, f, "manyTillApply")
+        primitiveManyTill(p, endp, f)
 
     pub def many1Till(p: Parser[a], end: Parser[sep]): Parser[List[a]] = 
         pipe2(p, manyTill(p,end), (v, vs) -> v :: vs)
@@ -469,15 +496,15 @@ namespace TextParser {
 
 
     pub def skipManyTill(p: Parser[a], end: Parser[e]): Parser[Unit] = 
-        let fk = _ -> Err("skipManyTill");
+        let fk = e -> Err(nestErrorMessage("skipManyTill", e));
         let sk = pos -> Ok((), pos);
         Parser((inp, pos) -> skipManyTillHelper(p, end, inp, pos, fk, sk))
 
-    def skipManyTillHelper(p: Parser[a], end: Parser[e], inp: String, pos: Index, fk: Unit -> Result[(Unit, Index), ErrMsg], sk: Index -> Result[(Unit, Index), ErrMsg]): Result[(Unit, Index), ErrMsg] = 
+    def skipManyTillHelper(p: Parser[a], end: Parser[e], inp: String, pos: Index, fk: ParseError -> Result[(Unit, Index), ParseError], sk: Index -> Result[(Unit, Index), ParseError]): Result[(Unit, Index), ParseError] = 
         match apply1(end, inp, pos) {
             case Ok(_, pos1) => sk(pos1)
             case Err(_) => match apply1(p, inp, pos) {
-                case Err(_) => fk()
+                case Err(e) => fk(e)
                 case Ok(_, pos1) => skipManyTillHelper(p, end, inp, pos1, fk, sk)
             }
         }
@@ -516,7 +543,7 @@ namespace TextParser {
     
     
     pub def manyCharsTillApply(p: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
-        primitiveManyTill(p, endp, (xs,e) -> f(Internal.makeString(xs), e), "manyCharsTillApply")
+        primitiveManyTill(p, endp, (xs,e) -> f(Internal.makeString(xs), e))
         
 
     pub def manyCharsTillApply2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
@@ -536,9 +563,9 @@ namespace TextParser {
 
     pub def skipped(p: Parser[Unit]): Parser[String] = 
         Parser((inp,pos) -> match apply1(p, inp, pos) {
-            case Err(_) => Err("skipped")
+            case Err(e) => Err(nestErrorMessage("skipped", e))
             case Ok(_, pos1) => match Internal.trySlice(pos, pos1, inp) {
-                case None => Err("skipped")
+                case None => Err(makeParseError(inp, pos, "skipped"))
                 case Some(s) => Ok(s, pos1)
             }
         })
@@ -570,7 +597,8 @@ namespace TextParser {
         alt(chainr1(p, op), return(x))
 
     pub def endOfInput() : Parser[Unit] = 
-        Parser((inp, pos) -> if (pos >= String.length(inp)) Ok((), pos) else Err("endOfInput"))
+        Parser((inp, pos) -> 
+            if (pos >= String.length(inp)) Ok((), pos) else Err(makeParseError(inp, pos, "endOfInput")))
 
     /// End of input or newline.
     pub def endOfLine() : Parser[Unit] = 
@@ -580,7 +608,7 @@ namespace TextParser {
         Parser((inp, pos) -> 
             let end = String.length(inp);
             match Internal.trySlice(pos, end, inp) {
-                case None => Err("restOfInput")
+                case None => Err(makeParseError(inp, pos, "restOfInput"))
                 case Some(s) => Ok(s, end)
             })
 
@@ -597,7 +625,7 @@ namespace TextParser {
     pub def notFollowedBy(p: Parser[ans]): Parser[Unit] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) {
             case Err(_) => Ok((), pos)
-            case Ok(_,_) => Err("notFollowedBy")
+            case Ok(_,_) => Err(makeParseError(inp, pos, "notFollowedBy"))
         })
 
 
@@ -616,7 +644,7 @@ namespace TextParser {
     ///
     pub def horizon(n: Int): Parser[String] = 
         Parser((inp, pos) -> match Internal.trySlice(pos, pos+n, inp) {
-                case None => Err("horizon")
+                case None => Err(makeParseError(inp, pos, "horizon"))
                 case Some(s) => Ok(s, pos+n)
             })
 
@@ -632,9 +660,9 @@ namespace TextParser {
     pub def string(needle: String): Parser[String] = 
         let msg = "string - expecting '" + needle + "'";
         Parser((inp, pos) -> match Internal.trySlice(pos, pos + String.length(needle), inp) {
-                case None => Err(msg)
+                case None => Err(makeParseError(inp, pos, msg))
                 case Some(s) => 
-                    if (s == needle) Ok(needle, pos + String.length(needle)) else Err(msg)
+                    if (s == needle) Ok(needle, pos + String.length(needle)) else Err(makeParseError(inp, pos, msg))
             })
 
     pub def upper(): Parser[Char] = satisfy(Char.isUpperCase)
