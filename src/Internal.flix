@@ -28,6 +28,7 @@ namespace Internal {
     pub def prefix(c: Char, s: String): String = Char.toString(c) + s
 
 
+
     pub def textPos(i: Int32, tabsize: Int32, s: String): Option[(Int32, Int32)] = 
         textPosHelper(String.length(s), i, tabsize, s, 1, 1, 0) 
 
@@ -59,7 +60,21 @@ namespace Internal {
             }
         }
 
-
+    pub def justSeen(pos: Int32, s: String): String = 
+        let len = String.length(s);
+        if (pos > len) 
+            ""
+        else { 
+            if (pos > 40) String.slice(pos-40, pos, s) else String.slice(0, pos, s)
+        }
+            
+    pub def pendingInput(pos: Int32, s: String): String = 
+        let len = String.length(s);
+        if (pos > len) 
+            ""
+        else { 
+            if (pos + 40 < len) String.slice(pos, pos+40, s) else String.slice(pos, len, s)
+        }
 
 
 }

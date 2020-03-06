@@ -27,13 +27,17 @@ namespace TextParser {
         { message: String
         , linenum: Int32
         , column: Int32 
+        , justseen: String
+        , pending: String 
         }
 
     def makeParseError(src: String, pos: Int32, msg: String): ParseError = 
-        let pair = Internal.textPos(pos, 4, src) |> x -> Option.getWithDefault(x, (1,1));
+        let pair = Internal.textPos(pos, 3, src) |> x -> Option.getWithDefault(x, (1,1));
         let lin = fst(pair);
         let col = snd(pair);
-        let ans = { message = msg, linenum = lin, column = col };
+        let seen = Internal.justSeen(pos, src);
+        let todo = Internal.pendingInput(pos, src);
+        let ans = { message = msg, linenum = lin, column = col, justseen = seen, pending = todo };
         ParseError(ans)
 
     def nestErrorMessage(outer: String, e: ParseError): ParseError = 
@@ -47,7 +51,14 @@ namespace TextParser {
 
     pub def showParserError(e: ParseError): String = 
         let ParseError(err) = e;
-        "Line: " + Int32.toString(err.linenum) + ", column: " + Int32.toString(err.column) + " -- " + err.message
+        let h1 = "Line: " + Int32.toString(err.linenum) + ", column: " + Int32.toString(err.column);
+        let seen = err.justseen + "***";
+        let todo = "***" + err.pending;
+        String.unlines( h1 :: err.message :: seen :: todo :: Nil)
+
+
+    /// We could have an env with tabsize and a function trailing: Char -> Bool
+    /// This would allow nice configuration...
 
     pub enum Parser[ans] {
         case Parser((String, Index) -> Result[(ans, Index), ParseError])
@@ -248,7 +259,12 @@ namespace TextParser {
 
     pub def alt(p: Parser[ans], q: Parser[ans]): Parser[ans] =
         Parser((inp, pos) -> match (apply1(p, inp, pos), apply1(q, inp, pos)) {
-            case (Err(_), Err(_)) => Err(makeParseError(inp, pos, "alt"))
+            case (Err(e1), Err(e2)) => { 
+                let ParseError(err1) = e1;
+                let ParseError(err2) = e2;
+                let msg = "alt[" + err1.message + ", " + err2.message + "]";
+                Err(makeParseError(inp, pos, msg))
+            }
             case (Err(_), b) => b
             case (a, Err(_)) => a
             case (Ok(a, pos1a), Ok(b, pos1b)) => 
