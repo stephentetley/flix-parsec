@@ -47,28 +47,39 @@ namespace TextParser {
                 case Ok(ans, pos1) => Ok(f(ans), pos1)
             })
 
-
     pub def liftM2(f: (a, b) -> ans, p1: Parser[a], p2: Parser[b]): Parser[ans] = 
         bind(p1, v1 -> 
             bind(p2, v2 -> return(f(v1,v2))))
 
     pub def liftM3(f: (a, b, c) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c]): Parser[ans] = 
         bind(p1, v1 -> 
-            bind(p2, v2 -> 
-                bind(p3, v3 -> return(f(v1, v2, v3)))))
+            liftM2((v2,v3) -> f(v1,v2,v3), p2, p3))
+
 
     pub def liftM4(f: (a, b, c, d) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d]): Parser[ans] = 
-        bind(p1, v1 ->
-            bind(p2, v2 -> 
-                bind(p3, v3 -> 
-                    bind(p4, v4 -> return(f(v1, v2, v3, v4))))))
+        bind(p1, v1 -> 
+            liftM3((v2,v3,v4) -> f(v1,v2,v3,v4), p2, p3, p4))
+                    
 
     pub def liftM5(f: (a, b, c, d, e) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e]): Parser[ans] = 
         bind(p1, v1 -> 
-            bind(p2, v2 -> 
-                bind(p3, v3 -> 
-                    bind(p4, v4 -> 
-                        bind(p5, v5 -> return(f(v1, v2, v3, v4, v5)))))))
+            liftM4((v2,v3,v4,v5) -> f(v1,v2,v3,v4,v5), p2, p3, p4, p5))
+
+    pub def liftM6(f: (a, b, c, d, e, f) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM5((v2,v3,v4,v5,v6) -> f(v1,v2,v3,v4,v5,v6), p2, p3, p4, p5, p6))
+
+    pub def liftM7(f: (a, b, c, d, e, f, g) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM6((v2,v3,v4,v5,v6,v7) -> f(v1,v2,v3,v4,v5,v6,v7), p2, p3, p4, p5, p6,p7))
+
+    pub def liftM8(f: (a, b, c, d, e, f, g, h) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM7((v2,v3,v4,v5,v6,v7,v8) -> f(v1,v2,v3,v4,v5,v6,v7,v8), p2, p3, p4, p5, p6,p7,p8))
+
+    pub def liftM9(f: (a, b, c, d, e, f, g, h, i) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], p9: Parser[i]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM8((v2,v3,v4,v5,v6,v7,v8,v9) -> f(v1,v2,v3,v4,v5,v6,v7,v8,v9), p2, p3, p4, p5, p6,p7,p8,p9))
 
     pub def parseString(parser: Parser[a], input: String): Result[a, ErrMsg] = 
         let Parser(f) = parser;
@@ -238,6 +249,19 @@ namespace TextParser {
     pub def pipe5(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], f: (a,b,c,d,e) -> ans): Parser[ans] = 
         liftM5(f, p1, p2, p3, p4, p5)
 
+    pub def pipe6(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], f: (a,b,c,d,e,f) -> ans): Parser[ans] = 
+        liftM6(f, p1, p2, p3, p4, p5, p6)
+
+    pub def pipe7(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], f: (a,b,c,d,e,f,g) -> ans): Parser[ans] = 
+        liftM7(f, p1, p2, p3, p4, p5, p6, p7)
+
+    pub def pipe8(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], f: (a,b,c,d,e,f,g,h) -> ans): Parser[ans] = 
+        liftM8(f, p1, p2, p3, p4, p5, p6, p7, p8)
+
+    pub def pipe9(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], p9: Parser[i], f: (a,b,c,d,e,f,g,h, i) -> ans): Parser[ans] = 
+        liftM9(f, p1, p2, p3, p4, p5, p6, p7, p8, p9)
+
+
     pub def tuple2(p1: Parser[a], p2: Parser[b]): Parser[(a,b)] = 
         pipe2(p1, p2, (a,b) -> (a,b))
 
@@ -247,9 +271,20 @@ namespace TextParser {
     pub def tuple4(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d]): Parser[(a,b,c,d)] = 
         pipe4(p1, p2, p3, p4, (a,b,c,d) -> (a,b,c,d))
 
-    pub def tuple5(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[d]): Parser[(a,b,c,d,e)] = 
-        pipe5(p1, p2, p3, p4, p5, (a,b,c,d, e) -> (a,b,c,d,e))
+    pub def tuple5(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e]): Parser[(a,b,c,d,e)] = 
+        pipe5(p1, p2, p3, p4, p5, (a,b,c,d,e) -> (a,b,c,d,e))
 
+    pub def tuple6(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f]): Parser[(a,b,c,d,e,f)] = 
+        pipe6(p1, p2, p3, p4, p5, p6, (a,b,c,d,e,f) -> (a,b,c,d,e,f))
+
+    pub def tuple7(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g]): Parser[(a,b,c,d,e,f,g)] = 
+        pipe7(p1, p2, p3, p4, p5, p6, p7, (a,b,c,d,e,f,g) -> (a,b,c,d,e,f,g))
+
+    pub def tuple8(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h]): Parser[(a,b,c,d,e,f,g,h)] = 
+        pipe8(p1, p2, p3, p4, p5, p6, p7, p8, (a,b,c,d,e,f,g,h) -> (a,b,c,d,e,f,g,h))
+
+    pub def tuple9(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], p9: Parser[i]): Parser[(a,b,c,d,e,f,g,h,i)] = 
+        pipe9(p1, p2, p3, p4, p5, p6, p7, p8, p9, (a,b,c,d,e,f,g,h,i) -> (a,b,c,d,e,f,g,h,i))
 
     pub def string2(p1: Parser[String], p2: Parser[String]): Parser[String] = 
         pipe2(p1, p2, (a,b) -> a + b)
@@ -600,9 +635,15 @@ namespace TextParser {
 
     pub def letter(): Parser[Char] = satisfy(Char.isLetter)
 
+    pub def letters(): Parser[String] = 
+        many1(letter()) |> fmap(List.toString)
+
     pub def alphaNum(): Parser[Char] = alt(letter(), digit())
 
     pub def digit(): Parser[Char] = satisfy(Char.isDigit)
+
+    pub def digits(): Parser[String] = 
+        many1(digit()) |> fmap(List.toString)
 
     pub def octDigit(): Parser[Char] = 
         let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: Nil;
@@ -632,11 +673,36 @@ namespace TextParser {
 
     pub def tab(): Parser[Char] = char('\t')
 
-    pub def space(): Parser[Unit] = satisfy(Char.isWhiteSpace) |> fmap(_ -> ())
+    ///
+    /// Parse a space character (u0020)
+    /// 
+    pub def space(): Parser[Char] = char(' ')
 
-    pub def spaces(): Parser[Unit] = skipMany(satisfy(Char.isWhiteSpace))
+    ///
+    /// Parse a sequence space characters (u0020).
+    /// 
+    pub def spaces(): Parser[Unit] = skipMany(space())
 
-    pub def lexeme(p: Parser[ans]): Parser[ans] = seqLeft(p, spaces())
+
+    /// Right padded with spaces.
+    pub def rightPadded(p: Parser[a]): Parser[a] = 
+        seqLeft(p, spaces())
+
+    /// Left padded with spaces.
+    pub def leftPadded(p: Parser[a]): Parser[a] = 
+        seqRight(spaces(), p)
+
+    /// Padded with spaces - left and/or right or neither.
+    pub def padded(p: Parser[a]): Parser[a] = 
+        rightPadded(leftPadded(p))
+
+
+    /// Read many whiteSpace characters (space, tab, newline)
+    pub def whiteSpace(): Parser[Unit] = skipMany(satisfy(Char.isWhiteSpace))
+
+
+
+    pub def lexeme(p: Parser[ans]): Parser[ans] = seqLeft(p, whiteSpace())
 
     pub def symbol(s: String): Parser[String] = lexeme(string(s))
 
@@ -665,6 +731,9 @@ namespace TextParser {
     pub def commaSep1(p: Parser[ans]): Parser[List[ans]] = sepBy1(p, comma())
 
     // TODO - charLiteral and stringLiteral
+    // Number parser use lexeme which consumes trailing whitespace.
+    // We may want a choice of trailing whitespace, trailing spaces, or no trailing.
+    // How do we resolve this?
 
 
     def sign(): Parser[String] = 
@@ -738,5 +807,16 @@ namespace TextParser {
         })
 
     pub def float64(): Parser[Float64] = lexeme(primFloat64())    
+
+    /// This is a bit limited without existentials
+    pub opaque type SymbolParser = 
+        { f64: Parser[Float64] 
+        }
+
+    pub def makeSymbolParser(trailing: Parser[Unit]): SymbolParser =
+        let pLexeme = p -> seqLeft(p, trailing);
+        let pFloat64 = pLexeme(primFloat64());
+        let r1 = { f64 = pFloat64 };
+        SymbolParser(r1)
 
 }

@@ -290,3 +290,29 @@ def restOfLine02(): Bool & Impure =
         case Ok(x) => x
         case Err(_) => false
     }
+
+@test 
+def numberParser01(): Float64 = 
+    let src = "123.56 ";
+    let SymbolParser(body) = TextParser.makeSymbolParser(TextParser.spaces());
+
+    let myFloat64 = body.f64;
+    match TextParser.parseString(myFloat64, src) {
+        case Ok(x) => x
+        case Err(_) => 0.0f64
+    }
+
+def numParsers(): TextParser.SymbolParser = TextParser.makeSymbolParser(TextParser.spaces())
+def pFloat64(): TextParser.Parser[Float64] = 
+    let SymbolParser(body) = numParsers();
+    body.f64
+
+
+@test 
+def numberParser02(): Float64 = 
+    let src = "123.56 ";
+    
+    match TextParser.parseString(pFloat64(), src) {
+        case Ok(x) => x
+        case Err(_) => 0.0f64
+    }
