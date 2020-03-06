@@ -17,20 +17,20 @@
 
 namespace TextParser {
     
-    type alias SrcPos = Int32
+    type alias Index = Int32
 
     type alias ErrMsg = String
 
 
     pub enum Parser[ans] {
-        case Parser((String, SrcPos) -> Result[(ans, SrcPos), ErrMsg])
+        case Parser((String, Index) -> Result[(ans, Index), ErrMsg])
     }
 
     pub def fail() : Parser[ans] = Parser((_,_) -> Err("fail"))
 
     pub def return(x: ans): Parser[ans] = Parser((_, pos) -> Ok(x, pos))
 
-    def apply1(parser: Parser[ans], inp: String, pos: SrcPos): Result[(ans, SrcPos), ErrMsg] = 
+    def apply1(parser: Parser[ans], inp: String, pos: Index): Result[(ans, Index), ErrMsg] = 
         let Parser(f) = parser;
         f(inp, pos)
         
@@ -47,40 +47,7 @@ namespace TextParser {
                 case Ok(ans, pos1) => Ok(f(ans), pos1)
             })
 
-    pub def liftM2(f: (a, b) -> ans, p1: Parser[a], p2: Parser[b]): Parser[ans] = 
-        bind(p1, v1 -> 
-            bind(p2, v2 -> return(f(v1,v2))))
-
-    pub def liftM3(f: (a, b, c) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c]): Parser[ans] = 
-        bind(p1, v1 -> 
-            liftM2((v2,v3) -> f(v1,v2,v3), p2, p3))
-
-
-    pub def liftM4(f: (a, b, c, d) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d]): Parser[ans] = 
-        bind(p1, v1 -> 
-            liftM3((v2,v3,v4) -> f(v1,v2,v3,v4), p2, p3, p4))
-                    
-
-    pub def liftM5(f: (a, b, c, d, e) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e]): Parser[ans] = 
-        bind(p1, v1 -> 
-            liftM4((v2,v3,v4,v5) -> f(v1,v2,v3,v4,v5), p2, p3, p4, p5))
-
-    pub def liftM6(f: (a, b, c, d, e, f) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f]): Parser[ans] = 
-        bind(p1, v1 -> 
-            liftM5((v2,v3,v4,v5,v6) -> f(v1,v2,v3,v4,v5,v6), p2, p3, p4, p5, p6))
-
-    pub def liftM7(f: (a, b, c, d, e, f, g) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g]): Parser[ans] = 
-        bind(p1, v1 -> 
-            liftM6((v2,v3,v4,v5,v6,v7) -> f(v1,v2,v3,v4,v5,v6,v7), p2, p3, p4, p5, p6,p7))
-
-    pub def liftM8(f: (a, b, c, d, e, f, g, h) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h]): Parser[ans] = 
-        bind(p1, v1 -> 
-            liftM7((v2,v3,v4,v5,v6,v7,v8) -> f(v1,v2,v3,v4,v5,v6,v7,v8), p2, p3, p4, p5, p6,p7,p8))
-
-    pub def liftM9(f: (a, b, c, d, e, f, g, h, i) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], p9: Parser[i]): Parser[ans] = 
-        bind(p1, v1 -> 
-            liftM8((v2,v3,v4,v5,v6,v7,v8,v9) -> f(v1,v2,v3,v4,v5,v6,v7,v8,v9), p2, p3, p4, p5, p6,p7,p8,p9))
-
+    
     pub def parseString(parser: Parser[a], input: String): Result[a, ErrMsg] = 
         let Parser(f) = parser;
         match f(input, 0) {
@@ -161,6 +128,42 @@ namespace TextParser {
         
     pub def position(): Parser[Int32] =
         Parser((_, pos) -> Ok(pos, pos))
+
+    
+    pub def liftM2(f: (a, b) -> ans, p1: Parser[a], p2: Parser[b]): Parser[ans] = 
+        bind(p1, v1 -> 
+            bind(p2, v2 -> return(f(v1,v2))))
+
+    pub def liftM3(f: (a, b, c) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM2((v2,v3) -> f(v1,v2,v3), p2, p3))
+
+
+    pub def liftM4(f: (a, b, c, d) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM3((v2,v3,v4) -> f(v1,v2,v3,v4), p2, p3, p4))
+                    
+
+    pub def liftM5(f: (a, b, c, d, e) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM4((v2,v3,v4,v5) -> f(v1,v2,v3,v4,v5), p2, p3, p4, p5))
+
+    pub def liftM6(f: (a, b, c, d, e, f) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM5((v2,v3,v4,v5,v6) -> f(v1,v2,v3,v4,v5,v6), p2, p3, p4, p5, p6))
+
+    pub def liftM7(f: (a, b, c, d, e, f, g) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM6((v2,v3,v4,v5,v6,v7) -> f(v1,v2,v3,v4,v5,v6,v7), p2, p3, p4, p5, p6,p7))
+
+    pub def liftM8(f: (a, b, c, d, e, f, g, h) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM7((v2,v3,v4,v5,v6,v7,v8) -> f(v1,v2,v3,v4,v5,v6,v7,v8), p2, p3, p4, p5, p6,p7,p8))
+
+    pub def liftM9(f: (a, b, c, d, e, f, g, h, i) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], p9: Parser[i]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM8((v2,v3,v4,v5,v6,v7,v8,v9) -> f(v1,v2,v3,v4,v5,v6,v7,v8,v9), p2, p3, p4, p5, p6,p7,p8,p9))
+
 
     pub def bounded(p: Parser[a], length: Int32): Parser[a] = 
         Parser((inp, pos) -> match Internal.trySlice(0, pos+length, inp) {
@@ -313,9 +316,9 @@ namespace TextParser {
     pub def count(i: Int32, p: Parser[ans]): Parser[List[ans]] = 
         Parser((inp, pos) -> countHelper(i, p, inp, pos, msg -> Err("count[" + msg + "]"), (xs, pos1)-> Ok(xs, pos1)))
 
-    type alias ListAnswer[ans] = Result[(List[ans], SrcPos), ErrMsg]
+    type alias ListAnswer[ans] = Result[(List[ans], Index), ErrMsg]
 
-    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: SrcPos, fk: ErrMsg -> ListAnswer[ans], sk: (List[ans], SrcPos) -> ListAnswer[ans]): ListAnswer[ans] = 
+    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: Index, fk: ErrMsg -> ListAnswer[ans], sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
         if (i <= 0)
             sk(Nil, pos)
         else 
@@ -337,13 +340,13 @@ namespace TextParser {
             bind(many(p), vs -> return(v1 :: vs))) |> nestError("many1")
 
 
-    def manyHelper(p: Parser[ans], inp: String, pos: SrcPos, sk: (List[ans], SrcPos) -> ListAnswer[ans]): ListAnswer[ans] = 
+    def manyHelper(p: Parser[ans], inp: String, pos: Index, sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
         match apply1(p, inp, pos) {
             case Err(_) => sk(Nil, pos)
             case Ok(a, pos1) => manyHelper(p, inp, pos1, (xs,posk) -> sk(a :: xs, posk))
         }
 
-    type alias SkipAnswer = Result[(Unit, SrcPos), ErrMsg]
+    type alias SkipAnswer = Result[(Unit, Index), ErrMsg]
 
     pub def skipMany(p: Parser[ans]): Parser[Unit] = 
         Parser((inp, pos) -> skipManyHelper(p, inp, pos, pos1-> Ok((), pos1)))
@@ -352,7 +355,7 @@ namespace TextParser {
         seqRight(p, skipMany(p))
 
 
-    def skipManyHelper(p: Parser[ans], inp: String, pos: SrcPos, sk: SrcPos -> SkipAnswer): SkipAnswer = 
+    def skipManyHelper(p: Parser[ans], inp: String, pos: Index, sk: Index -> SkipAnswer): SkipAnswer = 
         match apply1(p, inp, pos) {
             case Err(_) => sk(pos)
             case Ok(_, pos1) => skipManyHelper(p, inp, pos1, posk -> sk(posk))
@@ -362,7 +365,7 @@ namespace TextParser {
         Parser((inp, pos) -> sepByHelper(p, sep, inp, pos, (xs,pos1)-> Ok(xs, pos1)))
 
 
-    def sepByHelper(p: Parser[ans], sep: Parser[sep], inp: String, pos: SrcPos, sk: (List[ans], SrcPos) -> ListAnswer[ans]): ListAnswer[ans] = 
+    def sepByHelper(p: Parser[ans], sep: Parser[sep], inp: String, pos: Index, sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
         match apply1(p, inp, pos) {
             case Err(_) => sk(Nil, pos)
             case Ok(a, pos1) => manyHelper(seqRight(sep, p), inp, pos1, (xs,posk) -> sk(a :: xs, posk))
@@ -381,7 +384,7 @@ namespace TextParser {
     pub def sepEndBy(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
         Parser((inp, pos) -> sepEndByHelper(p, sep, inp, pos, (xs,pos1)-> Ok(xs, pos1)))
 
-    def sepEndByHelper(p: Parser[ans], sep: Parser[sep], inp: String, pos: SrcPos, sk: (List[ans], SrcPos) -> ListAnswer[ans]): ListAnswer[ans] = 
+    def sepEndByHelper(p: Parser[ans], sep: Parser[sep], inp: String, pos: Index, sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
         match apply1(p, inp, pos) {
             case Err(_) => sk(Nil, pos)
             case Ok(a, pos1) => match apply1(sep, inp, pos1) {
@@ -402,7 +405,7 @@ namespace TextParser {
     pub def choose(p: Parser[Option[a]]): Parser[List[a]] = 
         Parser((inp, pos) -> chooseHelper(p, inp, pos, (xs, posk) -> Ok(xs, posk)))
     
-    def chooseHelper(p: Parser[Option[a]], inp: String, pos: SrcPos, sk: (List[a], SrcPos) ->  ListAnswer[a]): ListAnswer[a] = 
+    def chooseHelper(p: Parser[Option[a]], inp: String, pos: Index, sk: (List[a], Index) ->  ListAnswer[a]): ListAnswer[a] = 
         match apply1(p, inp, pos) {
             case Err(_) => sk(Nil, pos)
             case Ok(Some(a), pos1) => chooseHelper(p, inp, pos1, (xs,posk) -> sk(a :: xs, posk))
@@ -437,7 +440,7 @@ namespace TextParser {
         Parser((inp, pos) -> primitiveManyTillHelper(p, endp, inp, pos, fk, sk))
 
     
-    def primitiveManyTillHelper(p: Parser[a], endp: Parser[e], inp: String, pos: SrcPos, fk: Unit -> Result[ans, ErrMsg], sk: (List[a], e, SrcPos) -> Result[ans, ErrMsg]): Result[ans, ErrMsg] = 
+    def primitiveManyTillHelper(p: Parser[a], endp: Parser[e], inp: String, pos: Index, fk: Unit -> Result[ans, ErrMsg], sk: (List[a], e, Index) -> Result[ans, ErrMsg]): Result[ans, ErrMsg] = 
         match apply1(endp, inp, pos) {
             case Ok(end1, pos1) => sk(Nil, end1, pos1)
             case Err(_) => match apply1(p, inp, pos) {
@@ -470,7 +473,7 @@ namespace TextParser {
         let sk = pos -> Ok((), pos);
         Parser((inp, pos) -> skipManyTillHelper(p, end, inp, pos, fk, sk))
 
-    def skipManyTillHelper(p: Parser[a], end: Parser[e], inp: String, pos: SrcPos, fk: Unit -> Result[(Unit, SrcPos), ErrMsg], sk: SrcPos -> Result[(Unit, SrcPos), ErrMsg]): Result[(Unit, SrcPos), ErrMsg] = 
+    def skipManyTillHelper(p: Parser[a], end: Parser[e], inp: String, pos: Index, fk: Unit -> Result[(Unit, Index), ErrMsg], sk: Index -> Result[(Unit, Index), ErrMsg]): Result[(Unit, Index), ErrMsg] = 
         match apply1(end, inp, pos) {
             case Ok(_, pos1) => sk(pos1)
             case Err(_) => match apply1(p, inp, pos) {
@@ -569,6 +572,10 @@ namespace TextParser {
     pub def endOfInput() : Parser[Unit] = 
         Parser((inp, pos) -> if (pos >= String.length(inp)) Ok((), pos) else Err("endOfInput"))
 
+    /// End of input or newline.
+    pub def endOfLine() : Parser[Unit] = 
+        alt(endOfInput(), newline())
+
     pub def restOfInput(): Parser[String] = 
         Parser((inp, pos) -> 
             let end = String.length(inp);
@@ -623,10 +630,11 @@ namespace TextParser {
     
 
     pub def string(needle: String): Parser[String] = 
+        let msg = "string - expecting '" + needle + "'";
         Parser((inp, pos) -> match Internal.trySlice(pos, pos + String.length(needle), inp) {
-                case None => Err("string")
+                case None => Err(msg)
                 case Some(s) => 
-                    if (s == needle) Ok(needle, pos + String.length(needle)) else Err("string")
+                    if (s == needle) Ok(needle, pos + String.length(needle)) else Err(msg)
             })
 
     pub def upper(): Parser[Char] = satisfy(Char.isUpperCase)
@@ -667,7 +675,7 @@ namespace TextParser {
         ) 
 
     ///
-    /// Either at end-of-input or only whitespace rremeing before end-of-input.
+    /// Either at end-of-input or only whitespace remaining before end-of-input.
     /// 
     pub def endOfContent(): Parser[Unit] = seqRight(spaces(), endOfInput())
 

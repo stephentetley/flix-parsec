@@ -16,22 +16,6 @@ namespace Internal {
         case _: ##java.lang.IndexOutOfBoundsException => None
     }
 
-    /// Being added to Array
-    pub def arrayMemberOf(x: a, a: Array[a]): Bool = 
-        arrayMemberOfHelper(x, a, 0) as & Pure
-
-    ///
-    /// Helper function for `arrayMemberOf`.
-    ///
-    def arrayMemberOfHelper(x: a, a: Array[a], i: Int): Bool & Impure = 
-        if (i >= Array.length(a))
-            false
-        else { 
-            if (a[i] == x) 
-                true 
-            else 
-                arrayMemberOfHelper(x, a, i+1)
-        }
 
     pub def makeString(cs: List[Char]): String = 
         makeStringHelper(cs) as & Pure
@@ -43,11 +27,39 @@ namespace Internal {
 
     pub def prefix(c: Char, s: String): String = Char.toString(c) + s
 
-    // pub def listForeach(f: a -> Unit, xs: List[a]): Unit = 
-    //     match xs { 
-    //         case Nil => ()
-    //         case x :: rs => { f(x); listForeach(f, rs) }
-    //     }
+
+    pub def textPos(i: Int32, tabsize: Int32, s: String): Option[(Int32, Int32)] = 
+        textPosHelper(String.length(s), i, tabsize, s, 1, 1, 0) 
+
+    def textPosHelper(len: Int32, pos: Int32, tabsize: Int32, src: String, linenum: Int32, colnum: Int32, ix: Int32): Option[(Int32, Int32)] = 
+        if (ix == pos)
+            Some (linenum, colnum)
+        else { 
+            if (ix > len)
+                None        
+            else {
+                match String.charAt(ix, src) {
+                    case '\n' => textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+1)
+                    case '\r' =>
+                        if (ix+1 <= pos && ix + 1 <= len) {
+                            if (String.charAt(ix+1,src) == '\n') { 
+                                // carriage retrun & line feed
+                                textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+2)
+                            } else {
+                                // jsut carraige return
+                                textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+1)
+                            }
+                        } else {
+                            // At end anyway, just seen newline so increment to next
+                            Some(linenum+1, 1)
+                        }
+                    case '\t' => textPosHelper(len, pos, tabsize, src, linenum, colnum+tabsize, ix+1)
+                    case _ => textPosHelper(len, pos, tabsize, src, linenum, colnum+1, ix+1)
+                }
+            }
+        }
+
+
 
 
 }
