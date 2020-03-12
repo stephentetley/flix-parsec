@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 namespace TextParser {
     
     type alias Index = Int32
@@ -98,6 +97,11 @@ namespace TextParser {
     ///
     pub def run(parser: Parser[a], input: String): Result[a, ParseError] = parseString(parser, input)
     
+    pub def runs(parser: Parser[a], input: String): Result[a, String] = 
+        match parseString(parser, input) {
+            case Err(e) => Err(showParserError(e))
+            case Ok(a) => Ok(a) 
+        }
 
     pub def parseFile(parser: Parser[a], path: FilePath, cs: Charset): Result[a, ParseError] & Impure = 
         match File.readFile(path, cs) {
