@@ -53,7 +53,7 @@ namespace TextParser {
         let h1 = "Line: " + Int32.toString(err.linenum) + ", column: " + Int32.toString(err.column);
         let seen = err.justseen + "***";
         let todo = "***" + err.pending;
-        String.unlines( h1 :: err.message :: seen :: todo :: Nil)
+        String.unlines([h1, err.message, seen, todo]) as & Pure
 
 
     /// We could have an env with tabsize and a function trailing: Char -> Bool
@@ -78,7 +78,7 @@ namespace TextParser {
                 case Ok(ans, pos1) => apply1(k(ans), inp, pos1)
             })
 
-    pub def fmap(f: a -> b, ma: Parser[a]) : Parser[b] = 
+    pub def map(f: a -> b, ma: Parser[a]) : Parser[b] = 
         Parser((inp, pos) -> match apply1(ma, inp, pos) { 
                 case Err(e) => Err(e)
                 case Ok(ans, pos1) => Ok(f(ans), pos1)
@@ -239,11 +239,11 @@ namespace TextParser {
             })
 
     pub def optional(p: Parser[ans]): Parser[Option[ans]] = 
-        alt(fmap(x -> Some(x), p), return(None))
+        alt(map(x -> Some(x), p), return(None))
 
 
-    pub def ignore(p: Parser[ans]): Parser[unit] = 
-        fmap(_ -> (), p)
+    pub def ignore(p: Parser[ans]): Parser[Unit] = 
+        map(_ -> (), p)
 
     ///
     /// lookahead - run the parser but don't consume input on success
@@ -259,7 +259,7 @@ namespace TextParser {
     /// Parser the input with `p`, the if the parser succeed return None. 
     ///
     pub def assertNone(p: Parser[a]): Parser[Option[ans]] = 
-        fmap(_ -> None, p)
+        map(_ -> None, p)
 
     pub def alt(p: Parser[ans], q: Parser[ans]): Parser[ans] =
         Parser((inp, pos) -> match (apply1(p, inp, pos), apply1(q, inp, pos)) {
@@ -282,10 +282,10 @@ namespace TextParser {
         bind(pf, f -> bind(pa, a -> return(f(a))))
 
     ///
-    /// `pipe1` is `fmap` with the arguments flipped.
+    /// `pipe1` is `map` with the arguments flipped.
     ///
     pub def pipe1(p1: Parser[a], f: a -> ans): Parser[ans] = 
-        fmap(f, p1)
+        map(f, p1)
 
     pub def pipe2(p1: Parser[a], p2: Parser[b], f: (a,b) -> ans): Parser[ans] = 
         liftM2(f, p1, p2)
@@ -542,23 +542,23 @@ namespace TextParser {
     
 
     pub def manyChars(p: Parser[Char]): Parser[String] = 
-        fmap(Internal.makeString, many(p))
+        map(Internal.makeString, many(p))
 
     pub def manyChars2(p1: Parser[Char], p2: Parser[Char]): Parser[String] = 
         bind(p1, c -> bind(many(p2), cs -> return(Internal.makeString(c :: cs))))
 
 
     pub def many1Chars(p: Parser[Char]): Parser[String] = 
-        fmap(Internal.makeString, many1(p))
+        map(Internal.makeString, many1(p))
 
     pub def many1Chars2(p1: Parser[Char], p2: Parser[Char]): Parser[String] = 
         bind(p1, c -> bind(many1(p2), cs -> return(Internal.makeString(c :: cs))))
 
     pub def manyCharsTill(p: Parser[Char], endp: Parser[a]): Parser[String] = 
-        fmap(Internal.makeString, manyTill(p, endp))
+        map(Internal.makeString, manyTill(p, endp))
 
     pub def manyCharsTill2(p1: Parser[Char], p2: Parser[Char], endp: Parser[a]): Parser[String] = 
-        fmap(Internal.makeString, manyTill2(p1, p2, endp))
+        map(Internal.makeString, manyTill2(p1, p2, endp))
             
     
     
@@ -572,7 +572,7 @@ namespace TextParser {
 
 
     pub def many1CharsTill(p: Parser[Char], endp: Parser[e]): Parser[String] = 
-        fmap(Internal.makeString, many1Till(p, endp))
+        map(Internal.makeString, many1Till(p, endp))
 
     pub def many1CharsTill2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e]): Parser[String] = 
         pipe2(
@@ -673,7 +673,7 @@ namespace TextParser {
     /// the current position.
     ///
     pub def content(n: Int): Parser[String] = 
-        fmap(String.trim, horizon(n))
+        map(String.trim, horizon(n))
 
     
 
@@ -692,14 +692,14 @@ namespace TextParser {
     pub def letter(): Parser[Char] = satisfy(Char.isLetter)
 
     pub def letters(): Parser[String] = 
-        many1(letter()) |> fmap(List.toString)
+        many1(letter()) |> map(List.toString)
 
     pub def alphaNum(): Parser[Char] = alt(letter(), digit())
 
     pub def digit(): Parser[Char] = satisfy(Char.isDigit)
 
     pub def digits(): Parser[String] = 
-        many1(digit()) |> fmap(List.toString)
+        many1(digit()) |> map(List.toString)
 
     pub def octDigit(): Parser[Char] = 
         let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: Nil;
@@ -717,7 +717,7 @@ namespace TextParser {
     // newline() needs testing  - to test
 
     pub def newline(): Parser[Unit] = 
-        fmap(
+        map(
             _ -> (),
             alt(char('\n'), seqLeft(char('\r'), optional(char('\n'))))            
         ) 
@@ -796,7 +796,7 @@ namespace TextParser {
         option("", alt(string("+"), string("-")))
 
     def digitString(): Parser[String] = 
-        many1(digit()) |> fmap(List.toString)
+        many1(digit()) |> map(List.toString)
 
     def intString(): Parser[String] = 
         liftM2((x,y) -> x + y, sign(), digitString())

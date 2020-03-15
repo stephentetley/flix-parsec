@@ -106,10 +106,10 @@ namespace DirListing {
         )
 
     pub def ignoreLine(): TextParser.Parser[Option[a]] = 
-        TextParser.fmap(_ -> None, TextParser.restOfLine(true))
+        TextParser.map(_ -> None, TextParser.restOfLine(true))
 
     def mode1() : TextParser.Parser[Mode] = 
-        TextParser.fmap(
+        TextParser.map(
             x -> Mode(x),
             TextParser.many1Chars(TextParser.alt(TextParser.lower(), TextParser.char('-'))) 
         )
@@ -180,7 +180,7 @@ namespace DirListing {
         ) |> TextParser.nestError("directoryListing")
 
 
-    pub def parseDirListing(path: String): Result[List[DirListingFolder], String] & Impure = 
+    pub def parseDirListing(path: String): Result[List[DirListingFolder], TextParser.ParseError] & Impure = 
         let path1 = FilePath.new(path);
         TextParser.parseFile(DirListing.directoryListing(), path1, Charset.utf_16le())
             

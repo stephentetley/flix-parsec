@@ -1,6 +1,6 @@
 @test
 def ukTimeStamp01(): Result[String, String] = 
-    TextParser.run(DirListing.pUkTimeStamp(), "11/04/2019  08:49") 
+    TextParser.runs(DirListing.pUkTimeStamp(), "11/04/2019  08:49") 
         |> Result.map(DirListing.printTimeStamp)
 
 
@@ -23,7 +23,7 @@ def exists01(): Result[Bool,String] & Impure =
     Path.exists(path) |> mapError(_ -> "io error")
 
 @test
-def parseLines01(): Result[List[String], String] & Impure = 
+def parseLines01(): Result[List[String], TextParser.ParseError] & Impure = 
     let path = Path.new(src());
     TextParser.parseLines(TextParser.restOfInput(), path)
 
@@ -56,7 +56,7 @@ def parseFile01(): Unit & Impure =
     let path = "D:\coding\flix\text-parser\samples\test-data\dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(msg) => Console.printLine(msg)
+        case Err(e) => Console.printLine(TextParser.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)
@@ -64,7 +64,7 @@ def parseFile01(): Unit & Impure =
     } 
 
 @test
-def parseFile01a(): Result[DirListingFolder, String] & Impure = 
+def parseFile01a(): Result[DirListingFolder, TextParser.ParseError] & Impure = 
     let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
     let p1 = TextParser.pipe3(
         TextParser.byteOrderMark(),
@@ -75,7 +75,7 @@ def parseFile01a(): Result[DirListingFolder, String] & Impure =
     TextParser.parseFile(p1, path, Charset.utf_16le())
 
 @test
-def parseFile01b(): Result[String, String] & Impure = 
+def parseFile01b(): Result[String, TextParser.ParseError] & Impure = 
     let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
     let p1 = TextParser.pipe3(
         TextParser.byteOrderMark(),
@@ -87,7 +87,7 @@ def parseFile01b(): Result[String, String] & Impure =
 
 
 @test
-def parseFile01c(): Result[String, String] & Impure = 
+def parseFile01c(): Result[String, TextParser.ParseError] & Impure = 
     let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
     let p1 = TextParser.pipe4(        
         TextParser.byteOrderMark(),
@@ -129,7 +129,7 @@ def fileChar03(): Result[Char, String] & Impure =
 
 @test
 def directoryDirective01(): Result[String, String] = 
-    TextParser.run(DirListing.directoryDirective(), "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW") 
+    TextParser.runs(DirListing.directoryDirective(), "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW") 
 
 
 def makeString(xs: List[String]): String & Impure = 
@@ -141,7 +141,7 @@ def makeString(xs: List[String]): String & Impure =
 def directoryDirective02(): Result[String, String] & Impure =  
     let p1 = TextParser.seqRight(DirListing.blankLines1(), DirListing.directoryDirective());
     let s = makeString("" :: "" :: "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW" :: Nil);
-    TextParser.run(p1, s)
+    TextParser.runs(p1, s)
 
 
 @test
@@ -151,19 +151,19 @@ def directoryDirective03(): Result[String, String] & Impure =
                 TextParser.seqLeft(DirListing.directoryDirective(), DirListing.blankLines1())
             );
     let s = makeString("" :: "" :: "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW" :: "" :: "" :: Nil);
-    TextParser.run(p1, s)
+    TextParser.runs(p1, s)
 
 
 @test
 def directoryHeadings01(): Result[Unit, String] & Impure =  
     let p1 = TextParser.seqRight(DirListing.blankLines1(), DirListing.directoryHeadings());
     let s = makeString("" :: "" :: "Mode                LastWriteTime         Length Name                            " :: "----                -------------         ------ ----                            " :: Nil);
-    TextParser.run(p1, s)
+    TextParser.runs(p1, s)
 
 @test
 def dirListingLine01(): Result[DirListingLine, String] =  
     let s = "-a----       28/02/2020     15:52              0 dir.txt                            ";
-    TextParser.run(DirListing.dirListingLine(), s)
+    TextParser.runs(DirListing.dirListingLine(), s)
 
 @test
 def dirListingLine02(): Result[List[DirListingLine], String] & Impure =  
@@ -171,7 +171,7 @@ def dirListingLine02(): Result[List[DirListingLine], String] & Impure =
                    "-a----       28/02/2020     15:52              0 dir.txt                           "
                 :: "-a----       28/02/2020     15:48           1848 dirlisting-test.flix              "
                 :: Nil);
-    TextParser.run(TextParser.many1(DirListing.dirListingLine()), s)
+    TextParser.runs(TextParser.many1(DirListing.dirListingLine()), s)
 
 
 @test
@@ -179,7 +179,7 @@ def parseFile02(): Unit & Impure =
     let path = "D:\coding\flix\text-parser\samples\test-data\long_names_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(msg) => Console.printLine(msg)
+        case Err(e) => Console.printLine(TextParser.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)
@@ -192,7 +192,7 @@ def temp01(): Unit & Impure =
     let path = "G:\work\Projects\edm2\prep-for-edms_feb2020\stw_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(msg) => Console.printLine(msg)
+        case Err(e) => Console.printLine(TextParser.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)
@@ -204,7 +204,7 @@ def temp02(): Unit & Impure =
     let path = "G:\work\Projects\edm2\prep-for-edms_feb2020\cso_sps_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(msg) => Console.printLine(msg)
+        case Err(e) => Console.printLine(TextParser.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)
