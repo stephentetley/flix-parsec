@@ -53,7 +53,7 @@ pub def showOptionFiles(xs: List[Option[DirListingLine]]): Unit & Impure =
 
 @test
 def parseFile01(): Unit & Impure = 
-    let path = "D:\coding\flix\text-parser\samples\test-data\dir.txt";
+    let path = "e:\coding\flix\text-parser\testdata\dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
         case Err(e) => Console.printLine(TextParser.showParserError(e))

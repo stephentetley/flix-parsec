@@ -78,6 +78,12 @@ namespace TextParser {
                 case Ok(ans, pos1) => apply1(k(ans), inp, pos1)
             })
 
+    pub def flatMap(k: a -> Parser[b], ma: Parser[a]) : Parser[b] = 
+        Parser((inp, pos) -> match apply1(ma, inp, pos) { 
+                case Err(e) => Err(e)
+                case Ok(ans, pos1) => apply1(k(ans), inp, pos1)
+            })
+
     pub def map(f: a -> b, ma: Parser[a]) : Parser[b] = 
         Parser((inp, pos) -> match apply1(ma, inp, pos) { 
                 case Err(e) => Err(e)
