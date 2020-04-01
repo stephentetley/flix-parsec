@@ -1,3 +1,9 @@
+use TextParser.ParseError;
+use TextParser.{runs, return};
+use TextParser/Combinators.{pipe3, seqLeft, seqRight, many1};
+use TextParser/Char.{byteOrderMark};
+use TextParser/Text.{restOfLine, restOfInput};
+
 @test
 def ukTimeStamp01(): Result[String, String] = 
     TextParser.runs(DirListing.pUkTimeStamp(), "11/04/2019  08:49") 
@@ -23,14 +29,14 @@ def exists01(): Result[Bool,String] & Impure =
     Path.exists(path) |> mapError(_ -> "io error")
 
 @test
-def parseLines01(): Result[List[String], TextParser.ParseError] & Impure = 
+def parseLines01(): Result[List[String], ParseError] & Impure = 
     let path = Path.new(src());
-    TextParser.parseLines(TextParser.restOfInput(), path)
+    TextParser.parseLines(restOfInput(), path)
 
 @test
 def readLines01(): Result[List[String], String] & Impure = 
     let path = Path.new(src());
-    Path.readLines( path) |> mapError(_ -> "io error")
+    Path.readLines(path) |> mapError(_ -> "io error")
 
 
 // pub def getFiles(path: Path): Result[List[Option[DirListingRow]], String] = 
@@ -64,10 +70,10 @@ def parseFile01(): Unit & Impure =
     } 
 
 @test
-def parseFile01a(): Result[DirListingFolder, TextParser.ParseError] & Impure = 
+def parseFile01a(): Result[DirListingFolder, ParseError] & Impure = 
     let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    let p1 = TextParser.pipe3(
-        TextParser.byteOrderMark(),
+    let p1 = pipe3(
+        byteOrderMark(),
         DirListing.blankLines1(),
         DirListing.dirListingFolder(),
         (_,_,z) -> z
@@ -75,27 +81,28 @@ def parseFile01a(): Result[DirListingFolder, TextParser.ParseError] & Impure =
     TextParser.parseFile(p1, path, Charset.utf_16le())
 
 @test
-def parseFile01b(): Result[String, TextParser.ParseError] & Impure = 
+def parseFile01b(): Result[String, ParseError] & Impure = 
     let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    let p1 = TextParser.pipe3(
-        TextParser.byteOrderMark(),
+    let p1 = pipe3(
+        byteOrderMark(),
         DirListing.blankLines1(),
-        TextParser.restOfLine(true),
+        restOfLine(true),
         (_,_,z) -> z
     );
     TextParser.parseFile(p1, path, Charset.utf_16le())
 
 
 @test
-def parseFile01c(): Result[String, TextParser.ParseError] & Impure = 
+def parseFile01c(): Result[String, ParseError] & Impure = 
+    use TextParser.flatMap;
     let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    let p1 = TextParser.pipe4(        
-        TextParser.byteOrderMark(),
-        TextParser.restOfLine(true),
-        TextParser.restOfLine(true),
-        TextParser.restOfLine(true),
-        (_, _, _, z2) -> z2
-    );
+    let p1 = {
+        let* _ = byteOrderMark();
+        let* _ = restOfLine(true);
+        let* _ = restOfLine(true);
+        let* a = restOfLine(true);
+        return(a)
+    };
     TextParser.parseFile(p1, path, Charset.utf_16le())
 
 
@@ -139,16 +146,16 @@ def makeString(xs: List[String]): String & Impure =
 
 @test
 def directoryDirective02(): Result[String, String] & Impure =  
-    let p1 = TextParser.seqRight(DirListing.blankLines1(), DirListing.directoryDirective());
+    let p1 = seqRight(DirListing.blankLines1(), DirListing.directoryDirective());
     let s = makeString("" :: "" :: "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW" :: Nil);
     TextParser.runs(p1, s)
 
 
 @test
 def directoryDirective03(): Result[String, String] & Impure =  
-    let p1 = TextParser.seqRight(
+    let p1 = seqRight(
                 DirListing.blankLines1(), 
-                TextParser.seqLeft(DirListing.directoryDirective(), DirListing.blankLines1())
+                seqLeft(DirListing.directoryDirective(), DirListing.blankLines1())
             );
     let s = makeString("" :: "" :: "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW" :: "" :: "" :: Nil);
     TextParser.runs(p1, s)
@@ -156,7 +163,7 @@ def directoryDirective03(): Result[String, String] & Impure =
 
 @test
 def directoryHeadings01(): Result[Unit, String] & Impure =  
-    let p1 = TextParser.seqRight(DirListing.blankLines1(), DirListing.directoryHeadings());
+    let p1 = seqRight(DirListing.blankLines1(), DirListing.directoryHeadings());
     let s = makeString("" :: "" :: "Mode                LastWriteTime         Length Name                            " :: "----                -------------         ------ ----                            " :: Nil);
     TextParser.runs(p1, s)
 
@@ -171,7 +178,7 @@ def dirListingLine02(): Result[List[DirListingLine], String] & Impure =
                    "-a----       28/02/2020     15:52              0 dir.txt                           "
                 :: "-a----       28/02/2020     15:48           1848 dirlisting-test.flix              "
                 :: Nil);
-    TextParser.runs(TextParser.many1(DirListing.dirListingLine()), s)
+    runs(many1(DirListing.dirListingLine()), s)
 
 
 @test

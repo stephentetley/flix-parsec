@@ -20,7 +20,12 @@
 /// Also note, a `dir` listing is flat without recursion and the results
 /// are therefore a list not a tree. 
 
-use TextParser.return;
+use TextParser.Parser;
+use TextParser.{return, nestError, alt};
+use TextParser/Combinators.{seqLeft, seqRight, count, many, many1, manyTill, ignore, tuple2};
+use TextParser/Char.{char, lower, oneOf, newline, byteOrderMark};
+use TextParser/Text.{restOfLine, many1Chars};
+use TextParser/Token.{symbol, int32, int64};
 
 type alias TimeStamp = { day: Int32, month: Int32, year: Int32, hour: Int32, minute: Int32 }
 
@@ -59,57 +64,57 @@ namespace DirListing {
     pub def printTimeStamp(ts: TimeStamp): String = 
         "${ Int32.toString(ts.day)}/${Int32.toString(ts.month)}/${ Int32.toString(ts.year)} ${ Int32.toString(ts.hour)}:${Int32.toString(ts.minute)}"
 
-    pub def pUkTimeStamp(): TextParser.Parser[TimeStamp] = 
+    pub def pUkTimeStamp(): Parser[TimeStamp] = 
         use TextParser.flatMap;
-        let* dy  = TextParser.seqLeft(TextParser.int32(), TextParser.char('/'));
-        let* mon = TextParser.seqLeft(TextParser.int32(), TextParser.char('/'));
-        let* yr  = TextParser.int32();
-        let* hr  = TextParser.seqLeft(TextParser.int32(), TextParser.char(':'));
-        let* min = TextParser.int32();
+        let* dy  = seqLeft(int32(), char('/'));
+        let* mon = seqLeft(int32(), char('/'));
+        let* yr  = int32();
+        let* hr  = seqLeft(int32(), char(':'));
+        let* min = int32();
         return({ day=dy, month=mon, year=yr, hour=hr, minute=min })
 
-    pub def fileStats(): TextParser.Parser[(TimeStamp, Int64)] = 
-        TextParser.tuple2(
+    pub def fileStats(): Parser[(TimeStamp, Int64)] = 
+        tuple2(
             pUkTimeStamp(),
-            TextParser.int64()
+            int64()
         )
     
     /// Note - Windows Dir Listing can run to muliple lines
-    pub def multilineName(offset: Int32): TextParser.Parser[String] = 
+    pub def multilineName(offset: Int32): Parser[String] = 
         use TextParser.flatMap;        
         let lineCont = 
-            TextParser.seqRight(
-                TextParser.count(offset, TextParser.char(' ')),
-                TextParser.restOfLine(true)
+            seqRight(
+                count(offset, char(' ')),
+                restOfLine(true)
             );
-        let* x = TextParser.restOfLine(true);
-        let* xs = TextParser.many(lineCont);
+        let* x = restOfLine(true);
+        let* xs = many(lineCont);
         let ans = List.foldLeft((ss,s) -> ss + s, x, xs) |> String.trim;
-        return(ans) |> TextParser.nestError("multilineName") 
+        return(ans) |> nestError("multilineName") 
 
-    def pFile(mode: Mode): TextParser.Parser[DirListingLine] = 
+    def pFile(mode: Mode): Parser[DirListingLine] = 
         use TextParser.flatMap;
         let* stats = TextParser.bounded(fileStats(), 36);
         let* name = multilineName(49);
         let (timestamp, size) = stats; 
         return(FileLine(name, mode, timestamp, size))
 
-    def pFolder(mode: Mode): TextParser.Parser[DirListingLine] = 
+    def pFolder(mode: Mode): Parser[DirListingLine] = 
         use TextParser.flatMap;
         let* timestamp = TextParser.bounded(pUkTimeStamp(), 36);
         let* name = multilineName(49);
         return(FolderLine(name, mode, timestamp))
 
-    pub def ignoreLine(): TextParser.Parser[Option[a]] = 
-        TextParser.map(_ -> None, TextParser.restOfLine(true))
+    pub def ignoreLine(): Parser[Option[a]] = 
+        TextParser.map(_ -> None, restOfLine(true))
 
-    def mode1() : TextParser.Parser[Mode] = 
+    def mode1() : Parser[Mode] = 
         TextParser.map(
             x -> Mode(x),
-            TextParser.many1Chars(TextParser.alt(TextParser.lower(), TextParser.char('-'))) 
+            many1Chars(alt(lower(), char('-'))) 
         )
     
-    def pMode() : TextParser.Parser[Mode] = TextParser.bounded(mode1(), 13)
+    def pMode() : Parser[Mode] = TextParser.bounded(mode1(), 13)
 
     pub def isDirectory (mode: Mode) : Bool = 
         let Mode(str) = mode;
@@ -119,56 +124,56 @@ namespace DirListing {
         }
 
     /// mode is a common prefix
-    pub def dirListingLine(): TextParser.Parser[DirListingLine] = 
+    pub def dirListingLine(): Parser[DirListingLine] = 
         use TextParser.flatMap;
         let* mode = pMode();
         let* ans = if (isDirectory(mode)) pFolder(mode) else pFile(mode);
         return(ans) |> TextParser.nestError("dirListingLine") 
 
-    pub def directoryDirective(): TextParser.Parser[String] = 
+    pub def directoryDirective(): Parser[String] = 
         use TextParser.flatMap;        
-        let* _ = TextParser.count(4, TextParser.char(' '));
-        let* _ = TextParser.symbol("Directory:");
+        let* _ = count(4, char(' '));
+        let* _ = symbol("Directory:");
         let* name = multilineName(4);
-        return(name) |> TextParser.nestError("directoryDirective")
+        return(name) |> nestError("directoryDirective")
 
 
-    def directoryHeadings1(): TextParser.Parser[Unit] = 
+    def directoryHeadings1(): Parser[Unit] = 
         use TextParser.flatMap;
-        let* _ = TextParser.symbol("Mode");
-        let* _ = TextParser.symbol("LastWriteTime");
-        let* _ = TextParser.symbol("Length");
-        let* _ = TextParser.symbol("Name");
+        let* _ = symbol("Mode");
+        let* _ = symbol("LastWriteTime");
+        let* _ = symbol("Length");
+        let* _ = symbol("Name");
         return(())
         
-    pub def directoryHeadings(): TextParser.Parser[Unit] = 
+    pub def directoryHeadings(): Parser[Unit] = 
         use TextParser.flatMap;
-        let underline = TextParser.many1Chars(TextParser.oneOf(' ' ::  '-' :: Nil));
+        let underline = many1Chars(oneOf(' ' ::  '-' :: Nil));
         let* _ = directoryHeadings1();
         let* _ = underline;
-        let* _ = TextParser.newline();
-        return(()) |> TextParser.nestError("directoryHeadings")
+        let* _ = newline();
+        return(()) |> nestError("directoryHeadings")
     
-    def blankLine(): TextParser.Parser[Unit] = TextParser.newline()
+    def blankLine(): Parser[Unit] = newline()
     
-    pub def blankLines1(): TextParser.Parser[Unit] = 
-        TextParser.ignore(TextParser.many1(blankLine())) 
-            |> TextParser.nestError("blankLines1")
+    pub def blankLines1(): Parser[Unit] = 
+        ignore(many1(blankLine())) 
+            |> nestError("blankLines1")
 
-    pub def dirListingFolder(): TextParser.Parser[DirListingFolder] = 
+    pub def dirListingFolder(): Parser[DirListingFolder] = 
         use TextParser.flatMap;
         let* p1 = directoryDirective();
-        let* _ = TextParser.seqRight(blankLines1(), directoryHeadings());
-        let* xs = TextParser.manyTill(dirListingLine(), blankLines1());
+        let* _ = seqRight(blankLines1(), directoryHeadings());
+        let* xs = manyTill(dirListingLine(), blankLines1());
         return({ path = p1, contents = xs }) 
-            |> TextParser.nestError("dirListingFolder")
+            |> nestError("dirListingFolder")
 
-    pub def directoryListing() : TextParser.Parser[List[DirListingFolder]] = 
+    pub def directoryListing() : Parser[List[DirListingFolder]] = 
         use TextParser.flatMap;
-        let* _ = TextParser.byteOrderMark();
+        let* _ = byteOrderMark();
         let* _ = blankLines1();
-        TextParser.manyTill(dirListingFolder(), TextParser.endOfInput())
-            |> TextParser.nestError("directoryListing")
+        manyTill(dirListingFolder(), TextParser.endOfInput())
+            |> nestError("directoryListing")
 
 
     pub def parseDirListing(path: String): Result[List[DirListingFolder], TextParser.ParseError] & Impure = 
