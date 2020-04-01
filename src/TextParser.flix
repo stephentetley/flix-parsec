@@ -470,11 +470,7 @@ namespace TextParser {
                 }
             })
 
-    pub def anyChar(): Parser[Char] = 
-        Parser((inp, pos) -> match TextParser/Internal.charAtSafe(pos, inp) {
-                case None => Err(makeParseError(inp, pos, "anyChar"))
-                case Some(ch) => Ok(ch, pos+1)
-            })
+    
 
     pub def satisfy(test: Char -> Bool): Parser[Char] = 
         Parser((inp, pos) -> match TextParser/Internal.charAtSafe(pos, inp) {
@@ -483,27 +479,27 @@ namespace TextParser {
                     if (test(ch)) Ok(ch, pos+1) else Err(makeParseError(inp, pos, "satisfy"))
             }) 
 
-    def primitiveManyTill(p: Parser[a], endp: Parser[e], f: (List[a], e) -> ans): Parser[ans] =
+    pub def manyTillWith(f: (List[a], e) -> ans, p: Parser[a], endp: Parser[e]): Parser[ans] =
         let fk = e -> Err(e);
         let sk = (xs, end1, pos) -> Ok(f(xs, end1), pos);
-        Parser((inp, pos) -> primitiveManyTillHelper(p, endp, inp, pos, fk, sk))
+        Parser((inp, pos) -> manyTillWithHelper(p, endp, inp, pos, fk, sk))
 
     
-    def primitiveManyTillHelper(p: Parser[a], endp: Parser[e], inp: String, pos: Index, fk: ParseError -> Result[ans, ParseError], sk: (List[a], e, Index) -> Result[ans, ParseError]): Result[ans, ParseError] = 
+    def manyTillWithHelper(p: Parser[a], endp: Parser[e], inp: String, pos: Index, fk: ParseError -> Result[ans, ParseError], sk: (List[a], e, Index) -> Result[ans, ParseError]): Result[ans, ParseError] = 
         match apply1(endp, inp, pos) {
             case Ok(end1, pos1) => sk(Nil, end1, pos1)
             case Err(_) => match apply1(p, inp, pos) {
                 case Err(e) => fk(e)
-                case Ok(x, pos1) => primitiveManyTillHelper(p, endp, inp, pos1, fk, (xs, end2, pos2) -> sk(x :: xs, end2, pos2))
+                case Ok(x, pos1) => manyTillWithHelper(p, endp, inp, pos1, fk, (xs, end2, pos2) -> sk(x :: xs, end2, pos2))
             }
         }
 
     pub def manyTill(p: Parser[a], endp: Parser[e]): Parser[List[a]] =
-        primitiveManyTill(p, endp, (xs,_) -> xs) 
+        manyTillWith((xs,_) -> xs, p, endp) 
 
 
     pub def manyTillApply(p: Parser[a], endp: Parser[e], f: (List[a], e) -> ans): Parser[ans] =
-        primitiveManyTill(p, endp, f)
+        manyTillWith(f, p, endp)
 
     pub def many1Till(p: Parser[a], end: Parser[sep]): Parser[List[a]] = 
         pipe2(p, manyTill(p,end), (v, vs) -> v :: vs)
@@ -543,46 +539,7 @@ namespace TextParser {
         seqRight(p1, skipMany1Till(p2, end))
     
 
-    pub def manyChars(p: Parser[Char]): Parser[String] = 
-        map(TextParser/Internal.makeString, many(p))
-
-    pub def manyChars2(p1: Parser[Char], p2: Parser[Char]): Parser[String] = 
-        bind(p1, c -> bind(many(p2), cs -> return(TextParser/Internal.makeString(c :: cs))))
-
-
-    pub def many1Chars(p: Parser[Char]): Parser[String] = 
-        map(TextParser/Internal.makeString, many1(p))
-
-    pub def many1Chars2(p1: Parser[Char], p2: Parser[Char]): Parser[String] = 
-        bind(p1, c -> bind(many1(p2), cs -> return(TextParser/Internal.makeString(c :: cs))))
-
-    pub def manyCharsTill(p: Parser[Char], endp: Parser[a]): Parser[String] = 
-        map(TextParser/Internal.makeString, manyTill(p, endp))
-
-    pub def manyCharsTill2(p1: Parser[Char], p2: Parser[Char], endp: Parser[a]): Parser[String] = 
-        map(TextParser/Internal.makeString, manyTill2(p1, p2, endp))
-            
     
-    
-    pub def manyCharsTillApply(p: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
-        primitiveManyTill(p, endp, (xs,e) -> f(TextParser/Internal.makeString(xs), e))
-        
-
-    pub def manyCharsTillApply2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
-        let f1 = (c, ss, e) -> f(TextParser/Internal.prefix(c, ss), e);
-        bind(p1, c1 -> manyCharsTillApply(p2, endp, f1(c1)))
-
-
-    pub def many1CharsTill(p: Parser[Char], endp: Parser[e]): Parser[String] = 
-        map(TextParser/Internal.makeString, many1Till(p, endp))
-
-    pub def many1CharsTill2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e]): Parser[String] = 
-        use TextParser.flatMap;
-        let* c = p1;
-        let* ss = many1CharsTill(p2, endp);
-        return(TextParser/Internal.prefix(c, ss))
-
-
     pub def skipped(p: Parser[Unit]): Parser[String] = 
         Parser((inp,pos) -> match apply1(p, inp, pos) {
             case Err(e) => Err(nestErrorMessage("skipped", e))
@@ -622,26 +579,7 @@ namespace TextParser {
         Parser((inp, pos) -> 
             if (pos >= String.length(inp)) Ok((), pos) else Err(makeParseError(inp, pos, "endOfInput")))
 
-    /// End of input or newline.
-    pub def endOfLine() : Parser[Unit] = 
-        alt(endOfInput(), newline())
 
-    pub def restOfInput(): Parser[String] = 
-        Parser((inp, pos) -> 
-            let end = String.length(inp);
-            match TextParser/Internal.trySlice(pos, end, inp) {
-                case None => Err(makeParseError(inp, pos, "restOfInput"))
-                case Some(s) => Ok(s, end)
-            })
-
-    /// Parser any characaters before the end of line (or end of input).
-
-    pub def restOfLine(consumeEol: Bool): Parser[String] = 
-        let endp = alt(newline1(consumeEol), endOfInput());
-        manyCharsTill(anyChar(), endp)
-
-    def newline1(consumeEol: Bool): Parser[Unit] = 
-        if (consumeEol) newline() else lookahead(newline())
 
 
     pub def notFollowedBy(p: Parser[ans]): Parser[Unit] = 
@@ -651,14 +589,8 @@ namespace TextParser {
         })
 
 
-    pub def oneOf(cs: List[Char]): Parser[Char]= 
-        satisfy(ch -> List.memberOf(ch, cs)) |> nestError("oneOf")
+    
 
-    pub def noneOf(cs: List[Char]): Parser[Char] = 
-        satisfy(ch -> !List.memberOf(ch, cs)) |> nestError("noneOf")
-
-    pub def char(c: Char): Parser[Char] = 
-        satisfy(ch -> ch == c) |> nestError("char")
     
 
     /// 
@@ -687,194 +619,7 @@ namespace TextParser {
                     if (s == needle) Ok(needle, pos + String.length(needle)) else Err(makeParseError(inp, pos, msg))
             })
 
-    pub def upper(): Parser[Char] = satisfy(Char.isUpperCase)
-
-    pub def lower(): Parser[Char] = satisfy(Char.isLowerCase)
-
-    pub def letter(): Parser[Char] = satisfy(Char.isLetter)
-
-    pub def letters(): Parser[String] = 
-        many1(letter()) |> map(List.toString)
-
-    pub def alphaNum(): Parser[Char] = alt(letter(), digit())
-
-    pub def digit(): Parser[Char] = satisfy(Char.isDigit)
-
-    pub def digits(): Parser[String] = 
-        many1(digit()) |> map(List.toString)
-
-    pub def octDigit(): Parser[Char] = 
-        let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: Nil;
-        oneOf(xs)
-
-    pub def hexDigit(): Parser[Char] = 
-        let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: 'A' :: 'B' :: 'C' :: 'D' :: 'E' ::'F' ::'a' :: 'b' :: 'c' :: 'd' :: 'e' :: 'f' :: Nil;
-        oneOf(xs)
-
-    ///
-    /// Byte order mark '\ufeff'
-    ///
-    pub def byteOrderMark(): Parser[Char] = char('\ufeff')
-    
-    // newline() needs testing  - to test
-
-    pub def newline(): Parser[Unit] = 
-        map(
-            _ -> (),
-            alt(char('\n'), seqLeft(char('\r'), optional(char('\n'))))            
-        ) 
-
-    ///
-    /// Either at end-of-input or only whitespace remaining before end-of-input.
-    /// 
-    pub def endOfContent(): Parser[Unit] = seqRight(spaces(), endOfInput())
-
-    pub def tab(): Parser[Char] = char('\t')
-
-    ///
-    /// Parse a space character (u0020)
-    /// 
-    pub def space(): Parser[Char] = char(' ')
-
-    ///
-    /// Parse a sequence space characters (u0020).
-    /// 
-    pub def spaces(): Parser[Unit] = skipMany(space())
 
 
-    /// Right padded with spaces.
-    pub def rightPadded(p: Parser[a]): Parser[a] = 
-        seqLeft(p, spaces())
-
-    /// Left padded with spaces.
-    pub def leftPadded(p: Parser[a]): Parser[a] = 
-        seqRight(spaces(), p)
-
-    /// Padded with spaces - left and/or right or neither.
-    pub def padded(p: Parser[a]): Parser[a] = 
-        rightPadded(leftPadded(p))
-
-
-    /// Read many whiteSpace characters (space, tab, newline)
-    pub def whiteSpace(): Parser[Unit] = skipMany(satisfy(Char.isWhiteSpace))
-
-
-
-    pub def lexeme(p: Parser[ans]): Parser[ans] = seqLeft(p, whiteSpace())
-
-    pub def symbol(s: String): Parser[String] = lexeme(string(s))
-
-    pub def parens(p: Parser[ans]): Parser[ans] = between(symbol("("), symbol(")"), p)
-
-    pub def braces(p: Parser[ans]): Parser[ans] = between(symbol("{"), symbol("}"), p)
-
-    pub def brackets(p: Parser[ans]): Parser[ans] = between(symbol("<"), symbol(">"), p)
-
-    pub def squares(p: Parser[ans]): Parser[ans] = between(symbol("["), symbol("]"), p)
-
-    pub def semi(): Parser[String] = symbol(";")
-
-    pub def comma(): Parser[String] = symbol(",")
-
-    pub def colon(): Parser[String] = symbol(":")
-
-    pub def dot(): Parser[String] = symbol(".")
-
-    pub def semiSep(p: Parser[ans]): Parser[List[ans]] = sepBy(p, semi())
-
-    pub def semiSep1(p: Parser[ans]): Parser[List[ans]] = sepBy1(p, semi())
-
-    pub def commaSep(p: Parser[ans]): Parser[List[ans]] = sepBy(p, comma())
-
-    pub def commaSep1(p: Parser[ans]): Parser[List[ans]] = sepBy1(p, comma())
-
-    // TODO - charLiteral and stringLiteral
-    // Number parser use lexeme which consumes trailing whitespace.
-    // We may want a choice of trailing whitespace, trailing spaces, or no trailing.
-    // How do we resolve this?
-
-
-    def sign(): Parser[String] = 
-        option("", alt(string("+"), string("-")))
-
-    def digitString(): Parser[String] = 
-        many1(digit()) |> map(List.toString)
-
-    def intString(): Parser[String] = 
-        liftM2((x,y) -> x + y, sign(), digitString())
-
-    def primInt8(): Parser[Int8] =
-        bind(intString(), v1 -> match Int8.fromString(v1) {
-            case Err(_) => throwError("int8")
-            case Ok(i) => return(i)
-        })
-
-    pub def int8(): Parser[Int8] = lexeme(primInt8())
-
-    def primInt16(): Parser[Int16] =
-        bind(intString(), v1 -> match Int16.fromString(v1) {
-            case Err(_) => throwError("int16")
-            case Ok(i) => return(i)
-        })
-
-    pub def int16(): Parser[Int16] = lexeme(primInt16())
-
-    def primInt32(): Parser[Int32] =
-        bind(intString(), v1 -> match Int32.fromString(v1) {
-            case Err(_) => throwError("int32")
-            case Ok(i) => return(i)
-        })
-
-    pub def int32(): Parser[Int32] = lexeme(primInt32())
-
-    def primInt64(): Parser[Int64] =
-        bind(intString(), v1 -> match Int64.fromString(v1) {
-            case Err(_) => throwError("int64")
-            case Ok(i) => return(i)
-        })
-
-    pub def int64(): Parser[Int64] = lexeme(primInt64())
-
-    def primBigInt(): Parser[BigInt] =
-        bind(intString(), v1 -> match BigInt.fromString(v1) {
-            case Err(_) => throwError("bigInt")
-            case Ok(i) => return(i)
-        })
-
-    pub def bigInt(): Parser[BigInt] = lexeme(primBigInt())
-    
-    def floatString(): Parser[String] = 
-        string4( 
-            sign(), 
-            intString(),
-            string("."),
-            intString())
-    
-    def primFloat32(): Parser[Float32] =
-        bind(floatString(), v1 -> match Float32.fromString(v1) {
-            case Err(_) => throwError("float32")
-            case Ok(i) => return(i)
-        })
-
-    pub def float32(): Parser[Float32] = lexeme(primFloat32())
-    
-    def primFloat64(): Parser[Float64] =
-        bind(floatString(), v1 -> match Float64.fromString(v1) {
-            case Err(_) => throwError("float64")
-            case Ok(i) => return(i)
-        })
-
-    pub def float64(): Parser[Float64] = lexeme(primFloat64())    
-
-    /// This is a bit limited without existentials
-    pub opaque type SymbolParser = 
-        { f64: Parser[Float64] 
-        }
-
-    pub def makeSymbolParser(trailing: Parser[Unit]): SymbolParser =
-        let pLexeme = p -> seqLeft(p, trailing);
-        let pFloat64 = pLexeme(primFloat64());
-        let r1 = { f64 = pFloat64 };
-        SymbolParser(r1)
 
 }
