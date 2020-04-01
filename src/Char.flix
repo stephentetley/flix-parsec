@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Stephen Tetley
+ * Copyright 2020 Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 
 use TextParser.Parser;
-
-use TextParser.nestError;
-use TextParser.satisfy;
+use TextParser.{map, nestError, satisfy, alt};
+use TextParser/Combinators.{seqLeft, optional, many1, skipMany};
 
 ///
 /// Character level parsers.
@@ -53,7 +52,7 @@ namespace TextParser/Char {
     pub def newline(): Parser[Unit] = 
         TextParser.map(
             _ -> (),
-            TextParser.alt(char('\n'), TextParser.seqLeft(char('\r'), TextParser.optional(char('\n'))))            
+            TextParser.alt(char('\n'), seqLeft(char('\r'), optional(char('\n'))))            
         ) 
 
     pub def tab(): Parser[Char] = char('\t')
@@ -66,7 +65,7 @@ namespace TextParser/Char {
     ///
     /// Parse a sequence space characters (u0020).
     /// 
-    pub def spaces(): Parser[Unit] = TextParser.skipMany(space())
+    pub def spaces(): Parser[Unit] = skipMany(space())
 
     pub def upper(): Parser[Char] = satisfy(Char.isUpperCase)
 
@@ -75,14 +74,14 @@ namespace TextParser/Char {
     pub def letter(): Parser[Char] = satisfy(Char.isLetter)
 
     pub def letters(): Parser[String] = 
-        TextParser.many1(letter()) |> TextParser.map(List.toString)
+        many1(letter()) |> TextParser.map(List.toString)
 
-    pub def alphaNum(): Parser[Char] = TextParser.alt(letter(), digit())
+    pub def alphaNum(): Parser[Char] = alt(letter(), digit())
 
     pub def digit(): Parser[Char] = satisfy(Char.isDigit)
 
     pub def digits(): Parser[String] = 
-        TextParser.many1(digit()) |> TextParser.map(List.toString)
+        many1(digit()) |> map(List.toString)
 
     pub def octDigit(): Parser[Char] = 
         let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: Nil;

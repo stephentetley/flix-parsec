@@ -16,7 +16,8 @@
 
 use TextParser.Parser;
 use TextParser.Parser.Parser;
-use TextParser.{map, return, bind, makeParseError, manyTill, alt, manyTillWith, manyTill2, many1Till, many, many1};
+use TextParser.{map, return, bind, alt, makeParseError};
+use TextParser/Combinators.{manyTill, manyTillWith, manyTill2, many1Till, many, many1, seqLeft, seqRight};
 use TextParser.nestError;
 use TextParser/Char.spaces;
 
@@ -41,7 +42,7 @@ namespace TextParser/Text {
     /// Either at end-of-input or only whitespace remaining before end-of-input.
     /// 
     pub def endOfContent(): Parser[Unit] = 
-        TextParser.seqRight(spaces(), TextParser.endOfInput())
+        seqRight(spaces(), TextParser.endOfInput())
 
     /// End of input or newline.
     pub def endOfLine() : Parser[Unit] = 
@@ -59,11 +60,11 @@ namespace TextParser/Text {
 
     /// Right padded with spaces.
     pub def rightPadded(p: Parser[a]): Parser[a] = 
-        TextParser.seqLeft(p, spaces())
+        seqLeft(p, spaces())
 
     /// Left padded with spaces.
     pub def leftPadded(p: Parser[a]): Parser[a] = 
-        TextParser.seqRight(spaces(), p)
+        seqRight(spaces(), p)
 
     /// Padded with spaces - left and/or right or neither.
     pub def padded(p: Parser[a]): Parser[a] = 

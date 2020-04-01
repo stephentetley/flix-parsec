@@ -15,7 +15,8 @@
  */
 
 use TextParser.Parser;
-use TextParser.{return, bind, map, throwError, sepBy, sepBy1, between, skipMany, satisfy, many1, string, option, alt, seqLeft, liftM2, string4};
+use TextParser.{return, bind, map, throwError, alt, satisfy, string, liftM2};
+use TextParser/Combinators.{sepBy, sepBy1, between, skipMany, many1, option, seqLeft, string4};
 use TextParser/Char.{digit};
 
 ///
