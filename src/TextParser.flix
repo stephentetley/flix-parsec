@@ -31,11 +31,11 @@ namespace TextParser {
         }
 
     def makeParseError(src: String, pos: Int32, msg: String): ParseError = 
-        let pair = Internal.textPos(pos, 3, src) |> x -> Option.getWithDefault(x, (1,1));
+        let pair = TextParser/Internal.textPos(pos, 3, src) |> x -> Option.getWithDefault(x, (1,1));
         let lin = fst(pair);
         let col = snd(pair);
-        let seen = Internal.justSeen(pos, src);
-        let todo = Internal.pendingInput(pos, src);
+        let seen = TextParser/Internal.justSeen(pos, src);
+        let todo = TextParser/Internal.pendingInput(pos, src);
         let ans = { message = msg, linenum = lin, column = col, justseen = seen, pending = todo };
         ParseError(ans)
 
@@ -78,11 +78,7 @@ namespace TextParser {
                 case Ok(ans, pos1) => apply1(k(ans), inp, pos1)
             })
 
-    pub def flatMap(k: a -> Parser[b], ma: Parser[a]) : Parser[b] = 
-        Parser((inp, pos) -> match apply1(ma, inp, pos) { 
-                case Err(e) => Err(e)
-                case Ok(ans, pos1) => apply1(k(ans), inp, pos1)
-            })
+    pub def flatMap(k: a -> Parser[b], ma: Parser[a]) : Parser[b] = bind(ma, k)
 
     pub def map(f: a -> b, ma: Parser[a]) : Parser[b] = 
         Parser((inp, pos) -> match apply1(ma, inp, pos) { 
@@ -214,7 +210,7 @@ namespace TextParser {
 
 
     pub def bounded(p: Parser[a], length: Int32): Parser[a] = 
-        Parser((inp, pos) -> match Internal.trySlice(0, pos+length, inp) {
+        Parser((inp, pos) -> match TextParser/Internal.trySlice(0, pos+length, inp) {
             case None => Err(makeParseError(inp, pos, "bounded"))
             case Some(s) => match apply1(p, s, pos) {
                 case Err(msg) => Err(msg)
@@ -475,13 +471,13 @@ namespace TextParser {
             })
 
     pub def anyChar(): Parser[Char] = 
-        Parser((inp, pos) -> match Internal.charAtSafe(pos, inp) {
+        Parser((inp, pos) -> match TextParser/Internal.charAtSafe(pos, inp) {
                 case None => Err(makeParseError(inp, pos, "anyChar"))
                 case Some(ch) => Ok(ch, pos+1)
             })
 
     pub def satisfy(test: Char -> Bool): Parser[Char] = 
-        Parser((inp, pos) -> match Internal.charAtSafe(pos, inp) {
+        Parser((inp, pos) -> match TextParser/Internal.charAtSafe(pos, inp) {
                 case None => Err(makeParseError(inp, pos, "satisfy (no input)"))
                 case Some(ch) => 
                     if (test(ch)) Ok(ch, pos+1) else Err(makeParseError(inp, pos, "satisfy"))
@@ -548,49 +544,49 @@ namespace TextParser {
     
 
     pub def manyChars(p: Parser[Char]): Parser[String] = 
-        map(Internal.makeString, many(p))
+        map(TextParser/Internal.makeString, many(p))
 
     pub def manyChars2(p1: Parser[Char], p2: Parser[Char]): Parser[String] = 
-        bind(p1, c -> bind(many(p2), cs -> return(Internal.makeString(c :: cs))))
+        bind(p1, c -> bind(many(p2), cs -> return(TextParser/Internal.makeString(c :: cs))))
 
 
     pub def many1Chars(p: Parser[Char]): Parser[String] = 
-        map(Internal.makeString, many1(p))
+        map(TextParser/Internal.makeString, many1(p))
 
     pub def many1Chars2(p1: Parser[Char], p2: Parser[Char]): Parser[String] = 
-        bind(p1, c -> bind(many1(p2), cs -> return(Internal.makeString(c :: cs))))
+        bind(p1, c -> bind(many1(p2), cs -> return(TextParser/Internal.makeString(c :: cs))))
 
     pub def manyCharsTill(p: Parser[Char], endp: Parser[a]): Parser[String] = 
-        map(Internal.makeString, manyTill(p, endp))
+        map(TextParser/Internal.makeString, manyTill(p, endp))
 
     pub def manyCharsTill2(p1: Parser[Char], p2: Parser[Char], endp: Parser[a]): Parser[String] = 
-        map(Internal.makeString, manyTill2(p1, p2, endp))
+        map(TextParser/Internal.makeString, manyTill2(p1, p2, endp))
             
     
     
     pub def manyCharsTillApply(p: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
-        primitiveManyTill(p, endp, (xs,e) -> f(Internal.makeString(xs), e))
+        primitiveManyTill(p, endp, (xs,e) -> f(TextParser/Internal.makeString(xs), e))
         
 
     pub def manyCharsTillApply2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
-        let f1 = (c, ss, e) -> f(Internal.prefix(c, ss), e);
+        let f1 = (c, ss, e) -> f(TextParser/Internal.prefix(c, ss), e);
         bind(p1, c1 -> manyCharsTillApply(p2, endp, f1(c1)))
 
 
     pub def many1CharsTill(p: Parser[Char], endp: Parser[e]): Parser[String] = 
-        map(Internal.makeString, many1Till(p, endp))
+        map(TextParser/Internal.makeString, many1Till(p, endp))
 
     pub def many1CharsTill2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e]): Parser[String] = 
-        pipe2(
-            p1, 
-            many1CharsTill(p2, endp),
-            Internal.prefix)
+        use TextParser.flatMap;
+        let* c = p1;
+        let* ss = many1CharsTill(p2, endp);
+        return(TextParser/Internal.prefix(c, ss))
 
 
     pub def skipped(p: Parser[Unit]): Parser[String] = 
         Parser((inp,pos) -> match apply1(p, inp, pos) {
             case Err(e) => Err(nestErrorMessage("skipped", e))
-            case Ok(_, pos1) => match Internal.trySlice(pos, pos1, inp) {
+            case Ok(_, pos1) => match TextParser/Internal.trySlice(pos, pos1, inp) {
                 case None => Err(makeParseError(inp, pos, "skipped"))
                 case Some(s) => Ok(s, pos1)
             }
@@ -633,7 +629,7 @@ namespace TextParser {
     pub def restOfInput(): Parser[String] = 
         Parser((inp, pos) -> 
             let end = String.length(inp);
-            match Internal.trySlice(pos, end, inp) {
+            match TextParser/Internal.trySlice(pos, end, inp) {
                 case None => Err(makeParseError(inp, pos, "restOfInput"))
                 case Some(s) => Ok(s, end)
             })
@@ -669,7 +665,7 @@ namespace TextParser {
     /// Returns a string of the next `n` characters from the current position.
     ///
     pub def horizon(n: Int): Parser[String] = 
-        Parser((inp, pos) -> match Internal.trySlice(pos, pos+n, inp) {
+        Parser((inp, pos) -> match TextParser/Internal.trySlice(pos, pos+n, inp) {
                 case None => Err(makeParseError(inp, pos, "horizon"))
                 case Some(s) => Ok(s, pos+n)
             })
@@ -685,7 +681,7 @@ namespace TextParser {
 
     pub def string(needle: String): Parser[String] = 
         let msg = "string - expecting '" + needle + "'";
-        Parser((inp, pos) -> match Internal.trySlice(pos, pos + String.length(needle), inp) {
+        Parser((inp, pos) -> match TextParser/Internal.trySlice(pos, pos + String.length(needle), inp) {
                 case None => Err(makeParseError(inp, pos, msg))
                 case Some(s) => 
                     if (s == needle) Ok(needle, pos + String.length(needle)) else Err(makeParseError(inp, pos, msg))
