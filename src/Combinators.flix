@@ -36,7 +36,7 @@ namespace TextParser/Combinators {
         bind(pa, _ -> bind(pb, b -> return(b)))
 
 
-    pub def satisfies(p: Parser[ans], test: ans -> Bool): Parser[ans] = 
+    pub def satisfies(p: Parser[a], test: ans -> Bool): Parser[a] = 
         bind(p, ans -> if (test(ans)) return(ans) else fail("satisfies"))
 
 
@@ -44,7 +44,7 @@ namespace TextParser/Combinators {
         countWithHelper(f, zero, n, p, 0, return) |> nestError("countWith")
 
 
-    def countWithHelper(f: (a, ac) -> ac, zero: ac, ntimes: Int32, p: Parser[ans], i: Int32, cont: ac -> Parser[ac]): Parser[ac] = 
+    def countWithHelper(f: (a, ac) -> ac, zero: ac, ntimes: Int32, p: Parser[a], i: Int32, cont: ac -> Parser[ac]): Parser[ac] = 
         use TextParser.flatMap;
         if (i == ntimes)
             cont(zero)
@@ -70,23 +70,23 @@ namespace TextParser/Combinators {
         }
 
 
-    pub def notFollowedBy(p: Parser[ans]): Parser[Unit] = 
+    pub def notFollowedBy(p: Parser[a]): Parser[Unit] = 
         bindFS(p, _ -> fail("notFollowedBy"), _ -> return(()))
         
 
-    pub def option(one: ans, p: Parser[ans]): Parser[ans] = 
+    pub def option(one: ans, p: Parser[a]): Parser[a] = 
         bindFS(p, _ -> return(one), return)
         
-    pub def optional(p: Parser[ans]): Parser[Option[ans]] = 
+    pub def optional(p: Parser[a]): Parser[Option[a]] = 
         bindFS(p, _ -> return(None), x -> return(Some(x)))
     
 
-    pub def ignore(p: Parser[ans]): Parser[Unit] = 
+    pub def ignore(p: Parser[a]): Parser[Unit] = 
         map(_ -> (), p)
 
 
 
-    pub def between(open: Parser[z1], close: Parser[z2], p: Parser[ans]): Parser[ans] = 
+    pub def between(open: Parser[z1], close: Parser[z2], p: Parser[a]): Parser[a] = 
         seqRight(open, seqLeft(p, close))
 
 
@@ -110,9 +110,6 @@ namespace TextParser/Combinators {
 
     pub def many(p: Parser[a]): Parser[List[a]] = 
         manyWith(cons, Nil, p)
-
-    
-
 
     pub def many1With(f: (a,ac) -> ac, zero: ac, p: Parser[a]): Parser[ac] = 
         use TextParser.flatMap; 
@@ -173,119 +170,86 @@ namespace TextParser/Combinators {
         many1TillWith((_,ac) -> ac, (), p, endp)
 
     
-    // pub def sepBy(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
-    //     Parser((inp, pos) -> sepByHelper(p, sep, inp, pos, (xs,pos1)-> Ok(xs, pos1)))
+    pub def sepByWith(f: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
+        sepByWithHelper(f, zero, p, sep, return) |> nestError("sepByWith")
+
+        
+    def sepByWithHelper(f: (a, ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep], cont: ac -> Parser[ac]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* ans = optional(p);
+        match ans { 
+            case None => cont(zero)
+            case Some(a) => 
+                let* ac = manyWith(f, zero, seqRight(sep, p));
+                return(f(a,ac))
+        }
+
+    pub def sepBy(p: Parser[a], sep: Parser[sep]): Parser[List[a]] = 
+        sepByWith(cons, Nil, p, sep) |> swapError("sepBy")
 
 
-    // def sepByHelper(p: Parser[ans], sep: Parser[sep], inp: String, pos: Index, sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
-    //     match apply1(p, inp, pos) {
-    //         case Err(_) => sk(Nil, pos)
-    //         case Ok(a, pos1) => manyHelper(seqRight(sep, p), inp, pos1, (xs,posk) -> sk(a :: xs, posk))
-    //     }
+    pub def sepBy1With(f: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* a = p;
+        let* ac = manyWith(f, zero, seqRight(sep, p));
+        return(f(a, ac)) |> swapError("sepBy1With")
+        
+    pub def sepBy1(p: Parser[a], sep: Parser[sep]): Parser[List[a]] = 
+        sepBy1With(cons, Nil, p, sep) |> swapError("sepBy1")
 
-    // pub def sepBy1(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
-    //     bind(p, v1 -> 
-    //         bind(many(seqRight(sep,p)), vs -> return(v1 :: vs))) |> nestError("sepBy1")
+    pub def endByWith(f: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
+        manyWith(f, zero, seqLeft(p, sep)) |> nestError("endByWith")
 
-    // pub def endBy(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
-    //     many(seqLeft(p, sep))
+    pub def endBy(p: Parser[a], sep: Parser[sep]): Parser[List[a]] = 
+        endByWith(cons, Nil, p, sep) |> swapError("endBy")
 
-    // pub def endBy1(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
-    //     many1(seqLeft(p, sep)) |> nestError("endBy1")
+    pub def endBy1With(f: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
+        many1With(f, zero, seqLeft(p, sep)) |> swapError("endBy1With")
 
-    // pub def sepEndBy(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
-    //     Parser((inp, pos) -> sepEndByHelper(p, sep, inp, pos, (xs,pos1)-> Ok(xs, pos1)))
-
-    // def sepEndByHelper(p: Parser[ans], sep: Parser[sep], inp: String, pos: Index, sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
-    //     match apply1(p, inp, pos) {
-    //         case Err(_) => sk(Nil, pos)
-    //         case Ok(a, pos1) => match apply1(sep, inp, pos1) {
-    //             case Err(_) => sk(a :: Nil, pos)
-    //             case Ok(_, pos2) => sepEndByHelper(p, sep, inp, pos2, (xs,posk) -> sk(a :: xs, posk))
-    //         }
-    //     }
-
-    // pub def sepEndBy1(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
-    //     Parser((inp, pos) -> match apply1(p, inp, pos) {
-    //         case Err(e) => Err(nestErrorMessage("sepEndBy1", e))
-    //         case Ok(a, pos1) => match apply1(sep, inp, pos1) {
-    //             case Err(_) => Ok(a :: Nil, pos1)
-    //             case Ok(_, pos2) => sepEndByHelper(p, sep, inp, pos2, (xs,posk) -> Ok(a :: xs, posk))
-    //         }
-    //     })
-
-    
-    
-    
-    // pub def manyTillWith(f: (List[a], e) -> ans, p: Parser[a], endp: Parser[e]): Parser[ans] =
-    //     let fk = e -> Err(e);
-    //     let sk = (xs, end1, pos) -> Ok(f(xs, end1), pos);
-    //     Parser((inp, pos) -> manyTillWithHelper(p, endp, inp, pos, fk, sk))
-
-    
-    // def manyTillWithHelper(p: Parser[a], endp: Parser[e], inp: String, pos: Index, fk: ParseError -> Result[ans, ParseError], sk: (List[a], e, Index) -> Result[ans, ParseError]): Result[ans, ParseError] = 
-    //     match apply1(endp, inp, pos) {
-    //         case Ok(end1, pos1) => sk(Nil, end1, pos1)
-    //         case Err(_) => match apply1(p, inp, pos) {
-    //             case Err(e) => fk(e)
-    //             case Ok(x, pos1) => manyTillWithHelper(p, endp, inp, pos1, fk, (xs, end2, pos2) -> sk(x :: xs, end2, pos2))
-    //         }
-    //     }
-
-    // pub def manyTill(p: Parser[a], endp: Parser[e]): Parser[List[a]] =
-    //     manyTillWith((xs,_) -> xs, p, endp) 
+    pub def endBy1(f: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
+        endBy1With(f, zero, p, sep) |> swapError("endBy1With")
 
 
-    // pub def manyTillApply(p: Parser[a], endp: Parser[e], f: (List[a], e) -> ans): Parser[ans] =
-    //     manyTillWith(f, p, endp)
+    /// Optionally terminated with sep.
+    pub def sepEndByWith(f: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
+        seqLeft(sepByWith(f, zero, p, sep), optional(sep)) |> swapError("sepEndByWith")
 
-    // pub def many1Till(p: Parser[a], end: Parser[sep]): Parser[List[a]] = 
-    //     pipe2(p, manyTill(p,end), (v, vs) -> v :: vs)
-
-    // /// p1 must succeed
-    // pub def manyTill2(p1: Parser[a], p2: Parser[a], end: Parser[sep]): Parser[List[a]] = 
-    //     pipe2(p1, manyTill(p2,end), (v, vs) -> v :: vs)
-
-    // /// p1 must succeed, p2 must succeed at least once.
-    // pub def many1Till2(p1: Parser[a], p2: Parser[a], end: Parser[sep]): Parser[List[a]] = 
-    //     pipe2(p1, many1Till(p2,end), (v, vs) -> v :: vs)
+    /// Optionally terminated with sep.
+    pub def sepEndBy(p: Parser[a], sep: Parser[sep]): Parser[List[a]] = 
+        sepEndByWith(cons, Nil, p, sep) |> swapError("sepEndBy")
 
 
-    // pub def skipManyTill(p: Parser[a], end: Parser[e]): Parser[Unit] = 
-    //     let fk = e -> Err(nestErrorMessage("skipManyTill", e));
-    //     let sk = pos -> Ok((), pos);
-    //     Parser((inp, pos) -> skipManyTillHelper(p, end, inp, pos, fk, sk))
+    pub def sepEndBy1With(f: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
+        seqLeft(sepBy1With(f, zero, p, sep), optional(sep)) |> swapError("sepEndBy1With")
 
-    // def skipManyTillHelper(p: Parser[a], end: Parser[e], inp: String, pos: Index, fk: ParseError -> Result[(Unit, Index), ParseError], sk: Index -> Result[(Unit, Index), ParseError]): Result[(Unit, Index), ParseError] = 
-    //     match apply1(end, inp, pos) {
-    //         case Ok(_, pos1) => sk(pos1)
-    //         case Err(_) => match apply1(p, inp, pos) {
-    //             case Err(e) => fk(e)
-    //             case Ok(_, pos1) => skipManyTillHelper(p, end, inp, pos1, fk, sk)
-    //         }
-    //     }
+    pub def sepEndBy1(p: Parser[a], sep: Parser[sep]): Parser[List[a]] = 
+        sepEndBy1With(cons, Nil, p, sep) |> swapError("sepEndBy1")
 
-    // pub def skipMany1Till(p: Parser[a], end: Parser[sep]): Parser[Unit] = 
-    //     seqRight(p, skipManyTill(p, end))
 
-    // /// p1 must succeed
-    // pub def skipManyTill2(p1: Parser[a], p2:Parser[a], end: Parser[sep]): Parser[Unit] = 
-    //     seqRight(p1, skipManyTill(p2, end))
+    /// p1 must succeed, p2 parsers zero-or-more
+    pub def manyTill2With(f: (a,ac) -> ac, zero: ac, p1: Parser[a], p2: Parser[a], endp: Parser[sep]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* a = p1;
+        let* ac = manyTillWith(f, zero, p2, endp);
+        return(f(a,ac)) |> swapError("manyTill2With")
 
-    // /// p1 must succeed, p2 must succeed at least once.
-    // pub def skipMany1Till2(p1: Parser[a], p2:Parser[a], end: Parser[sep]): Parser[Unit] = 
-    //     seqRight(p1, skipMany1Till(p2, end))
-    
+    /// p1 must succeed, p2 parsers zero-or-more
+    pub def manyTill2(p1: Parser[a], p2: Parser[a], endp: Parser[sep]): Parser[List[a]] = 
+        manyTill2With(cons, Nil, p1, p2, endp) |> swapError("manyTill2")
+
+    /// p1 must succeed, p2 parsers one-or-more
+    pub def many1Till2With(f: (a,ac) -> ac, zero: ac, p1: Parser[a], p2: Parser[a], endp: Parser[sep]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* a = p1;
+        let* ac = many1TillWith(f, zero, p2, endp);
+        return(f(a,ac)) |> swapError("many1Till2With")
+
+    /// p1 must succeed, p2 parsers one-or-more
+    pub def many1Till2(p1: Parser[a], p2: Parser[a], endp: Parser[sep]): Parser[List[a]] = 
+        many1Till2With(cons, Nil, p1, p2, endp) |> swapError("many1Till2")
 
     
-    // pub def skipped(p: Parser[Unit]): Parser[String] = 
-    //     Parser((inp,pos) -> match apply1(p, inp, pos) {
-    //         case Err(e) => Err(nestErrorMessage("skipped", e))
-    //         case Ok(_, pos1) => match TextParser/Internal.trySlice(pos, pos1, inp) {
-    //             case None => Err(makeParseError(inp, pos, "skipped"))
-    //             case Some(s) => Ok(s, pos1)
-    //         }
-    //     })
+
 
     pub def chainl1(p: Parser[a], op: Parser[(a, a) -> a]): Parser[a] = 
         bind(p, v1 -> chainl1Helper(p, op, v1))

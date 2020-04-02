@@ -265,6 +265,17 @@ namespace TextParser {
                 case Some(s) => POk(s, pos+n)
             })
 
+    /// 
+    /// Returns the text "skipped" by a parser if it succeeds.
+    ///
+    pub def skipped(p: Parser[a]): Parser[String] = 
+        Parser((inp,pos) -> match apply1(p, inp, pos) {
+            case PErr(e) => PErr(nestErrorMessage("skipped", e))
+            case POk(_, pos1) => match trySlice(pos, pos1, inp) {
+                case None => PErr(makeParseError(inp, pos, "skipped"))
+                case Some(s) => POk(s, pos1)
+            }
+        })
 
     /// 
     /// `endOfInput` succeeds if all the input has been parsed.

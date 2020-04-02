@@ -60,3 +60,25 @@ def test08(): Result[Char, String] =
     use TextParser/Combinators.choice;
     let p1: Parser[Char] = choice(satisfy(x -> x == 'a') :: satisfy(x -> x == 'b') :: Nil);
     TextParser.runs(p1, "abc")
+
+@test
+def test09(): Result[List[Char], String] = 
+    use TextParser.satisfy;
+    use TextParser/Combinators.sepBy;
+    let p1: Parser[List[Char]] = sepBy(satisfy(x -> x == 'a'), satisfy(x -> x == '-'));
+    TextParser.runs(p1, "a-a-a-a")
+
+
+@test
+def test10(): Result[List[Char], String] = 
+    use TextParser.satisfy;
+    use TextParser/Combinators.sepEndBy;
+    let p1: Parser[List[Char]] = sepEndBy(satisfy(x -> x == 'a'), satisfy(x -> x == '-'));
+    TextParser.runs(p1, "a-a-a-a")
+
+@test
+def test11(): Result[List[Char], String] = 
+    use TextParser.satisfy;
+    use TextParser/Combinators.sepEndBy;
+    let p1: Parser[List[Char]] = sepEndBy(satisfy(x -> x == 'a'), satisfy(x -> x == '-'));
+    TextParser.runs(p1, "a-a-a-a-")
