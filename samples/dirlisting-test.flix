@@ -183,7 +183,7 @@ def dirListingLine02(): Result[List[DirListingLine], String] & Impure =
 
 @test
 def parseFile02(): Unit & Impure = 
-    let path = "D:\coding\flix\text-parser\samples\test-data\long_names_dir.txt";
+    let path = "e:\coding\flix\text-parser\testdata\long_names_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
         case Err(e) => Console.printLine(TextParser.showParserError(e))
@@ -196,7 +196,7 @@ def parseFile02(): Unit & Impure =
 
 @test
 def temp01(): Unit & Impure = 
-    let path = "G:\work\Projects\edm2\prep-for-edms_feb2020\stw_dir.txt";
+    let path = "e:\coding\flix\text-parser\testdata\flix_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
         case Err(e) => Console.printLine(TextParser.showParserError(e))
