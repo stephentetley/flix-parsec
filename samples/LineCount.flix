@@ -16,7 +16,8 @@
 
 use TextParser/Internal.timeOperation;
 use TextParser.Parser;
-use TextParser.{runs, return};
+use TextParser.{runs, return, map};
+use TextParser/Combinators.{ntimes, skipManyTill};
 
 /// Very simple parser to count lines.
 
@@ -48,7 +49,12 @@ namespace LineCount {
             case Ok(c) => c
         }
 
-    pub def lc01(): Parser[Int32] = 
-        return(0)
+
+    def parseLine(): Parser[Unit] = 
+        use TextParser/Text.anyChar;
+        use TextParser/Text.newline;
+        skipManyTill(anyChar(), newline())
+
+    pub def lc01(): Parser[Int32] = ntimes(parseLine())
 
 }

@@ -288,6 +288,14 @@ namespace TextParser {
                 PErr(makeParseError(inp, pos, "endOfInput"))
         )
     
+    pub def restOfInput(): Parser[String] = 
+        Parser((inp, pos) -> 
+            let end = inp.end;
+            match trySlice(pos, end, inp) {
+                case None => PErr(makeParseError(inp, pos, "restOfInput"))
+                case Some(s) => POk(s, end)
+            })
+
 
     /// 
     /// Run parser `p` within a bounded text 

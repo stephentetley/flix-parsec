@@ -16,27 +16,96 @@
 
 use TextParser.Parser;
 use TextParser.Parser.Parser;
-use TextParser.{map, return, bind, alt, makeParseError};
-use TextParser/Combinators.{manyTill, manyTillWith, manyTill2, many1Till, many, many1, seqLeft, seqRight};
-use TextParser.nestError;
-use TextParser/Char.spaces;
+use TextParser.{map, return, bind, alt, satisfy, lookahead, makeParseError, nestError, restOfInput, horizon};
+use TextParser/Combinators.{optional, manyTill, manyTillWith, 
+        skipMany, manyTill2, many1Till, many, many1, seqLeft, seqRight};
+
 
 
 ///
-/// Text oriented parsers.
+/// Text and character oriented parsers.
 ///
 
 namespace TextParser/Text {
     
+    pub def anyChar(): Parser[Char] = 
+        satisfy(_ -> true)
+
+    pub def oneOf(cs: List[Char]): Parser[Char]= 
+        satisfy(ch -> List.memberOf(ch, cs)) |> nestError("oneOf")
+
+    pub def noneOf(cs: List[Char]): Parser[Char] = 
+        satisfy(ch -> !List.memberOf(ch, cs)) |> nestError("noneOf")
+
+    pub def char(c: Char): Parser[Char] = 
+        satisfy(ch -> ch == c) |> nestError("char")
+
+    ///
+    /// Byte order mark '\ufeff'
+    ///
+    pub def byteOrderMark(): Parser[Char] = char('\ufeff')
+
+    
+    pub def tab(): Parser[Char] = char('\t')
+
+    ///
+    /// Parse a space character (u0020)
+    /// 
+    pub def space(): Parser[Char] = char(' ')
+
+    
+    pub def upper(): Parser[Char] = satisfy(Char.isUpperCase)
+
+    pub def lower(): Parser[Char] = satisfy(Char.isLowerCase)
+
+    pub def letter(): Parser[Char] = satisfy(Char.isLetter)
+
+    pub def letters(): Parser[String] = 
+        many1(letter()) |> TextParser.map(List.toString)
+
+    pub def alphaNum(): Parser[Char] = alt(letter(), digit())
+
+    pub def digit(): Parser[Char] = satisfy(Char.isDigit)
+
+    pub def digits(): Parser[String] = 
+        many1(digit()) |> map(List.toString)
+
+    pub def octDigit(): Parser[Char] = 
+        let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: Nil;
+        oneOf(xs)
+
+    pub def hexDigit(): Parser[Char] = 
+        let xs = '0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: '8' :: '9' :: 'A' :: 'B' :: 'C' :: 'D' :: 'E' ::'F' ::'a' :: 'b' :: 'c' :: 'd' :: 'e' :: 'f' :: Nil;
+        oneOf(xs)
+
+
+
+    ///    
+    /// newline() needs testing  - to test
+    ///
+    pub def newline(): Parser[Unit] = 
+        TextParser.map(
+            _ -> (),
+            TextParser.alt(char('\n'), seqLeft(char('\r'), optional(char('\n'))))            
+        ) 
+
+    ///
+    /// Parse a sequence space characters (u0020).
+    /// 
+    pub def spaces(): Parser[Unit] = skipMany(space())
+
     ///
     /// Parser any characaters before the end of line (or end of input).
     ///
     pub def restOfLine(consumeEol: Bool): Parser[String] = 
         let endp = TextParser.alt(newline1(consumeEol), TextParser.endOfInput());
-        manyCharsTill(TextParser/Char.anyChar(), endp)
+        manyCharsTill(anyChar(), endp)
 
     def newline1(consumeEol: Bool): Parser[Unit] = 
-        if (consumeEol) TextParser/Char.newline() else TextParser.lookahead(TextParser/Char.newline())
+        if (consumeEol) 
+            newline() 
+        else 
+            lookahead(newline())
 
     ///
     /// Either at end-of-input or only whitespace remaining before end-of-input.
@@ -46,15 +115,8 @@ namespace TextParser/Text {
 
     /// End of input or newline.
     pub def endOfLine() : Parser[Unit] = 
-        alt(TextParser.endOfInput(), TextParser/Char.newline())
+        alt(TextParser.endOfInput(), newline())
 
-    pub def restOfInput(): Parser[String] = 
-        Parser((inp, pos) -> 
-            let end = String.length(inp);
-            match TextParser/Internal.trySlice(pos, end, inp) {
-                case None => Err(makeParseError(inp, pos, "restOfInput"))
-                case Some(s) => Ok(s, end)
-            })
 
 
 
@@ -90,13 +152,13 @@ namespace TextParser/Text {
         map(TextParser/Internal.makeString, manyTill2(p1, p2, endp))
              
     
-    pub def manyCharsTillApply(p: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
-        manyTillWith((xs,e) -> f(TextParser/Internal.makeString(xs), e), p, endp)
+    // pub def manyCharsTillApply(p: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
+    //     manyTillWith((xs,e) -> f(TextParser/Internal.makeString(xs), e), p, endp)
         
 
-    pub def manyCharsTillApply2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
-        let f1 = (c, ss, e) -> f(TextParser/Internal.prefix(c, ss), e);
-        bind(p1, c1 -> manyCharsTillApply(p2, endp, f1(c1)))
+    // pub def manyCharsTillApply2(p1: Parser[Char], p2: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
+    //     let f1 = (c, ss, e) -> f(TextParser/Internal.prefix(c, ss), e);
+    //     bind(p1, c1 -> manyCharsTillApply(p2, endp, f1(c1)))
 
 
     pub def many1CharsTill(p: Parser[Char], endp: Parser[e]): Parser[String] = 

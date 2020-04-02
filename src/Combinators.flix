@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-use TextParser/Internal.DList;
-use TextParser/Internal.{dcons, dsnoc, dlistToList, dempty};
 use TextParser.Parser;
-use TextParser.Index;
 use TextParser.ParseError;
 use TextParser.{bind, bindFS, return, alt, fail, failure, nestError, swapError, map};
 
@@ -121,14 +118,12 @@ namespace TextParser/Combinators {
         many1With(cons, Nil, p) |> swapError("many1")
 
     
-    pub def ntimes(p: Parser[a]): Parser[Int32] = 
-        manyWith((_,ac) -> ac+1, 0, p)
-
-    pub def manyTillWith(f: (a, ac) -> ac, zero: ac, p: Parser[a], endp: Parser[z]): Parser[ac] = 
+    
+    pub def manyTillWith(f: (a, ac) -> ac, zero: ac, p: Parser[a], endp: Parser[e]): Parser[ac] = 
         manyTillWithHelper(f, zero, p, endp, return) |> nestError("manyTillWith")
 
 
-    def manyTillWithHelper(f: (a, ac) -> ac, zero: ac, p: Parser[a], endp: Parser[z], cont: ac -> Parser[ac]): Parser[ac] = 
+    def manyTillWithHelper(f: (a, ac) -> ac, zero: ac, p: Parser[a], endp: Parser[e], cont: ac -> Parser[ac]): Parser[ac] = 
         use TextParser.flatMap;
         let* done = optional(endp);
         match done { 
@@ -248,7 +243,17 @@ namespace TextParser/Combinators {
     pub def many1Till2(p1: Parser[a], p2: Parser[a], endp: Parser[sep]): Parser[List[a]] = 
         many1Till2With(cons, Nil, p1, p2, endp) |> swapError("many1Till2")
 
-    
+    /// Count how many times parser `p` succeeds
+    pub def ntimes(p: Parser[a]): Parser[Int32] = 
+        manyWith((_,ac) -> ac + 1, 0, p)
+
+    /// Count how many times parser `p` succeeds
+    pub def ntimesSepBy(p: Parser[a], sep: Parser[sep]): Parser[Int32] = 
+        sepByWith((_,ac) -> ac + 1, 0, p, sep)
+
+    /// Count how many times parser `p` succeeds
+    pub def ntimesSepEndBy(p: Parser[a], sep: Parser[sep]): Parser[Int32] = 
+        sepEndByWith((_,ac) -> ac + 1, 0, p, sep)
 
 
     pub def chainl1(p: Parser[a], op: Parser[(a, a) -> a]): Parser[a] = 
