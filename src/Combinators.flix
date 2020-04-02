@@ -27,7 +27,7 @@ use TextParser.{bind, bindFS, return, alt, fail, failure, nestError, swapError, 
 
 namespace TextParser/Combinators {
 
-
+    def cons(x: a, xs: List[a]): List[a] = x :: xs
     
     pub def seqLeft(pa: Parser[a], pb: Parser[b]): Parser[a] =
         bind(pa, a -> bind(pb, _ -> return(a)))
@@ -59,8 +59,16 @@ namespace TextParser/Combinators {
                 ac -> cont(f(a,ac))
             )
 
-    pub def count(n: Int32, p: Parser[ans]): Parser[List[ans]] = 
-        countWith((x,xs) -> x :: xs, Nil, n, p) |> swapError("count")
+    pub def count(n: Int32, p: Parser[a]): Parser[List[a]] = 
+        countWith(cons, Nil, n, p) |> swapError("count")
+
+    pub def choice(ps: List[Parser[a]]): Parser[a] = 
+        match ps { 
+            case Nil => fail("choice")
+            case p :: rs => bindFS(p, _ -> choice(rs), return)
+
+        }
+
 
     pub def notFollowedBy(p: Parser[ans]): Parser[Unit] = 
         bindFS(p, _ -> fail("notFollowedBy"), _ -> return(()))
@@ -82,36 +90,89 @@ namespace TextParser/Combinators {
         seqRight(open, seqLeft(p, close))
 
 
-    // pub def many(p: Parser[ans]): Parser[List[ans]] = 
-    //     Parser((inp, pos) -> manyHelper(p, inp, pos, (xs, pos1)-> Ok(xs, pos1)))
+    pub def manyWith(f: (a,ac) -> ac, zero: ac, p: Parser[a]): Parser[ac] = 
+        manyWithHelper(f, zero, p, return) 
 
 
-    // pub def many1(p: Parser[ans]): Parser[List[ans]] = 
-    //     bind(p, v1 -> 
-    //         bind(many(p), vs -> return(v1 :: vs))) |> nestError("many1")
+    def manyWithHelper(f: (a, ac) -> ac, zero: ac, p: Parser[a], cont: ac -> Parser[ac]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* ans = optional(p);
+        match ans { 
+            case None => cont(zero)
+            case Some(a) => 
+                manyWithHelper(
+                    f, 
+                    zero, 
+                    p, 
+                    ac -> cont(f(a,ac))
+                )
+        }
+
+    pub def many(p: Parser[a]): Parser[List[a]] = 
+        manyWith(cons, Nil, p)
+
+    
 
 
-    // def manyHelper(p: Parser[ans], inp: String, pos: Index, sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
-    //     match apply1(p, inp, pos) {
-    //         case Err(_) => sk(Nil, pos)
-    //         case Ok(a, pos1) => manyHelper(p, inp, pos1, (xs,posk) -> sk(a :: xs, posk))
-    //     }
+    pub def many1With(f: (a,ac) -> ac, zero: ac, p: Parser[a]): Parser[ac] = 
+        use TextParser.flatMap; 
+        let* a = p;
+        let* ac = manyWith(f, zero, p);
+        return(f(a, ac)) |> nestError("many1With")
 
-    // type alias SkipAnswer = Result[(Unit, Index), ParseError]
+    pub def many1(p: Parser[a]): Parser[List[a]] = 
+        many1With(cons, Nil, p) |> swapError("many1")
 
-    // pub def skipMany(p: Parser[ans]): Parser[Unit] = 
-    //     Parser((inp, pos) -> skipManyHelper(p, inp, pos, pos1 -> Ok((), pos1)))
+    
+    pub def ntimes(p: Parser[a]): Parser[Int32] = 
+        manyWith((_,ac) -> ac+1, 0, p)
 
-    // pub def skipMany1(p: Parser[ans]): Parser[Unit] = 
-    //     seqRight(p, skipMany(p))
+    pub def manyTillWith(f: (a, ac) -> ac, zero: ac, p: Parser[a], endp: Parser[z]): Parser[ac] = 
+        manyTillWithHelper(f, zero, p, endp, return) |> nestError("manyTillWith")
 
 
-    // def skipManyHelper(p: Parser[ans], inp: String, pos: Index, sk: Index -> SkipAnswer): SkipAnswer = 
-    //     match apply1(p, inp, pos) {
-    //         case Err(_) => sk(pos)
-    //         case Ok(_, pos1) => skipManyHelper(p, inp, pos1, posk -> sk(posk))
-    //     }
+    def manyTillWithHelper(f: (a, ac) -> ac, zero: ac, p: Parser[a], endp: Parser[z], cont: ac -> Parser[ac]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* done = optional(endp);
+        match done { 
+            case Some(_) => cont(zero)
+            case None => {
+                let* a = bindFS(p, e -> failure(e), return);
+                manyTillWithHelper(
+                    f, 
+                    zero, 
+                    p, 
+                    endp,
+                    ac -> cont(f(a,ac))
+                )
+            }
+        }
+        
+    pub def manyTill(p: Parser[a], endp: Parser[z]): Parser[List[a]] = 
+        manyTillWithHelper(cons, Nil, p, endp, return) |> swapError("manyTill")
 
+    pub def many1TillWith(f: (a, ac) -> ac, zero: ac, p: Parser[a], endp: Parser[z]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* a = p;
+        let* ac = manyTillWith(f, zero, p, endp);
+        return(f(a, ac)) |> swapError("many1TillWith")
+
+    pub def many1Till(p: Parser[a], endp: Parser[z]): Parser[List[a]] = 
+        many1TillWith(cons, Nil, p, endp) |> swapError("many1Till")
+
+    pub def skipMany(p: Parser[a]): Parser[Unit] = 
+        manyWith((_,ac) -> ac, (), p)
+
+    pub def skipMany1(p: Parser[a]): Parser[Unit] = 
+        many1With((_,ac) -> ac, (), p) |> swapError("skipMany1")
+
+    pub def skipManyTill(p: Parser[a], endp: Parser[z]): Parser[Unit] = 
+        manyTillWith((_,ac) -> ac, (), p, endp)
+
+    pub def skipMany1Till(p: Parser[a], endp: Parser[z]): Parser[Unit] = 
+        many1TillWith((_,ac) -> ac, (), p, endp)
+
+    
     // pub def sepBy(p: Parser[ans], sep: Parser[sep]): Parser[List[ans]] = 
     //     Parser((inp, pos) -> sepByHelper(p, sep, inp, pos, (xs,pos1)-> Ok(xs, pos1)))
 
@@ -153,25 +214,8 @@ namespace TextParser/Combinators {
     //         }
     //     })
 
-    // pub def choose(p: Parser[Option[a]]): Parser[List[a]] = 
-    //     Parser((inp, pos) -> chooseHelper(p, inp, pos, (xs, posk) -> Ok(xs, posk)))
     
-    // def chooseHelper(p: Parser[Option[a]], inp: String, pos: Index, sk: (List[a], Index) ->  ListAnswer[a]): ListAnswer[a] = 
-    //     match apply1(p, inp, pos) {
-    //         case Err(_) => sk(Nil, pos)
-    //         case Ok(Some(a), pos1) => chooseHelper(p, inp, pos1, (xs,posk) -> sk(a :: xs, posk))
-    //         case Ok(None, pos1) => chooseHelper(p, inp, pos1, (xs,posk) -> sk(xs, posk))
-    //     }
-
-    // pub def choice(ps: List[Parser[ans]]): Parser[ans] = 
-    //     Parser((inp, pos) -> match ps {
-    //             case Nil => Err(makeParseError(inp, pos, "choice"))
-    //             case p :: rs =>  match apply1(p, inp, pos) {
-    //                 case Ok(a, pos1) => Ok(a, pos1)
-    //                 case Err(_) => apply1(choice(rs), inp, pos)
-    //             }
-    //         })
-
+    
     
     // pub def manyTillWith(f: (List[a], e) -> ans, p: Parser[a], endp: Parser[e]): Parser[ans] =
     //     let fk = e -> Err(e);
