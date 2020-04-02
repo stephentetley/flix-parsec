@@ -115,9 +115,9 @@ namespace TextParser {
         case Parser((Input, Index) -> ParseResult[ans])
     }
 
-    pub def fail() : Parser[ans] = Parser((inp, pos) -> PErr(makeParseError(inp, pos, "fail")))
+    pub def fail(msg: String) : Parser[ans] = Parser((inp, pos) -> PErr(makeParseError(inp, pos, msg)))
 
-    pub def failure(e: ParseError) : Parser[ans] = Parser((_, _) -> PErr(e))
+    def failure(e: ParseError) : Parser[ans] = Parser((_, _) -> PErr(e))
 
     pub def return(x: ans): Parser[ans] = Parser((_, pos) -> POk(x, pos))
 
@@ -136,7 +136,7 @@ namespace TextParser {
             })
 
 
-    pub def bindSF(ma: Parser[a], sk: a -> Parser[b], fk: ParseError -> Parser[b]) : Parser[b] = 
+    pub def bindFS(ma: Parser[a], fk: ParseError -> Parser[b], sk: a -> Parser[b]) : Parser[b] = 
         Parser((inp, pos) -> match apply1(ma, inp, pos) { 
                 case PErr(e) => apply1(fk(e), inp, pos)
                 case POk(ans, pos1) => apply1(sk(ans), inp, pos1)
@@ -147,7 +147,7 @@ namespace TextParser {
     pub def flatMap(k: a -> Parser[b], ma: Parser[a]) : Parser[b] = bind(ma, k)
 
     pub def map(f: a -> b, ma: Parser[a]) : Parser[b] = 
-        bindSF(ma, a -> return(f(a)), e -> failure(e))
+        bindFS(ma, e -> failure(e), a -> return(f(a)))
     
     
     ///
@@ -194,10 +194,10 @@ namespace TextParser {
         Parser((inp, pos) -> PErr(makeParseError(inp, pos, msg)))
 
     pub def swapError(msg: String, p: Parser[ans]): Parser[ans] = 
-        bindSF(p, return, e -> failure(swapErrorMessage(msg,e)))
+        bindFS(p, e -> failure(swapErrorMessage(msg,e)), return)
     
     pub def nestError(msg: String, p: Parser[ans]): Parser[ans] = 
-        bindSF(p, return, e -> failure(nestErrorMessage(msg, e)))
+        bindFS(p, e -> failure(nestErrorMessage(msg, e)), return)
         
 
 

@@ -16,14 +16,14 @@
 
 namespace TextParser/Internal {
 
+    
+
     pub def timeOperation(thunk: Unit -> a & e): (Int64, a) & Impure = 
         import java.lang.System:nanoTime();
         let t0 = nanoTime();
         let a = thunk() as & Impure;
         let t1 = nanoTime();
         (t1 - t0, a)
-
-
 
     pub def makeString(cs: List[Char]): String = 
         makeStringHelper(cs) as & Pure
