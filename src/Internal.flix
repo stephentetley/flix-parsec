@@ -24,20 +24,6 @@ namespace TextParser/Internal {
         (t1 - t0, a)
 
 
-    pub def charAtSafe(i: Int32, s: String) : Option[Char] = try {
-        String.charAt(i, s) |> Some
-    } catch {
-        case _: ##java.lang.StringIndexOutOfBoundsException => None
-    }
-
-    pub def trySlice(b: Int32, e: Int32, s: String) : Option[String] & Pure = try {
-        import java.lang.String.substring(Int32,Int32);
-        let s1 = s.substring(b, e) as & Pure;
-        Some(s1)
-    } catch {
-        case _: ##java.lang.IndexOutOfBoundsException => None
-    }
-
 
     pub def makeString(cs: List[Char]): String = 
         makeStringHelper(cs) as & Pure

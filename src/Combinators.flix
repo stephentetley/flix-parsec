@@ -18,8 +18,7 @@ use TextParser.Parser;
 use TextParser.Parser.Parser;
 use TextParser.Index;
 use TextParser.ParseError;
-use TextParser.{bind, return, alt, fail, nestError, apply1, makeParseError, nestErrorMessage, map, liftM2, 
-                liftM3, liftM4, liftM5, liftM6, liftM7, liftM8, liftM9};
+use TextParser.{bind, return, alt, fail, nestError, apply1, makeParseError, nestErrorMessage, map};
 
 ///
 /// Character level parsers.
@@ -39,9 +38,34 @@ namespace TextParser/Combinators {
     pub def satisfies(p: Parser[ans], test: ans -> Bool): Parser[ans] = 
         bind(p, ans -> if (test(ans)) return(ans) else fail())
 
+
+    // pub def countWith(f: (a, ac) -> ac, i: Int32, p: Parser[a]): Parser[ac] = 
+
+
+    // def countWithHelper(f: (a, ac) -> ac, i: Int32, p: Parser[ans], inp: String, pos: Index, fk: ParseError -> Result[ans], sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
+    //     if (i <= 0)
+    //         sk(Nil, pos)
+    //     else 
+    //         match apply1(p, inp, pos) {
+    //             case Err(e) => fk(e)
+    //             case Ok(a, pos1) => countHelper(i-1, p, inp, pos1, fk, (xs,posk) -> sk(a :: xs, posk))
+    //         }
+
+
     pub def count(i: Int32, p: Parser[ans]): Parser[List[ans]] = 
         Parser((inp, pos) -> countHelper(i, p, inp, pos, e -> Err(nestErrorMessage("count", e)), (xs, pos1) -> Ok(xs, pos1)))
 
+    type alias ListAnswer[ans] = Result[(List[ans], Index), ParseError]
+
+    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: Index, fk: ParseError -> ListAnswer[ans], sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
+        if (i <= 0)
+            sk(Nil, pos)
+        else 
+            match apply1(p, inp, pos) {
+                case Err(e) => fk(e)
+                case Ok(a, pos1) => countHelper(i-1, p, inp, pos1, fk, (xs,posk) -> sk(a :: xs, posk))
+            }
+    
 
     pub def notFollowedBy(p: Parser[ans]): Parser[Unit] = 
         Parser((inp, pos) -> match apply1(p, inp, pos) {
@@ -70,17 +94,7 @@ namespace TextParser/Combinators {
     
 
 
-    type alias ListAnswer[ans] = Result[(List[ans], Index), ParseError]
 
-    def countHelper(i: Int32, p: Parser[ans], inp: String, pos: Index, fk: ParseError -> ListAnswer[ans], sk: (List[ans], Index) -> ListAnswer[ans]): ListAnswer[ans] = 
-        if (i <= 0)
-            sk(Nil, pos)
-        else 
-            match apply1(p, inp, pos) {
-                case Err(e) => fk(e)
-                case Ok(a, pos1) => countHelper(i-1, p, inp, pos1, fk, (xs,posk) -> sk(a :: xs, posk))
-            }
-    
     pub def between(open: Parser[z1], close: Parser[z2], p: Parser[ans]): Parser[ans] = 
         seqRight(open, seqLeft(p, close))
 
@@ -271,6 +285,42 @@ namespace TextParser/Combinators {
 
     pub def chainr(p: Parser[a], op: Parser[(a, a) -> a], x: a): Parser[a] = 
         alt(chainr1(p, op), return(x))
+
+    
+    pub def liftM2(f: (a, b) -> ans, p1: Parser[a], p2: Parser[b]): Parser[ans] = 
+        bind(p1, v1 -> 
+            bind(p2, v2 -> return(f(v1,v2))))
+
+    pub def liftM3(f: (a, b, c) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM2((v2,v3) -> f(v1,v2,v3), p2, p3))
+
+
+    pub def liftM4(f: (a, b, c, d) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM3((v2,v3,v4) -> f(v1,v2,v3,v4), p2, p3, p4))
+                    
+
+    pub def liftM5(f: (a, b, c, d, e) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM4((v2,v3,v4,v5) -> f(v1,v2,v3,v4,v5), p2, p3, p4, p5))
+
+    pub def liftM6(f: (a, b, c, d, e, f) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM5((v2,v3,v4,v5,v6) -> f(v1,v2,v3,v4,v5,v6), p2, p3, p4, p5, p6))
+
+    pub def liftM7(f: (a, b, c, d, e, f, g) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM6((v2,v3,v4,v5,v6,v7) -> f(v1,v2,v3,v4,v5,v6,v7), p2, p3, p4, p5, p6,p7))
+
+    pub def liftM8(f: (a, b, c, d, e, f, g, h) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM7((v2,v3,v4,v5,v6,v7,v8) -> f(v1,v2,v3,v4,v5,v6,v7,v8), p2, p3, p4, p5, p6,p7,p8))
+
+    pub def liftM9(f: (a, b, c, d, e, f, g, h, i) -> ans, p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], p9: Parser[i]): Parser[ans] = 
+        bind(p1, v1 -> 
+            liftM8((v2,v3,v4,v5,v6,v7,v8,v9) -> f(v1,v2,v3,v4,v5,v6,v7,v8,v9), p2, p3, p4, p5, p6,p7,p8,p9))
+
 
     ///
     /// `pipe1` is `map` with the arguments flipped.

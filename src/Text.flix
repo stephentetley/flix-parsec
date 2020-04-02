@@ -88,8 +88,7 @@ namespace TextParser/Text {
 
     pub def manyCharsTill2(p1: Parser[Char], p2: Parser[Char], endp: Parser[a]): Parser[String] = 
         map(TextParser/Internal.makeString, manyTill2(p1, p2, endp))
-            
-    
+             
     
     pub def manyCharsTillApply(p: Parser[Char], endp: Parser[e], f: (String, e) -> a): Parser[a] = 
         manyTillWith((xs,e) -> f(TextParser/Internal.makeString(xs), e), p, endp)
@@ -109,5 +108,11 @@ namespace TextParser/Text {
         let* ss = many1CharsTill(p2, endp);
         return(TextParser/Internal.prefix(c, ss))
 
+    /// 
+    /// Returns the "content" (i.e the trimmed text) of the next `n` characters from 
+    /// the current position.
+    ///
+    pub def content(n: Int): Parser[String] = 
+        map(String.trim, horizon(n))
 
 }
