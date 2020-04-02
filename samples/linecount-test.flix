@@ -1,13 +1,24 @@
 
 use LineCount.{runLineCounter};
 
+def runlineCount01(path: String): Unit & Impure = 
+    let path1 = FilePath.new(path);
+    match File.readFile(path1, Charset.utf_16le()) { 
+        case Err(msg) => Console.printLine(msg)
+        case Ok(s) => {
+            runLineCounter("lineCount01", LineCount.lineCount01, s)
+        }
+
+    }
+
 def runTests(path: String): Unit & Impure = 
     let path1 = FilePath.new(path);
     match File.readFile(path1, Charset.utf_16le()) { 
         case Err(msg) => Console.printLine(msg)
         case Ok(s) => {
             runLineCounter("lineCount01", LineCount.lineCount01, s);
-            runLineCounter("lineCount02", LineCount.lineCount02, s)
+            runLineCounter("lineCount02", LineCount.lineCount02, s);
+            runLineCounter("lineCount03", LineCount.lineCount03, s)
         }
 
     }
@@ -16,6 +27,12 @@ def runTests(path: String): Unit & Impure =
 def test01(): Unit & Impure = 
     runTests("e:\coding\flix\text-parser\testdata\long_names_dir.txt")
 
+
+// Note - takes > 5 minutes, stoppped execution.
 @test
 def test02(): Unit & Impure = 
     runTests("e:\coding\flix\text-parser\testdata\flix_dir.txt")
+
+@test
+def test02a(): Unit & Impure = 
+    runlineCount01("e:\coding\flix\text-parser\testdata\flix_dir.txt")

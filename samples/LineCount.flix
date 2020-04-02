@@ -17,7 +17,6 @@
 use TextParser/Internal.timeOperation;
 use TextParser.Parser;
 use TextParser.{runs, return, map};
-use TextParser/Combinators.{ntimes, skipManyTill};
 
 /// Very simple parser to count lines.
 
@@ -39,22 +38,39 @@ namespace LineCount {
         else
             let ch = String.charAt(ix, s);
             if (ch == '\n') 
-                lineCount01Helper(s, len, count + 1, ix +1)
+                lineCount01Helper(s, len, count + 1, ix + 1)
             else
-                lineCount01Helper(s, len, count, ix +1)
+                lineCount01Helper(s, len, count, ix + 1)
 
     pub def lineCount02(s: String): Int32 & Impure = 
-        match runs(lc01(), s) {
+        match runs(lc02(), s) {
             case Err(msg) => { Console.printLine(msg); -1 }
             case Ok(c) => c
         }
 
+    pub def lc02(): Parser[Int32] = 
+        use TextParser/Combinators.ntimes; 
+        ntimes(parseLine2())
 
-    def parseLine(): Parser[Unit] = 
-        use TextParser/Text.anyChar;
-        use TextParser/Text.newline;
+    def parseLine2(): Parser[Unit] =
+        use TextParser/Combinators.skipManyTill; 
+        use TextParser/Text.{anyChar, newline};
         skipManyTill(anyChar(), newline())
 
-    pub def lc01(): Parser[Int32] = ntimes(parseLine())
+    pub def lineCount03(s: String): Int32 & Impure = 
+        match runs(lc03(), s) {
+            case Err(msg) => { Console.printLine(msg); -1 }
+            case Ok(c) => c
+        }
 
+    pub def lc03(): Parser[Int32] = 
+        use TextParser/CombinatorsDS.ntimes; 
+        ntimes(parseLine3())
+
+    def parseLine3(): Parser[Unit] =
+        use TextParser/CombinatorsDS.skipManyTill; 
+        use TextParser/Text.{anyChar, newline};
+        skipManyTill(anyChar(), newline())
+
+    
 }
