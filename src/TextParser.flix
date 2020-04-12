@@ -104,7 +104,7 @@ namespace TextParser {
         if (e <= b || b < 0 || b > end || e < 0 || e > end)
             None
         else
-            Some(String.slice(b, e, str))
+            Some(String.slice(str, b, e))
 
 
 
@@ -115,6 +115,7 @@ namespace TextParser {
         case Parser((Input, Index) -> ParseResult[ans])
     }
 
+    
     pub def fail(msg: String) : Parser[ans] = Parser((inp, pos) -> PErr(makeParseError(inp, pos, msg)))
 
     def failure(e: ParseError) : Parser[ans] = Parser((_, _) -> PErr(e))
@@ -149,7 +150,29 @@ namespace TextParser {
     pub def map(f: a -> b, ma: Parser[a]) : Parser[b] = 
         bindFS(ma, e -> failure(e), a -> return(f(a)))
     
+
+    pub opaque type Scanner = (String, Int32) -> Result[String, String]
     
+    pub opaque type Skipper = (String, Int32) -> Result[Int32, String]
+
+
+    pub def applyScanner(scan: Scanner): Parser[String] = 
+        Parser((inp, pos) -> 
+            let Scanner(scanner) = scan;
+            match scanner(inp.source, pos) {
+                case Err(msg) => PErr(makeParseError(inp, pos, msg))
+                case Ok(a) => POk(a, pos + String.length(a))
+            }            
+        )
+
+    pub def applySkipper(skip: Skipper): Parser[Unit] = 
+        Parser((inp, pos) -> 
+            let Skipper(skipper) = skip;
+            match skipper(inp.source, pos) {
+                case Err(msg) => PErr(makeParseError(inp, pos, msg))
+                case Ok(pos1) => POk((), pos1)
+            }            
+        )
     ///
     /// Alias for `parseString`.
     ///
@@ -171,8 +194,8 @@ namespace TextParser {
             case Ok(a) => Ok(a) 
         }
 
-    pub def parseFile(parser: Parser[a], path: FilePath, cs: Charset): Result[a, ParseError] & Impure = 
-        match File.readFile(path, cs) {
+    pub def parseFile(parser: Parser[a], path: System.FilePath, cs: System.Charset): Result[a, ParseError] & Impure = 
+        match System/File.readFile(path, cs) {
             case Err(_) => Err(makeParseError(makeInput(""), 0, "io error"))
             case Ok(text) => run(parser, text)
         }
@@ -223,6 +246,9 @@ namespace TextParser {
         bind(pf, f -> bind(pa, a -> return(f(a))))
 
 
+    ///
+    /// Avoid using `satisfy` if possible (efficiency).
+    ///
     pub def satisfy(test: Char -> Bool): Parser[Char] = 
         Parser((inp, pos) -> match charAt(pos, inp) {
             case None => PErr(makeParseError(inp, pos, "satisfy (index out of bounds)"))

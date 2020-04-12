@@ -64,13 +64,13 @@ namespace LineCount {
         }
 
     pub def lc03(): Parser[Int32] = 
-        use TextParser/CombinatorsDS.ntimes; 
+        use TextParser/Combinators.ntimes; 
         ntimes(parseLine3())
 
     def parseLine3(): Parser[Unit] =
-        use TextParser/CombinatorsDS.skipManyTill; 
-        use TextParser/Text.{anyChar, newline};
-        skipManyTill(anyChar(), newline())
+        use TextParser/Text.restOfLine; 
+        use TextParser/Combinators.ignore; 
+        restOfLine(true) |> ignore
 
     
 }

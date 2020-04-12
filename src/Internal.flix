@@ -25,14 +25,17 @@ namespace TextParser/Internal {
         let t1 = nanoTime();
         (t1 - t0, a)
 
+    /// Avoid using this!
+    /// Too slow
     pub def makeString(cs: List[Char]): String = 
         makeStringHelper(cs) as & Pure
 
     def makeStringHelper(chars: List[Char]): String & Impure = 
         let sb = StringBuilder.new();
-        List.foldLeft((_,x) -> StringBuilder.appendChar(sb, x), (), chars);
+        List.foldLeft((_,x) -> StringBuilder.appendChar!(sb, x), (), chars);
         StringBuilder.toString(sb)
 
+    
     pub def prefix(c: Char, s: String): String = Char.toString(c) + s
 
 
@@ -73,7 +76,7 @@ namespace TextParser/Internal {
         if (pos > len) 
             ""
         else { 
-            if (pos > 40) String.slice(pos-40, pos, s) else String.slice(0, pos, s)
+            if (pos > 40) String.slice(s, pos-40, pos) else String.slice(s, 0, pos)
         }
             
     pub def pendingInput(pos: Int32, s: String): String = 
@@ -81,7 +84,7 @@ namespace TextParser/Internal {
         if (pos > len) 
             ""
         else { 
-            if (pos + 40 < len) String.slice(pos, pos+40, s) else String.slice(pos, len, s)
+            if (pos + 40 < len) String.slice(s, pos, pos+40) else String.slice(s, pos, len)
         }
 
 

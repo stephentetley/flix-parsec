@@ -15,15 +15,16 @@
  */
 
 use TextParser.Parser;
-use TextParser.{return, bind, map, throwError, alt, satisfy, string, liftM2};
-use TextParser/Combinators.{sepBy, sepBy1, between, skipMany, many1, option, seqLeft, string4};
-use TextParser/Char.{digit};
+use TextParser.{return, bind, map, throwError, alt, satisfy, string};
+use TextParser/Combinators.{sepBy, sepBy1, between, skipMany, many1, option, seqLeft, liftM2, liftM4};
+use TextParser/Text.{digit};
 
 ///
 /// Token oriented parsers.
 ///
 
 namespace TextParser/Token {
+
     /// Read many whiteSpace characters (space, tab, newline)
     pub def whiteSpace(): Parser[Unit] = skipMany(satisfy(Char.isWhiteSpace))
 
@@ -113,11 +114,13 @@ namespace TextParser/Token {
     pub def bigInt(): Parser[BigInt] = lexeme(primBigInt())
     
     def floatString(): Parser[String] = 
-        string4( 
+        liftM4( 
+            (x1,x2,x3,x4) -> x1 + x2 + x3 + x4,
             sign(), 
             intString(),
             string("."),
-            intString())
+            intString()
+        )
     
     def primFloat32(): Parser[Float32] =
         bind(floatString(), v1 -> match Float32.fromString(v1) {

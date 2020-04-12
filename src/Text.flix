@@ -15,8 +15,11 @@
  */
 
 use TextParser.Parser;
-use TextParser.Parser.Parser;
-use TextParser.{map, return, bind, alt, satisfy, lookahead, makeParseError, nestError, restOfInput, horizon};
+use TextParser.Parser.{Parser};
+use TextParser.Scanner;
+use TextParser.Scanner.{Scanner};
+
+use TextParser.{map, return, bind, applyScanner, alt, satisfy, lookahead, makeParseError, nestError, restOfInput, horizon};
 use TextParser/Combinators.{optional, manyTill, manyTillWith, 
         skipMany, manyTill2, many1Till, many, many1, seqLeft, seqRight};
 
@@ -60,8 +63,14 @@ namespace TextParser/Text {
 
     pub def letter(): Parser[Char] = satisfy(Char.isLetter)
 
-    pub def letters(): Parser[String] = 
-        many1(letter()) |> TextParser.map(List.toString)
+
+    pub def letters(): Parser[String] =
+        import flix.runtime.textparser.PrimitiveScanners:manyAlphabetic(String, Int32);
+            Scanner((inp,pos) -> 
+                let ans = manyAlphabetic(inp, pos) as & Pure;
+                Ok(ans)
+            ) |> applyScanner
+
 
     pub def alphaNum(): Parser[Char] = alt(letter(), digit())
 
@@ -98,15 +107,22 @@ namespace TextParser/Text {
     /// Parser any characaters before the end of line (or end of input).
     ///
     pub def restOfLine(consumeEol: Bool): Parser[String] = 
-        let endp = TextParser.alt(newline1(consumeEol), TextParser.endOfInput());
-        manyCharsTill(anyChar(), endp)
+        import flix.runtime.textparser.PrimitiveScanners:restOfLine(Bool, String, Int32);
+        Scanner((inp,pos) -> 
+            let ans = restOfLine(consumeEol, inp, pos) as & Pure;
+            if (consumeEol == false)
+                Ok(ans)
+            else {
+                // Must consume something if consumeEol is true
+                if (String.length(ans) == 0) 
+                    Err("restOfLine")
+                else
+                    Ok(ans)
+            } 
 
-    def newline1(consumeEol: Bool): Parser[Unit] = 
-        if (consumeEol) 
-            newline() 
-        else 
-            lookahead(newline())
+        ) |> applyScanner
 
+    
     ///
     /// Either at end-of-input or only whitespace remaining before end-of-input.
     /// 
