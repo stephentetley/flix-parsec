@@ -43,6 +43,14 @@ namespace TextParser/Text {
     pub def char(c: Char): Parser[Char] = 
         satisfy(ch -> ch == c) |> nestError("char")
 
+    pub def string(needle: String): Parser[String] = 
+        import flix.runtime.textparser.PrimitiveScanners:exactString(String, String, Int32);
+        Scanner((inp,pos) -> 
+            let ans = exactString(needle, inp, pos) as & Pure;
+            Ok(ans)
+        ) |> applyScanner
+
+
     ///
     /// Byte order mark '\ufeff'
     ///
@@ -66,10 +74,10 @@ namespace TextParser/Text {
 
     pub def letters(): Parser[String] =
         import flix.runtime.textparser.PrimitiveScanners:manyAlphabetic(String, Int32);
-            Scanner((inp,pos) -> 
-                let ans = manyAlphabetic(inp, pos) as & Pure;
-                Ok(ans)
-            ) |> applyScanner
+        Scanner((inp,pos) -> 
+            let ans = manyAlphabetic(inp, pos) as & Pure;
+            Ok(ans)
+        ) |> applyScanner
 
 
     pub def alphaNum(): Parser[Char] = alt(letter(), digit())

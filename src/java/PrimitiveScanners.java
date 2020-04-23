@@ -161,4 +161,11 @@ public class PrimitiveScanners {
         return pos;
     }
 
+    public static String exactString(String needle, String src, int offset) {
+        int pos = offset;
+        if (src.startsWith(needle, offset)) {
+            pos += needle.length();
+        }
+        return src.substring(offset, pos);
+    }
 }
