@@ -41,7 +41,7 @@ def test01(): Unit & Impure =
 
 // Note - takes > 5 minutes, stoppped execution.
 @test
-def test02(): Unit & Impure = 
+def test02Bad(): Unit & Impure = 
     runTests("e:\coding\flix\text-parser\testdata\flix_dir.txt")
 
 @test

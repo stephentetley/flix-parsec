@@ -58,7 +58,7 @@ namespace TextParser {
         let seen = err.justseen + "***";
         let todo = "***" + err.pending;
         let msg = errorMessage(err.messages);
-        String.unlines([h1, msg, seen, todo]) as & Pure
+        String.unlines(h1 :: msg :: seen :: todo :: Nil)
 
     def errorMessage(stk: List[String]): String = match stk {
             case Nil => "*error*"

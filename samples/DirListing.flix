@@ -23,8 +23,7 @@
 use TextParser.Parser;
 use TextParser.{return, nestError, alt};
 use TextParser/Combinators.{seqLeft, seqRight, count, many, many1, manyTill, ignore, tuple2};
-use TextParser/Char.{char, lower, oneOf, newline, byteOrderMark};
-use TextParser/Text.{restOfLine, many1Chars};
+use TextParser/Text.{char, lower, oneOf, newline, byteOrderMark, restOfLine, many1Chars};
 use TextParser/Token.{symbol, int32, int64};
 
 type alias TimeStamp = { day: Int32, month: Int32, year: Int32, hour: Int32, minute: Int32 }
@@ -54,11 +53,11 @@ namespace DirListing {
 
     def toStringHelper(x: DirListingFolder): String & Impure = 
         let sb = StringBuilder.new();
-        StringBuilder.appendLine(sb, "");
-        StringBuilder.appendLine(sb, "Directory: " + x.path);
-        StringBuilder.appendInt32(sb, List.length(x.contents));
-        StringBuilder.appendLine(sb, " items");
-        List.foldLeft((_,x1) -> StringBuilder.appendLine(sb, dirListingLineToString(x1)), (), x.contents);
+        StringBuilder.appendLine!(sb, "");
+        StringBuilder.appendLine!(sb, "Directory: " + x.path);
+        StringBuilder.appendInt32!(sb, List.length(x.contents));
+        StringBuilder.appendLine!(sb, " items");
+        List.foldLeft((_,x1) -> StringBuilder.appendLine!(sb, dirListingLineToString(x1)), (), x.contents);
         StringBuilder.toString(sb)
 
     pub def printTimeStamp(ts: TimeStamp): String = 
@@ -177,7 +176,7 @@ namespace DirListing {
 
 
     pub def parseDirListing(path: String): Result[List[DirListingFolder], TextParser.ParseError] & Impure = 
-        let path1 = FilePath.new(path);
-        TextParser.parseFile(DirListing.directoryListing(), path1, Charset.utf_16le())
+        let path1 = System/FilePath.new(path);
+        TextParser.parseFile(DirListing.directoryListing(), path1, System/Charset.utf_16le())
             
 }

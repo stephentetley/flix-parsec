@@ -1,8 +1,7 @@
 use TextParser.ParseError;
 use TextParser.{runs, return};
 use TextParser/Combinators.{pipe3, seqLeft, seqRight, many1};
-use TextParser/Char.{byteOrderMark};
-use TextParser/Text.{restOfLine, restOfInput};
+use TextParser/Text.{byteOrderMark, restOfLine, restOfInput};
 
 @test
 def ukTimeStamp01(): Result[String, String] = 
@@ -27,11 +26,6 @@ pub def mapError(f: e -> e1, a: Result[a,e]): Result[a,e1] =
 def exists01(): Result[Bool,String] & Impure = 
     let path = Path.new(src());
     Path.exists(path) |> mapError(_ -> "io error")
-
-@test
-def parseLines01(): Result[List[String], ParseError] & Impure = 
-    let path = Path.new(src());
-    TextParser.parseLines(restOfInput(), path)
 
 @test
 def readLines01(): Result[List[String], String] & Impure = 
@@ -69,67 +63,31 @@ def parseFile01(): Unit & Impure =
         }
     } 
 
-@test
-def parseFile01a(): Result[DirListingFolder, ParseError] & Impure = 
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    let p1 = pipe3(
-        byteOrderMark(),
-        DirListing.blankLines1(),
-        DirListing.dirListingFolder(),
-        (_,_,z) -> z
-    );
-    TextParser.parseFile(p1, path, Charset.utf_16le())
-
-@test
-def parseFile01b(): Result[String, ParseError] & Impure = 
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    let p1 = pipe3(
-        byteOrderMark(),
-        DirListing.blankLines1(),
-        restOfLine(true),
-        (_,_,z) -> z
-    );
-    TextParser.parseFile(p1, path, Charset.utf_16le())
-
-
-@test
-def parseFile01c(): Result[String, ParseError] & Impure = 
-    use TextParser.flatMap;
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    let p1 = {
-        let* _ = byteOrderMark();
-        let* _ = restOfLine(true);
-        let* _ = restOfLine(true);
-        let* a = restOfLine(true);
-        return(a)
-    };
-    TextParser.parseFile(p1, path, Charset.utf_16le())
-
 
 
 @test
 def fileLength01(): Result[Int32, String] & Impure =  
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    File.readFile(path, Charset.utf_16le()) 
+    let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    System/File.readFile(path, System/Charset.utf_16le()) 
         |> Result.map(s -> String.length(s))
 
 @test
 def fileChar01(): Result[Bool, String] & Impure =  
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    File.readFile(path, Charset.utf_16le()) 
+    let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    System/File.readFile(path, System/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(1, s) == '\r')
 
 @test
 def fileChar02(): Result[Bool, String] & Impure =  
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    File.readFile(path, Charset.utf_16le()) 
+    let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    System/File.readFile(path, System/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(0, s) == '\ufeff')
 
 
 @test
 def fileChar03(): Result[Char, String] & Impure =  
-    let path = FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    File.readFile(path, Charset.utf_16le()) 
+    let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
+    System/File.readFile(path, System/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(9, s))
 
 
@@ -141,7 +99,7 @@ def directoryDirective01(): Result[String, String] =
 
 def makeString(xs: List[String]): String & Impure = 
     let sb = StringBuilder.new();
-    List.foldLeft((_,s) -> StringBuilder.appendLine(sb, s), (), xs);
+    List.foldLeft((_,s) -> StringBuilder.appendLine!(sb, s), (), xs);
     StringBuilder.toString(sb)
 
 @test
