@@ -223,7 +223,10 @@ namespace TextParser {
         bindFS(p, e -> failure(nestErrorMessage(msg, e)), return)
         
 
-
+    pub def liftResult(x: Result[a, String]): Parser[a] = match x {
+        case Err(s) => throwError(s)
+        case Ok(a) => return(a)
+    }
     
     /// 
     /// If parser `p` fails try parser `q`.
