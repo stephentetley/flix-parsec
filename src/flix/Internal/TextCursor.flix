@@ -41,7 +41,13 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.setPos(Int32);
         let TextCursor(x1) = x;
         x1.setPos(n)
-    
+
+    pub def getInput(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.getInput();
+        let TextCursor(x1) = x;
+        x1.getInput()
+
+
     pub def literal(x: TextCursor, s: String): Result[String, PrimError] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.literalX(String);
         let TextCursor(x1) = x;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package flix.runtime.textparser;
+package flix.runtime.spt.textparser;
 
 import java.lang.String;
 

@@ -37,6 +37,10 @@ public class TextCursor {
         pos = x;
     }
 
+    public String getInput() {
+        return input;
+    }
+
     public void skipWhiteSpace() {
         int len = input.length();
         while (pos < len && Character.isWhitespace(input.charAt(pos))) {

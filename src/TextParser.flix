@@ -173,6 +173,7 @@ namespace TextParser {
                 case Ok(pos1) => POk((), pos1)
             }            
         )
+
     ///
     /// Alias for `parseString`.
     ///
@@ -194,7 +195,7 @@ namespace TextParser {
             case Ok(a) => Ok(a) 
         }
 
-    pub def parseFile(parser: Parser[a], path: System.FilePath, cs: System.Charset): Result[a, ParseError] & Impure = 
+    pub def parseFile(parser: Parser[a], path: System.FilePath, cs: Text.Charset): Result[a, ParseError] & Impure = 
         match System/File.readFile(path, cs) {
             case Err(_) => Err(makeParseError(makeInput(""), 0, "io error"))
             case Ok(text) => run(parser, text)

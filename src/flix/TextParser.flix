@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-use TextParser/Error.{ParseError};
+use TextParser/Error.{ParseError, PrimError};
 use TextParser/Internal.{TextCursor};
 
 namespace TextParser {
 
     type alias ParseResult[a] = Result[a, ParseError]
+
+    type alias Config = { tabsize: Int32 }
         
+    def defaultConfig(): Config = { tabsize = 4 }
     
     /// TODO - We could have an env with tabsize and a function trailing: Char -> Bool
     pub enum Parser[ans] {
-        case Parser(TextCursor -> ParseResult[ans])
+        case Parser((Config, TextCursor) -> ParseResult[ans] & Impure)
     }
 
     ///
@@ -38,7 +41,7 @@ namespace TextParser {
     pub def parseStringHelper(parser: Parser[a], input: String): Result[a, ParseError] & Impure = 
         let Parser(f) = parser;
         let cursor = TextParser/Internal/TextCursor.new(input);
-        f(cursor)
+        f(defaultConfig(), cursor)
 
     ///
     /// Simplified version of `run`. On failure the ParseError is converted to a string.
@@ -49,24 +52,31 @@ namespace TextParser {
             case Ok(a) => Ok(a) 
         }
 
-    pub def return(x: a): Parser[a] = Parser(_ -> Ok(x))
+    pub def parseFile(parser: Parser[a], path: System.FilePath, cs: Text.Charset): Result[a, ParseError] & Impure = 
+        match System/File.readFile(path, cs) {
+            case Err(_) => Err(TextParser/Error.makeParseError("", 0, 0, "IO Error"))
+            case Ok(text) => run(parser, text)
+        }
+
+
+    pub def return(x: a): Parser[a] = Parser((_,_) -> Ok(x) as & Impure)
 
     pub def map(f: a -> b, p: Parser[a]): Parser[a] =
-        Parser(s -> 
+        Parser((r,s) -> 
             let Parser(p1) = p;
-            match p1(s) {
+            match p1(r, s) {
                 case Ok(a) => Ok(f(a))
                 case Err(e) => Err(e)
             }
         )
     
     pub def ap(pf: Parser[a -> b], p: Parser[a]): Parser[b] =
-        Parser(s -> 
+        Parser((r,s) -> 
             let Parser(pf1) = pf;
-            match pf1(s) {
+            match pf1(r,s) {
                 case Ok(f) => { 
                     let Parser(p1) = p;
-                    match p1(s) { 
+                    match p1(r,s) { 
                         case Ok(a) => Ok(f(a))
                         case Err(e) => Err(e)
                     }
@@ -76,12 +86,12 @@ namespace TextParser {
         )
  
     pub def bind(p: Parser[a], k: a -> Parser[b]): Parser[b] =
-        Parser(s -> 
+        Parser((r,s) -> 
             let Parser(p1) = p;
-            match p1(s) {
+            match p1(r,s) {
                 case Ok(a) => { 
                     let Parser(p2) = k(a);
-                    p2(s)
+                    p2(r,s)
                 }
                 case Err(e) => Err(e)
             }
@@ -89,6 +99,110 @@ namespace TextParser {
  
     pub def flatMap(k: a -> Parser[b], p: Parser[a]): Parser[b] = bind(p, k)
         
- 
+    ///
+    /// Throw a parse error. 
+    /// 
+    /// Note errors are collected in a stack, `throwError` discards any current error stack.
+    /// Users should prefer `nestError` for exploratory development.
+    /// 
+    pub def parseError(msg: String): Parser[ans] = 
+        use TextParser/Internal/TextCursor.{getPos, getInput};
+        use TextParser/Error.{makeParseError};
+        Parser((r,s) -> 
+            let tabsize = r.tabsize;
+            let pos = s.getPos();
+            let inp = s.getInput();
+            Err(makeParseError(inp, tabsize, pos, msg))
+        )
+
+    pub def swapError(msg: String, p: Parser[ans]): Parser[ans] = 
+        use TextParser/Error.{swapErrorMessage};
+        Parser((r,s) -> 
+            let Parser(p1) = p;
+            match p1(r,s) { 
+                case Ok(a) => Ok(a)
+                case Err(e) => Err(swapErrorMessage(msg, e))
+            }
+        )
+
+    pub def nestError(msg: String, p: Parser[ans]): Parser[ans] = 
+        use TextParser/Error.{nestErrorMessage};
+        Parser((r,s) -> 
+            let Parser(p1) = p;
+            match p1(r,s) { 
+                case Ok(a) => Ok(a)
+                case Err(e) => Err(nestErrorMessage(msg, e))
+            }
+        )
+
+    /// 
+    /// If parser `p` fails try parser `q`.
+    ///
+    pub def alt(p: Parser[ans], q: Parser[ans]): Parser[ans] =
+        use TextParser/Internal/TextCursor.{setPos, getPos, getInput};
+        use TextParser/Error.{makeParseError};
+        Parser((r,s) -> 
+            let start = s.getPos();
+            let Parser(p1) = p;
+            match p1(r,s) { 
+                case Ok(a) => Ok(a)
+                case Err(_) => { 
+                    s.setPos(start);
+                    let Parser(q1) = q;
+                    match q1(r,s) {
+                        case Ok(b) => Ok(b)
+                        case Err(_) => {
+                            /// TODO need a strategy to show alternatives...
+                            let tabsize = r.tabsize;
+                            let pos = s.getPos();
+                            let inp = s.getInput();
+                            Err(makeParseError(inp, tabsize, pos, "alt"))
+                        }
+                    }
+                }
+            }
+        )
+
+
+    ///
+    /// lookahead - run the parser but don't consume input on success
+    /// On fail, fail.
+    /// 
+    pub def lookahead(p: Parser[a]): Parser[a] =
+        use TextParser/Internal/TextCursor.{setPos, getPos};
+        use TextParser/Error.{nestErrorMessage};
+        Parser((r,s) -> {
+            let Parser(p1) = p;
+            let start = s.getPos();            
+            match p1(r,s) { 
+                case Err(e) => Err(nestErrorMessage("lookahead", e))
+                case Ok(a) => { 
+                    s.setPos(start); 
+                    Ok(a) 
+                }
+            }
+        })
+
+    pub def liftPrim(f: TextCursor -> a & Impure): Parser[a] = 
+        Parser((_,s) -> 
+            let a = f(s);
+            Ok(a)
+        )
+
+   pub def liftPrimResult(f: TextCursor -> Result[a, PrimError] & Impure): Parser[a] =       
+        use TextParser/Internal/TextCursor.{setPos, getPos, getInput};
+        use TextParser/Error.{makeParseError, showPrimError};
+        Parser((r,s) -> 
+            match f(s) {
+                case Ok(a) => Ok(a)
+                case Err(e) => {
+                    let tabsize = r.tabsize;
+                    let pos = s.getPos();
+                    let inp = s.getInput();
+                    Err(makeParseError(inp, tabsize, pos, showPrimError(e)))
+                }
+            }
+        )
+
 
 }
