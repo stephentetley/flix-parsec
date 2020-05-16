@@ -61,6 +61,10 @@ namespace TextParser {
 
     pub def return(x: a): Parser[a] = Parser((_,_) -> Ok(x) as & Impure)
 
+    pub def fail(msg: String): Parser[ans] = parseError(msg)
+
+    pub def failure(e: ParseError) : Parser[ans] = Parser((_, _) -> Err(e) as & Impure)
+
     pub def map(f: a -> b, p: Parser[a]): Parser[a] =
         Parser((r,s) -> 
             let Parser(p1) = p;
@@ -182,6 +186,56 @@ namespace TextParser {
                 }
             }
         })
+
+    pub def option(one: ans, p: Parser[a]): Parser[a] = 
+        use TextParser/Internal/TextCursor.{setPos, getPos};
+        use TextParser/Error.{nestErrorMessage};
+        Parser((r,s) -> {
+            let Parser(p1) = p;
+            let start = s.getPos();            
+            match p1(r,s) { 
+                case Err(_) => { 
+                    s.setPos(start); 
+                    Ok(one)
+                } 
+                case Ok(a) => Ok(a)
+            }
+        })
+        
+    pub def optional(p: Parser[a]): Parser[Option[a]] = 
+        use TextParser/Internal/TextCursor.{setPos, getPos};
+        use TextParser/Error.{nestErrorMessage};
+        Parser((r,s) -> {
+            let Parser(p1) = p;
+            let start = s.getPos();            
+            match p1(r,s) { 
+                case Err(_) => { 
+                    s.setPos(start); 
+                    Ok(None)
+                } 
+                case Ok(a) => Ok(Some(a))
+            }
+        })
+    
+    /// Resets start position before failue continuation is run...
+    pub def bindEither(p: Parser[a], fk: ParseError -> Parser[b], sk: a -> Parser[b]): Parser[b] = 
+        use TextParser/Internal/TextCursor.{setPos, getPos};
+        Parser((r,s) -> {
+            let Parser(p1) = p;
+            let start = s.getPos();            
+            match p1(r,s) { 
+                case Err(e) => { 
+                    s.setPos(start); 
+                    let Parser(fk1) = fk(e);
+                    fk1(r,s)
+                } 
+                case Ok(a) => {
+                    let Parser(sk1) = sk(a);
+                    sk1(r,s)
+                }
+            }
+        })
+
 
     pub def liftPrim(f: TextCursor -> a & Impure): Parser[a] = 
         Parser((_,s) -> 
