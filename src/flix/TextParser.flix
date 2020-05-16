@@ -19,14 +19,6 @@
 namespace TextParser {
 
 
-    pub enum Error { 
-        case IOError,
-        case IllegalArgumentException,
-        case IllegalStateException,
-        case InputMismatchException, 
-        case NoSuchElementException,
-        case PatternSyntaxException,
-        case Generic(String)
-    }
+    
 
 }
