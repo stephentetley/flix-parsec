@@ -69,7 +69,7 @@ namespace TextParser {
         Parser((r,s) -> 
             let Parser(p1) = p;
             match p1(r, s) {
-                case Ok(a) => Ok(f(a))
+                case Ok(a) => { let b = f(a); Ok(b) }
                 case Err(e) => Err(e)
             }
         )
@@ -267,5 +267,16 @@ namespace TextParser {
             }
         )
 
+    /// 
+    /// `endOfInput` succeeds if all the input has been parsed.
+    ///
+    pub def endOfInput() : Parser[Unit] = 
+        use TextParser/Internal/TextCursor.{isEof};
+        Parser((r,s) -> 
+            if (isEof(s)) 
+                Ok()
+            else 
+                Err(applyParseError("endOfInput", r, s))
+        )
 
 }

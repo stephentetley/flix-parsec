@@ -56,7 +56,7 @@ def parseFile01(): Unit & Impure =
     let path = "e:\coding\flix\text-parser\testdata\dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser.showParserError(e))
+        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)
@@ -68,26 +68,26 @@ def parseFile01(): Unit & Impure =
 @test
 def fileLength01(): Result[Int32, String] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    System/File.readFile(path, System/Charset.utf_16le()) 
+    System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.length(s))
 
 @test
 def fileChar01(): Result[Bool, String] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    System/File.readFile(path, System/Charset.utf_16le()) 
+    System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(1, s) == '\r')
 
 @test
 def fileChar02(): Result[Bool, String] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    System/File.readFile(path, System/Charset.utf_16le()) 
+    System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(0, s) == '\ufeff')
 
 
 @test
 def fileChar03(): Result[Char, String] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
-    System/File.readFile(path, System/Charset.utf_16le()) 
+    System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(9, s))
 
 
@@ -144,7 +144,7 @@ def parseFile02(): Unit & Impure =
     let path = "e:\coding\flix\text-parser\testdata\long_names_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser.showParserError(e))
+        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)
@@ -157,7 +157,7 @@ def temp01(): Unit & Impure =
     let path = "e:\coding\flix\text-parser\testdata\flix_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser.showParserError(e))
+        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)
@@ -169,7 +169,7 @@ def temp02(): Unit & Impure =
     let path = "G:\work\Projects\edm2\prep-for-edms_feb2020\cso_sps_dir.txt";
     let write1 = Console.printLine << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser.showParserError(e))
+        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => Console.printLine("empty results")
             case _ => List.foreach(write1, xs)

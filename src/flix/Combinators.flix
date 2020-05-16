@@ -86,8 +86,10 @@ namespace TextParser/Combinators {
         }
 
     pub def ignore(p: Parser[a]): Parser[Unit] = 
-        map(_ -> (), p)
-
+        use TextParser.flatMap;
+        let* _ = p;
+        return()
+        
     pub def between(open: Parser[z1], close: Parser[z2], p: Parser[a]): Parser[a] = 
         use TextParser.flatMap;
         let* _ = open;

@@ -23,7 +23,7 @@
 use TextParser.Parser;
 use TextParser.{return, nestError, alt};
 use TextParser/Combinators.{seqLeft, seqRight, count, many, many1, manyTill, ignore, tuple2};
-use TextParser/Text.{char, lower, oneOf, newline, byteOrderMark, restOfLine, many1Chars};
+use TextParser/Text.{char, countChar, restOfLine, lookingAts, newline, many1OneOf};
 use TextParser/Token.{symbol, int32, int64};
 
 type alias TimeStamp = { day: Int32, month: Int32, year: Int32, hour: Int32, minute: Int32 }
@@ -63,6 +63,12 @@ namespace DirListing {
     pub def printTimeStamp(ts: TimeStamp): String = 
         "${ Int32.toString(ts.day)}/${Int32.toString(ts.month)}/${ Int32.toString(ts.year)} ${ Int32.toString(ts.hour)}:${Int32.toString(ts.minute)}"
 
+
+    ///
+    /// Byte order mark '\ufeff'
+    ///
+    pub def byteOrderMark(): Parser[Char] = char('\ufeff')
+
     pub def pUkTimeStamp(): Parser[TimeStamp] = 
         use TextParser.flatMap;
         let* dy  = seqLeft(int32(), char('/'));
@@ -81,39 +87,37 @@ namespace DirListing {
     /// Note - Windows Dir Listing can run to muliple lines
     pub def multilineName(offset: Int32): Parser[String] = 
         use TextParser.flatMap;        
-        let lineCont = 
-            seqRight(
-                count(offset, char(' ')),
-                restOfLine(true)
-            );
+        let lineCont = () -> {
+            let* _ = countChar(offset, ' ');
+            restOfLine(true)
+        };
         let* x = restOfLine(true);
-        let* xs = many(lineCont);
+        let* xs = many(lineCont());
         let ans = List.foldLeft((ss,s) -> ss + s, x, xs) |> String.trim;
         return(ans) |> nestError("multilineName") 
 
     def pFile(mode: Mode): Parser[DirListingLine] = 
         use TextParser.flatMap;
-        let* stats = TextParser.bounded(fileStats(), 36);
+        let* stats = TextParser.bounded(36, fileStats());
         let* name = multilineName(49);
         let (timestamp, size) = stats; 
         return(FileLine(name, mode, timestamp, size))
 
     def pFolder(mode: Mode): Parser[DirListingLine] = 
         use TextParser.flatMap;
-        let* timestamp = TextParser.bounded(pUkTimeStamp(), 36);
+        let* timestamp = TextParser.bounded(36, pUkTimeStamp());
         let* name = multilineName(49);
         return(FolderLine(name, mode, timestamp))
 
-    pub def ignoreLine(): Parser[Option[a]] = 
-        TextParser.map(_ -> None, restOfLine(true))
+    // pub def ignoreLine(): Parser[Option[a]] = 
+    //     TextParser.map(_ -> None, restOfLine(true))
 
     def mode1() : Parser[Mode] = 
-        TextParser.map(
-            x -> Mode(x),
-            many1Chars(alt(lower(), char('-'))) 
-        )
+        use TextParser.flatMap;
+        let* s = lookingAts("(\-|\p{Lower}){d}");
+        return(Mode(s))
     
-    def pMode() : Parser[Mode] = TextParser.bounded(mode1(), 13)
+    def pMode() : Parser[Mode] = TextParser.bounded(13, mode1())
 
     pub def isDirectory (mode: Mode) : Bool = 
         let Mode(str) = mode;
@@ -143,11 +147,11 @@ namespace DirListing {
         let* _ = symbol("LastWriteTime");
         let* _ = symbol("Length");
         let* _ = symbol("Name");
-        return(())
+        return()
         
     pub def directoryHeadings(): Parser[Unit] = 
         use TextParser.flatMap;
-        let underline = many1Chars(oneOf(' ' ::  '-' :: Nil));
+        let underline = many1OneOf(' ' ::  '-' :: Nil);
         let* _ = directoryHeadings1();
         let* _ = underline;
         let* _ = newline();
@@ -175,8 +179,8 @@ namespace DirListing {
             |> nestError("directoryListing")
 
 
-    pub def parseDirListing(path: String): Result[List[DirListingFolder], TextParser.ParseError] & Impure = 
+    pub def parseDirListing(path: String): Result[List[DirListingFolder], TextParser/Error.ParseError] & Impure = 
         let path1 = System/FilePath.new(path);
-        TextParser.parseFile(DirListing.directoryListing(), path1, System/Charset.utf_16le())
+        TextParser.parseFile(DirListing.directoryListing(), path1, Text/Charset.utf_16le())
             
 }
