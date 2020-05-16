@@ -16,10 +16,10 @@
 
 
 
-namespace TextParser {
+namespace TextParser/Error {
 
 
-    pub enum Error { 
+    pub enum PrimError { 
         case IOError,
         case IllegalArgumentException,
         case IllegalStateException,

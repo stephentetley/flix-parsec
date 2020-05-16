@@ -15,8 +15,9 @@
  */
 use TextParser/Internal.{TextCursor};
 use TextParser/Internal.TextCursor.{TextCursor};
-use TextParser.Error.{IllegalArgumentException, IllegalStateException, InputMismatchException, 
-                        NoSuchElementException, PatternSyntaxException};
+use TextParser/Error.{PrimError};
+use TextParser/Error.PrimError.{IllegalArgumentException, IllegalStateException, InputMismatchException, 
+                                NoSuchElementException, PatternSyntaxException};
 
 namespace TextParser/Internal {
 
@@ -41,7 +42,7 @@ namespace TextParser/Internal/TextCursor {
         let TextCursor(x1) = x;
         x1.setPos(n)
     
-    pub def literal(x: TextCursor, s: String): Result[String, TextParser.Error] & Impure = 
+    pub def literal(x: TextCursor, s: String): Result[String, PrimError] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.literalX(String);
         let TextCursor(x1) = x;
         let ans = x1.literalX(s);
