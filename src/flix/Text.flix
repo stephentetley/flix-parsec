@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 use TextParser.Parser;
 use TextParser.{liftPrim, liftPrimResult, fail, return};
 use TextParser/Combinators.{ignore};
@@ -50,6 +51,12 @@ namespace TextParser/Text {
     pub def string(s: String): Parser[String] = 
         liftPrimResult(TextParser/Internal/TextCursor.string(s))
     
+    pub def char(c: Char): Parser[Char] = 
+        liftPrimResult(TextParser/Internal/TextCursor.char(c))
+
+    pub def anyChar(): Parser[Char] = 
+        liftPrimResult(TextParser/Internal/TextCursor.anyChar)
+
     pub def manyChar(c: Char): Parser[String] = 
         liftPrim(TextParser/Internal/TextCursor.manyChar(c))
 
@@ -152,7 +159,18 @@ namespace TextParser/Text {
 
     pub def lookingAt(patt: Regex.Pattern): Parser[String] = 
         liftPrimResult(TextParser/Internal/TextCursor.lookingAt(patt))
-        
+
+    pub def compilePattern(regex: String): Parser[Regex.Pattern] = 
+        match Regex/Pattern.compile(regex) {
+            case Ok(patt) => return(patt)
+            case Err(_) => fail("PatternSyntaxException")
+        }
+
+    pub def newline(): Parser[Unit] = 
+        use TextParser.flatMap;
+        let* patt = compilePattern("\R");
+        let* _ = lookingAt(patt);
+        return()
 
     pub def charsTillString(needle: String): Parser[String] = 
         liftPrim(TextParser/Internal/TextCursor.charsTillString(needle))

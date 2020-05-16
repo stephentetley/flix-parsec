@@ -44,12 +44,17 @@ namespace TextParser/Combinators {
 
 
     def countWithHelper(append: (a, ac) -> ac, zero: ac, ntimes: Int32, p: Parser[a], k: ac -> Parser[ac]): Parser[ac] = 
+        use TextParser.flatMap;
         if (ntimes <= 0)
             k(zero)
         else 
-            bindEither(p
-                , failure
-                , x -> countWithHelper(append, zero, ntimes - 1, p,  ac -> { let ac1 = append(x, ac); k(ac1) })
+            let* a = bindEither(p, failure, return);
+            countWithHelper(
+                append, 
+                zero, 
+                ntimes +1, 
+                p, 
+                ac -> { let ac1 = append(a,ac); k(ac1) }
             )
 
     pub def count(n: Int32, p: Parser[a]): Parser[List[a]] = 
@@ -80,14 +85,22 @@ namespace TextParser/Combinators {
 
 
     pub def manyWith(append: (a,ac) -> ac, zero: ac, p: Parser[a]): Parser[ac] = 
-        manyWithHelper(append, zero, p, _ -> return(Nil), return) 
+        manyWithHelper(append, zero, p, return) 
 
 
-    def manyWithHelper(append: (a, ac) -> ac, zero: ac, p: Parser[a], fk: Unit -> Parser[ac], sk: ac -> Parser[ac]): Parser[ac] = 
-        bindEither( p
-            , _ -> fk()
-            , x -> manyWithHelper(append, zero, p, fk, xs -> sk(x :: xs))
-        )
+    def manyWithHelper(append: (a, ac) -> ac, zero: ac, p: Parser[a], k: ac -> Parser[ac]): Parser[ac] = 
+        use TextParser.flatMap;
+        let* ans = optional(p);
+        match ans { 
+            case None => k(zero)
+            case Some(a) => 
+                manyWithHelper(
+                    append, 
+                    zero, 
+                    p, 
+                    ac -> { let ac1 = append(a, ac); k(ac1) }
+                )
+        }
 
     pub def many(p: Parser[a]): Parser[List[a]] = 
         manyWith((x,xs) -> x :: xs, Nil, p)
@@ -145,11 +158,11 @@ namespace TextParser/Combinators {
     pub def sepByWith(append: (a,ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep]): Parser[ac] = 
         sepByWithHelper(append, zero, p, sep, return) |> nestError("sepByWith")
 
-    def sepByWithHelper(append: (a, ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep], cont: ac -> Parser[ac]): Parser[ac] = 
+    def sepByWithHelper(append: (a, ac) -> ac, zero: ac, p: Parser[a], sep: Parser[sep], k: ac -> Parser[ac]): Parser[ac] = 
         use TextParser.flatMap;
         let* ans = optional(p);
         match ans { 
-            case None => cont(zero)
+            case None => k(zero)
             case Some(a) => {
                 let* ac = manyWith(append, zero, seqRight(sep, p));
                 let ac1 = append(a,ac);

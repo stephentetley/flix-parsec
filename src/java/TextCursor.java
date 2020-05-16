@@ -80,6 +80,27 @@ public class TextCursor {
         }
     }
 
+    /// TODO Bounds checking...
+    public boolean charX(char c) {
+        char c1 = input.charAt(pos);
+        if (c1 == c) {
+            pos = pos + 1;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public String anyCharX() {
+        if (pos < input.length()) {
+            String c1 = input.substring(pos, pos+1);
+            pos++;
+            return c1;
+        } else {
+            return null;
+        }
+    }
+
     public String manyChar(char c) {
         int start = pos;
         int len = input.length();

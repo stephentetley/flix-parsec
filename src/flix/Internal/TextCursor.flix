@@ -57,6 +57,26 @@ namespace TextParser/Internal/TextCursor {
         else 
             Ok(ans)
 
+    pub def char(c: Char, x: TextCursor): Result[Char, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.charX(Char);
+        let TextCursor(x1) = x;
+        let ans = x1.charX(c);
+        if (!ans) 
+            Err(InputMismatchException)
+        else 
+            Ok(c)
+
+    pub def anyChar(x: TextCursor): Result[Char, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.anyCharX();
+        let TextCursor(x1) = x;
+        let str = x1.anyCharX();
+        if (isNull(str)) 
+            Err(InputMismatchException)
+        else {
+            let c = String.charAt(0, str);
+            Ok(c)
+        }
+
     pub def skipWhiteSpace(x: TextCursor): Unit & Impure = 
         import flix.runtime.spt.textparser.TextCursor.skipWhiteSpace();
         let TextCursor(x1) = x;

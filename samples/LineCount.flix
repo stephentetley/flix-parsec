@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-use TextParser/Internal.timeOperation;
 use TextParser.Parser;
 use TextParser.{runs, return, map};
 
 /// Very simple parser to count lines.
 
 namespace LineCount {
+
+
+    pub def timeOperation(thunk: Unit -> a & e): (Int64, a) & Impure = 
+        import java.lang.System:nanoTime();
+        let t0 = nanoTime();
+        let a = thunk() as & Impure;
+        let t1 = nanoTime();
+        (t1 - t0, a)
 
     pub def runLineCounter(header: String, counter: String -> Int32 & e, s: String): Unit & Impure =         
         let (nt, a) = timeOperation(_ -> counter(s)) as & Impure;
@@ -52,7 +59,7 @@ namespace LineCount {
         use TextParser/Combinators.ntimes; 
         ntimes(parseLine2())
 
-    def parseLine2(): Parser[Unit] =
+    pub def parseLine2(): Parser[Unit] =
         use TextParser/Combinators.skipManyTill; 
         use TextParser/Text.{anyChar, newline};
         skipManyTill(anyChar(), newline())
@@ -68,9 +75,10 @@ namespace LineCount {
         ntimes(parseLine3())
 
     def parseLine3(): Parser[Unit] =
+        use TextParser.flatMap;
         use TextParser/Text.restOfLine; 
-        use TextParser/Combinators.ignore; 
-        restOfLine(true) |> ignore
+        let* _ = restOfLine(true);
+        return()
 
     
 }
