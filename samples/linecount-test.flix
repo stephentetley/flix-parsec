@@ -53,19 +53,5 @@ def test02b(): Unit & Impure =
     runlineCount03("e:\coding\flix\text-parser\testdata\flix_dir.txt")
 
 
-pub def span(ix: Int32, test: Char -> Bool, src: String): Int32 = 
-    spanHelper(test, src, String.length(src) - 1, ix)
-
-/// TODO - CPS transform
-def spanHelper(test: Char -> Bool, src: String, end: Int32, ix: Int32): Int32 = 
-    if (ix > end)
-        ix
-    else 
-        if (test(String.charAt(ix, src)) == false) 
-            ix
-        else 
-            spanHelper(test, src, end, ix+1)
-
-/// can we do say scanDigits without recursion in Flix?
 
 

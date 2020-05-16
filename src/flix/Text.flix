@@ -194,4 +194,6 @@ namespace TextParser/Text {
         let* _ = liftPrim(TextParser/Internal/TextCursor.skipRestOfLine(consumeEol));
         return()
 
+    pub def isEof(): Parser[Bool] = 
+        liftPrim(TextParser/Internal/TextCursor.isEof)
 }

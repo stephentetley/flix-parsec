@@ -15,7 +15,7 @@
  */
 
 use TextParser.Parser;
-use TextParser.{runs, return, map};
+use TextParser.{runs, return, fail, map};
 
 /// Very simple parser to count lines.
 
@@ -72,13 +72,18 @@ namespace LineCount {
 
     pub def lc03(): Parser[Int32] = 
         use TextParser/Combinators.ntimes; 
-        ntimes(parseLine3())
+        TextParser.map(x -> x + 1, ntimes(parseLine3()))
 
     def parseLine3(): Parser[Unit] =
         use TextParser.flatMap;
-        use TextParser/Text.restOfLine; 
-        let* _ = restOfLine(true);
-        return()
-
+        use TextParser/Text.{isEof, restOfLine};
+        let* end = isEof();
+        if (end)
+            fail("eof")
+        else {
+            let* _ = restOfLine(true);
+            return()
+        }
+        
     
 }
