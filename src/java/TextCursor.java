@@ -99,6 +99,25 @@ public class TextCursor {
         return pos - start;
     }
 
+    public String manyNotChar(char ch) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && input.charAt(pos) != ch) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    /// returns count of chars skipped
+    public int skipNotChar(char c) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && input.charAt(pos) != c) {
+            pos++;
+        }
+        return pos - start;
+    }
+
     public String manyAlphabetic() {
         int start = pos;
         int len = input.length();
@@ -153,6 +172,42 @@ public class TextCursor {
         return input.substring(start, pos);
     }
 
+    public String manyOneOf(String allowed) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (allowed.indexOf(input.charAt(pos)) > -1)) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public int skipOneOf(String allowed) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (allowed.indexOf(input.charAt(pos)) > -1)) {
+            pos++;
+        }
+        return pos - start;
+    }
+
+    public String manyNoneOf(String notallowed) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (notallowed.indexOf(input.charAt(pos)) == -1)) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public int skipNoneOf(String notallowed) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (notallowed.indexOf(input.charAt(pos)) == -1)) {
+            pos++;
+        }
+        return pos - start;
+    }
+
     public String lookingAtX(Pattern p1) {
         Matcher m1 = p1.matcher(input);
         m1.region(pos, input.length());
@@ -165,4 +220,66 @@ public class TextCursor {
         }
     }
 
+    public String charsTillString(String needle) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (input.startsWith(needle, pos) == false)) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public int skipCharsTillString(String needle) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (input.startsWith(needle, pos) == false)) {
+            pos++;
+        }
+        return pos - start;
+    }
+
+
+    public String restOfLine(boolean consumeEol) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (input.startsWith("\r\n", pos) == false
+                                && input.charAt(pos) != '\n')
+                                && input.charAt(pos) != '\r') {
+            pos++;
+        }
+        if (consumeEol && pos < len) {
+            if (input.startsWith("\r\n", pos)) {
+                pos = pos + 2;
+            } else if (input.charAt(pos) == '\n') {
+                pos++;
+            } else if (input.charAt(pos) == '\r') {
+                pos++;
+            }
+        }
+        return input.substring(start, pos);
+    }
+
+    public int skipRestOfLine(boolean consumeEol) {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && (input.startsWith("\r\n", pos) == false
+                                && input.charAt(pos) != '\n'
+                                && input.charAt(pos) != '\r')) {
+            pos++;
+        }
+        if (consumeEol && pos < len) {
+            if (input.startsWith("\r\n", pos)) {
+                pos = pos + 2;
+            } else if (input.charAt(pos) == '\n') {
+                pos++;
+            } else if (input.charAt(pos) == '\r') {
+                pos++;
+            }
+        }
+        return pos - start;
+    }
+
+    public boolean isEof() {
+        return pos >= input.length();
+    }
 }

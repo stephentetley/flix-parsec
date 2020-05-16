@@ -81,6 +81,16 @@ namespace TextParser/Internal/TextCursor {
         let TextCursor(x1) = x;
         x1.skipChar(c)
     
+    pub def manyNotChar(c: Char, x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyNotChar(Char);
+        let TextCursor(x1) = x;
+        x1.manyNotChar(c)
+
+    pub def skipNotChar(c: Char, x: TextCursor): Int32 & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.skipNotChar(Char);
+        let TextCursor(x1) = x;
+        x1.skipNotChar(c)
+
     pub def manyAlphabetic(x: TextCursor): String & Impure = 
         import flix.runtime.spt.textparser.TextCursor.manyAlphabetic();
         let TextCursor(x1) = x;
@@ -110,5 +120,66 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.manyLetterOrDigit();
         let TextCursor(x1) = x;
         x1.manyLetterOrDigit()
+
+
+    pub def manyOneOf(cs: List[Char], x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyOneOf(String);        
+        let TextCursor(x1) = x;
+        let s = String.flatten(List.map(Char.toString, cs));
+        x1.manyOneOf(s)
+
+    pub def skipOneOf(cs: List[Char], x: TextCursor): Int & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.skipOneOf(String);        
+        let TextCursor(x1) = x;
+        let s = String.flatten(List.map(Char.toString, cs));
+        x1.skipOneOf(s)
+
+    pub def manyNoneOf(cs: List[Char], x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyNoneOf(String);        
+        let TextCursor(x1) = x;
+        let s = String.flatten(List.map(Char.toString, cs));
+        x1.manyNoneOf(s)
+
+    pub def skipNoneOf(cs: List[Char], x: TextCursor): Int & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.skipNoneOf(String);        
+        let TextCursor(x1) = x;
+        let s = String.flatten(List.map(Char.toString, cs));
+        x1.skipNoneOf(s)
+
+    pub def lookingAt(patt: Regex.Pattern, x: TextCursor): Result[String, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.lookingAtX(##java.util.regex.Pattern);
+        use Regex.Pattern.{Pattern};
+        let TextCursor(x1) = x;
+        let Pattern(patt1) = patt;
+        let ans = x1.lookingAtX(patt1);
+        if (isNull(ans))
+            Err(InputMismatchException)
+        else 
+            Ok(ans)
+
+    pub def charsTillString(needle: String, x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.charsTillString(String);        
+        let TextCursor(x1) = x;
+        x1.charsTillString(needle)
+
+    pub def skipCharsTillString(needle: String, x: TextCursor): Int & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.skipCharsTillString(String);        
+        let TextCursor(x1) = x;
+        x1.skipCharsTillString(needle)
+
+    pub def restOfLine(consumeEol: Bool, x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.restOfLine(Bool);        
+        let TextCursor(x1) = x;
+        x1.restOfLine(consumeEol)
+    
+    pub def skipRestOfLine(consumeEol: Bool, x: TextCursor): Int & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.skipRestOfLine(Bool);        
+        let TextCursor(x1) = x;
+        x1.skipRestOfLine(consumeEol)
+
+    pub def isEof(x: TextCursor): Bool & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.isEof();        
+        let TextCursor(x1) = x;
+        x1.isEof()
 
 }
