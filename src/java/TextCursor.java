@@ -19,6 +19,8 @@ package flix.runtime.spt.textparser;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/// Methods with an X suffix must have their return value checked!
+
 public class TextCursor {
 
     String input;
@@ -57,7 +59,16 @@ public class TextCursor {
         return input.substring(start, pos);
     }
 
-    public String literalX(String s) {
+    public boolean whiteSpace1X() {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && Character.isWhitespace(input.charAt(pos))) {
+            pos++;
+        }
+        return pos > start;
+    }
+
+    public String stringX(String s) {
         int len = s.length();
         String s1 = input.substring(pos, pos + len);
         if (s1.equals(s)) {

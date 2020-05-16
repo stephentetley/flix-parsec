@@ -48,14 +48,28 @@ namespace TextParser/Internal/TextCursor {
         x1.getInput()
 
 
-    pub def literal(x: TextCursor, s: String): Result[String, PrimError] & Impure = 
-        import flix.runtime.spt.textparser.TextCursor.literalX(String);
+    pub def string(s: String, x: TextCursor): Result[String, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.stringX(String);
         let TextCursor(x1) = x;
-        let ans = x1.literalX(s);
+        let ans = x1.stringX(s);
         if (isNull(ans)) 
             Err(InputMismatchException)
         else 
             Ok(ans)
 
+    pub def skipWhiteSpace(x: TextCursor): Unit & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.skipWhiteSpace();
+        let TextCursor(x1) = x;
+        x1.skipWhiteSpace()
 
+    pub def whiteSpace1(x: TextCursor): Result[Unit, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.whiteSpace1X();
+        let TextCursor(x1) = x;
+        let ok = x1.whiteSpace1X();
+        if (!ok)
+            Err(InputMismatchException)
+        else 
+            Ok()
+
+        
 }
