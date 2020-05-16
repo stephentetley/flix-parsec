@@ -101,6 +101,16 @@ namespace TextParser/Internal/TextCursor {
         let TextCursor(x1) = x;
         x1.skipChar(c)
     
+    pub def countChar(n: Int32, c: Char, x: TextCursor): Result[String, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.countCharX(Int32, Char);
+        let TextCursor(x1) = x;
+        let ans = x1.countCharX(n, c);
+        if (isNull(ans))
+            Err(InputMismatchException)
+        else 
+            Ok(ans)
+
+
     pub def manyNotChar(c: Char, x: TextCursor): String & Impure = 
         import flix.runtime.spt.textparser.TextCursor.manyNotChar(Char);
         let TextCursor(x1) = x;

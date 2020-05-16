@@ -19,6 +19,18 @@ use TextParser.{return, bind, fail, failure, alt, bindEither, nestError, swapErr
 
 namespace TextParser/Combinators {
 
+    pub def liftResult(x: Result[t,e]): Parser[t] = 
+        match x {
+            case Ok(a)  => return(a)
+            case Err(_) => fail("liftResult")
+        }
+
+    pub def liftOption(x: Option[t]): Parser[t] = 
+        match x {
+            case Some(a) => return(a)
+            case None    => fail("liftOption")
+        }
+
     pub def seqLeft(p: Parser[a], q: Parser[b]): Parser[a] =
         use TextParser.flatMap;
         let* a = p;

@@ -120,6 +120,20 @@ public class TextCursor {
         return pos - start;
     }
 
+    /// Does bounds check!
+    public String countCharX(int n, char c) {
+        int start = pos;
+        int stop = pos + n;
+        if (stop > input.length()) {
+            return null;
+        } else {
+            while (pos < stop && input.charAt(pos) == c) {
+                pos++;
+            }
+            return input.substring(start, pos);
+        }
+    }
+
     public String manyNotChar(char ch) {
         int start = pos;
         int len = input.length();

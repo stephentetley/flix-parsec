@@ -71,6 +71,9 @@ namespace TextParser/Text {
     pub def skip1Char(c: Char): Parser[Unit] = 
         skipAtLeast1(liftPrim(TextParser/Internal/TextCursor.skipChar(c)), "skip1Char")
 
+    pub def countChar(n: Int32, c: Char): Parser[String] = 
+        liftPrimResult(TextParser/Internal/TextCursor.countChar(n, c)) 
+
     pub def manyNotChar(c: Char): Parser[String] = 
         liftPrim(TextParser/Internal/TextCursor.manyNotChar(c))
 
