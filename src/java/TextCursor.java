@@ -68,6 +68,7 @@ public class TextCursor {
         return pos > start;
     }
 
+
     public String stringX(String s) {
         int len = s.length();
         String s1 = input.substring(pos, pos + len);
@@ -88,19 +89,69 @@ public class TextCursor {
         return input.substring(start, pos);
     }
 
-    public String many1CharX(char c) {
+    /// returns count of chars skipped
+    public int skipChar(char c) {
         int start = pos;
         int len = input.length();
         while (pos < len && input.charAt(pos) == c) {
             pos++;
         }
-        if (pos > start) {
-            return input.substring(start, pos);
-        } else {
-            return null;
-        }
+        return pos - start;
     }
 
+    public String manyAlphabetic() {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && Character.isAlphabetic(input.charAt(pos))) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public String manyLetter() {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && Character.isLetter(input.charAt(pos))) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public String manyDigit() {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && Character.isDigit(input.charAt(pos))) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public String manyLowerCase() {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && Character.isLowerCase(input.charAt(pos))) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public String manyUpperCase() {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && Character.isUpperCase(input.charAt(pos))) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
+
+    public String manyLetterOrDigit() {
+        int start = pos;
+        int len = input.length();
+        while (pos < len && Character.isLetterOrDigit(input.charAt(pos))) {
+            pos++;
+        }
+        return input.substring(start, pos);
+    }
 
     public String lookingAtX(Pattern p1) {
         Matcher m1 = p1.matcher(input);

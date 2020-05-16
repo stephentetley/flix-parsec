@@ -71,5 +71,44 @@ namespace TextParser/Internal/TextCursor {
         else 
             Ok()
 
+    pub def manyChar(c: Char, x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyChar(Char);
+        let TextCursor(x1) = x;
+        x1.manyChar(c)
+
+    pub def skipChar(c: Char, x: TextCursor): Int32 & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.skipChar(Char);
+        let TextCursor(x1) = x;
+        x1.skipChar(c)
+    
+    pub def manyAlphabetic(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyAlphabetic();
+        let TextCursor(x1) = x;
+        x1.manyAlphabetic()
         
+    pub def manyLetter(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyLetter();
+        let TextCursor(x1) = x;
+        x1.manyLetter()
+
+    pub def manyDigit(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyDigit();
+        let TextCursor(x1) = x;
+        x1.manyDigit()
+
+    pub def manyLowerCase(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyLowerCase();
+        let TextCursor(x1) = x;
+        x1.manyLowerCase()
+    
+    pub def manyUpperCase(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyUpperCase();
+        let TextCursor(x1) = x;
+        x1.manyUpperCase()
+
+    pub def manyLetterOrDigit(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.manyLetterOrDigit();
+        let TextCursor(x1) = x;
+        x1.manyLetterOrDigit()
+
 }
