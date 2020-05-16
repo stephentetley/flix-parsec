@@ -112,12 +112,17 @@ namespace TextParser {
     pub def parseError(msg: String): Parser[ans] = 
         use TextParser/Internal/TextCursor.{getPos, getInput};
         use TextParser/Error.{makeParseError};
-        Parser((r,s) -> 
-            let tabsize = r.tabsize;
-            let pos = s.getPos();
-            let inp = s.getInput();
-            Err(makeParseError(inp, tabsize, pos, msg))
-        )
+        Parser((r,s) -> Err(applyParseError(msg, r, s)))
+
+
+    /// Internal helper to make ParseErrors
+    def applyParseError(msg: String, r: Config, s: TextCursor): ParseError & Impure = 
+        use TextParser/Internal/TextCursor.{getPos, getInput};
+        use TextParser/Error.{makeParseError};        
+        let tabsize = r.tabsize;
+        let pos = s.getPos();
+        let inp = s.getInput();
+        makeParseError(inp, tabsize, pos, msg)
 
     pub def swapError(msg: String, p: Parser[ans]): Parser[ans] = 
         use TextParser/Error.{swapErrorMessage};
@@ -155,13 +160,7 @@ namespace TextParser {
                     let Parser(q1) = q;
                     match q1(r,s) {
                         case Ok(b) => Ok(b)
-                        case Err(_) => {
-                            /// TODO need a strategy to show alternatives...
-                            let tabsize = r.tabsize;
-                            let pos = s.getPos();
-                            let inp = s.getInput();
-                            Err(makeParseError(inp, tabsize, pos, "alt"))
-                        }
+                        case Err(_) => Err(applyParseError("alt", r, s))     /// TODO need a strategy to show alternatives...
                     }
                 }
             }
@@ -249,16 +248,24 @@ namespace TextParser {
         Parser((r,s) -> 
             match f(s) {
                 case Ok(a) => Ok(a)
-                case Err(e) => {
-                    let tabsize = r.tabsize;
-                    let pos = s.getPos();
-                    let inp = s.getInput();
-                    Err(makeParseError(inp, tabsize, pos, showPrimError(e)))
-                }
+                case Err(e) => Err(applyParseError(showPrimError(e), r, s))
             }
         )
 
-
+    /// 
+    /// Run parser `p` within a bounded length 
+    ///
+    pub def bounded(n: Int32, p: Parser[a]): Parser[a] = 
+        use TextParser/Internal/TextCursor.{horizon};
+        Parser((r,s) -> 
+            match horizon(n, s) {
+                case Ok(str) => match parseString(p, str) {
+                    case Ok(a) => Ok(a)
+                    case Err(_) => Err(applyParseError("bounded", r, s))
+                }
+                case Err(_)  => Err(applyParseError("bounded", r, s))
+            }
+        )
 
 
 }

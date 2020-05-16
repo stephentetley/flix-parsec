@@ -287,4 +287,81 @@ namespace TextParser/Combinators {
     pub def chainr(p: Parser[a], op: Parser[(a, a) -> a], x: a): Parser[a] = 
         alt(chainr1(p, op), return(x))
 
+    pub def tuple2(p1: Parser[a], p2: Parser[b]): Parser[(a,b)] =
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        return((a,b))
+
+    pub def tuple3(p1: Parser[a], p2: Parser[b], p3: Parser[c]): Parser[(a,b,c)] = 
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        let* c = p3;
+        return((a,b,c))
+
+    pub def tuple4(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d]): Parser[(a,b,c,d)] = 
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        let* c = p3;
+        let* d = p4;
+        return((a,b,c,d))
+
+
+    pub def tuple5(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e]): Parser[(a,b,c,d,e)] = 
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        let* c = p3;
+        let* d = p4;
+        let* e = p5;
+        return((a,b,c,d,e))
+
+    pub def tuple6(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f]): Parser[(a,b,c,d,e,f)] = 
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        let* c = p3;
+        let* d = p4;
+        let* e = p5;
+        let* f = p6;
+        return((a,b,c,d,e,f))
+
+    pub def tuple7(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g]): Parser[(a,b,c,d,e,f,g)] = 
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        let* c = p3;
+        let* d = p4;
+        let* e = p5;
+        let* f = p6;
+        let* g = p7;
+        return((a,b,c,d,e,f,g))
+
+    pub def tuple8(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h]): Parser[(a,b,c,d,e,f,g,h)] = 
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        let* c = p3;
+        let* d = p4;
+        let* e = p5;
+        let* f = p6;
+        let* g = p7;
+        let* h = p8;
+        return((a,b,c,d,e,f,g,h))
+
+    pub def tuple9(p1: Parser[a], p2: Parser[b], p3: Parser[c], p4: Parser[d], p5: Parser[e], p6: Parser[f], p7: Parser[g], p8: Parser[h], p9: Parser[i]): Parser[(a,b,c,d,e,f,g,h,i)] = 
+        use TextParser.flatMap;
+        let* a = p1; 
+        let* b = p2;
+        let* c = p3;
+        let* d = p4;
+        let* e = p5;
+        let* f = p6;
+        let* g = p7;
+        let* h = p8;
+        let* i = p9;
+        return((a,b,c,d,e,f,g,h,i))
+
 }

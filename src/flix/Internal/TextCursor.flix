@@ -91,6 +91,16 @@ namespace TextParser/Internal/TextCursor {
         else 
             Ok()
 
+    pub def horizon(n: Int32, x: TextCursor): Result[String, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.horizonX(Int32);
+        let TextCursor(x1) = x;
+        let s = x1.horizonX(n);
+        if (isNull(s))
+            Err(InputMismatchException)
+        else 
+            Ok(s)
+        
+
     pub def manyChar(c: Char, x: TextCursor): String & Impure = 
         import flix.runtime.spt.textparser.TextCursor.manyChar(Char);
         let TextCursor(x1) = x;

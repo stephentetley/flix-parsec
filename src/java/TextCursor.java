@@ -68,6 +68,15 @@ public class TextCursor {
         return pos > start;
     }
 
+    public String horizonX(int n) {
+        if (pos + n <= input.length()) {
+            String s1 = input.substring(pos, pos + n);
+            pos = pos + n;
+            return s1;
+        } else {
+            return null;
+        }
+    }
 
     public String stringX(String s) {
         int len = s.length();

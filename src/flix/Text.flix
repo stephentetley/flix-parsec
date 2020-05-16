@@ -46,7 +46,8 @@ namespace TextParser/Text {
     pub def whiteSpace1(): Parser[Unit] =  
         liftPrimResult(TextParser/Internal/TextCursor.whiteSpace1)
 
-
+    pub def horizon(n: Int32): Parser[String] = 
+        liftPrimResult(TextParser/Internal/TextCursor.horizon(n))
     
     pub def string(s: String): Parser[String] = 
         liftPrimResult(TextParser/Internal/TextCursor.string(s))
@@ -169,10 +170,15 @@ namespace TextParser/Text {
             case Err(_) => fail("PatternSyntaxException")
         }
 
+    pub def lookingAts(regex: String): Parser[String] =
+        use TextParser.flatMap;
+        let* patt = compilePattern(regex);
+        lookingAt(patt)
+        
+
     pub def newline(): Parser[Unit] = 
         use TextParser.flatMap;
-        let* patt = compilePattern("\R");
-        let* _ = lookingAt(patt);
+        let* _ = lookingAts("\R");
         return()
 
     pub def charsTillString(needle: String): Parser[String] = 
