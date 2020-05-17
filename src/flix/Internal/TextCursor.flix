@@ -221,5 +221,19 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.isEof();        
         let TextCursor(x1) = x;
         x1.isEof()
+    
+     pub def peekHorizon(n: Int32, x: TextCursor): Result[String, PrimError] & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.peekHorizonX(Int32);
+        let TextCursor(x1) = x;
+        let s = x1.peekHorizonX(n);
+        if (isNull(s))
+            Err(InputMismatchException)
+        else 
+            Ok(s)
+        
+    pub def peekRestOfLine(x: TextCursor): String & Impure = 
+        import flix.runtime.spt.textparser.TextCursor.peekRestOfLine();        
+        let TextCursor(x1) = x;
+        x1.peekRestOfLine()
 
 }

@@ -26,6 +26,8 @@ public class TextCursor {
     String input;
     int pos = 0;
 
+    final Pattern patLinebreak = Pattern.compile("\\R{1}");
+
     public TextCursor(String src) {
         input = src;
         pos = 0;
@@ -285,45 +287,58 @@ public class TextCursor {
 
     public String restOfLine(boolean consumeEol) {
         int start = pos;
-        int len = input.length();
-        while (pos < len && (input.startsWith("\r\n", pos) == false
-                                && input.charAt(pos) != '\n')
-                                && input.charAt(pos) != '\r') {
-            pos++;
-        }
-        if (consumeEol && pos < len) {
-            if (input.startsWith("\r\n", pos)) {
-                pos = pos + 2;
-            } else if (input.charAt(pos) == '\n') {
-                pos++;
-            } else if (input.charAt(pos) == '\r') {
-                pos++;
+        Matcher m1 = patLinebreak.matcher(input);
+        if (m1.find(start)) {
+            if (consumeEol) {
+                pos = m1.end();
+            } else {
+                pos = m1.start();
             }
+        } else {
+            // Rest of line is rest of input
+            pos = input.length();
         }
         return input.substring(start, pos);
     }
 
     public int skipRestOfLine(boolean consumeEol) {
         int start = pos;
-        int len = input.length();
-        while (pos < len && (input.startsWith("\r\n", pos) == false
-                                && input.charAt(pos) != '\n'
-                                && input.charAt(pos) != '\r')) {
-            pos++;
-        }
-        if (consumeEol && pos < len) {
-            if (input.startsWith("\r\n", pos)) {
-                pos = pos + 2;
-            } else if (input.charAt(pos) == '\n') {
-                pos++;
-            } else if (input.charAt(pos) == '\r') {
-                pos++;
+        Matcher m1 = patLinebreak.matcher(input);
+        if (m1.find(start)) {
+            if (consumeEol) {
+                pos = m1.end();
+            } else {
+                pos = m1.start();
             }
+            return pos - start;
+        } else {
+            return 0;
         }
-        return pos - start;
     }
 
     public boolean isEof() {
         return pos >= input.length();
     }
+
+    public String peekHorizonX(int n) {
+        if (pos + n <= input.length()) {
+            return input.substring(pos, pos + n);
+        } else {
+            return null;
+        }
+    }
+
+    public String peekRestOfLine() {
+        int start = pos;
+        int len = input.length();
+        Matcher m1 = patLinebreak.matcher(input);
+        if (m1.find(start)) {
+            return input.substring(start, m1.start());
+        } else if (start < len) {
+            return input.substring(start, len);
+        } else {
+            return "";
+        }
+    }
+
 }
