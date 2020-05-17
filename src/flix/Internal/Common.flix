@@ -49,22 +49,43 @@ namespace TextParser/Internal/Common {
             }
         }
 
-    pub def justSeen(pos: Int32, s: String): String = 
-        let len = String.length(s);
-        if (pos > len) 
-            ""
-        else { 
-            if (pos > 40) String.slice(s, pos-40, pos) else String.slice(s, 0, pos)
-        }
-            
-    pub def pendingInput(pos: Int32, s: String): String = 
-        let len = String.length(s);
-        if (pos > len) 
-            ""
-        else { 
-            if (pos + 40 < len) String.slice(s, pos, pos+40) else String.slice(s, pos, len)
-        }
+    pub def getBeforeAndAfter(pos: Int32, s: String): (String,String) = 
+        getBeforeAndAfterHelper(pos, s) as & Pure 
 
+    def getBeforeAndAfterHelper(pos: Int32, s: String): (String,String) & Impure = 
+        let (before, after) = String.splitAt(pos, s);
+        let beforeArr = String.split(before, "\R{1}");
+        let afterArr = String.split(after, "\R{1}");
+        let after1 = { 
+            if (Array.length(afterArr) > 3) 
+                String.unlines(Array.toList(Array.slice(afterArr, 0, 2)))
+            else 
+                after
+        };
+        let before1 ={ 
+            let len = Array.length(beforeArr);
+            if (len > 3) 
+                String.unlines(Array.toList(Array.slice(beforeArr, len - 3, len)))
+            else 
+                before
+        }; 
+        (before1, after1)
+
+    // pub def justSeen(pos: Int32, s: String): String = 
+    //     let len = String.length(s);
+    //     if (pos > len) 
+    //         ""
+    //     else { 
+    //         if (pos > 40) String.slice(s, pos-40, pos) else String.slice(s, 0, pos)
+    //     }
+            
+    // pub def pendingInput(pos: Int32, s: String): String = 
+    //     let len = String.length(s);
+    //     if (pos > len) 
+    //         ""
+    //     else { 
+    //         if (pos + 40 < len) String.slice(s, pos, pos+40) else String.slice(s, pos, len)
+    //     }
 
 
 }

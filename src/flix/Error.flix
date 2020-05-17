@@ -50,8 +50,7 @@ namespace TextParser/Error {
         let pair = TextParser/Internal/Common.textPos(pos, tabsize, input) |> x -> Option.getWithDefault(x, (1,1));
         let lin = fst(pair);
         let col = snd(pair);
-        let seen = TextParser/Internal/Common.justSeen(pos, input);
-        let todo = TextParser/Internal/Common.pendingInput(pos, input);
+        let (seen, todo) = TextParser/Internal/Common.getBeforeAndAfter(pos, input);
         let ans = { messages = msg :: Nil, linenum = lin, column = col, justseen = seen, pending = todo };
         ParseError(ans)
 
