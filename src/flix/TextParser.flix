@@ -297,9 +297,10 @@ namespace TextParser {
         )
 
     ///
-    /// Lift an effectful action e.g. printing to the console for debugging.
+    /// Lift an effectful action e.g. printing to the console for debugging,
+    /// or creating an array.
     ///
-    pub def liftAction(f: Unit ~> Unit): Parser[Unit] =
-        Parser((_,_) -> { let _ = f(); Ok()})
+    pub def liftAction(f: Unit ~> a): Parser[a] =
+        Parser((_,_) -> { let a = f(); Ok(a)})
 
 }
