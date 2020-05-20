@@ -4,7 +4,7 @@ use TextParser/Combinators.{pipe3, seqLeft, seqRight, many1};
 use TextParser/Text.{byteOrderMark, restOfLine, restOfInput};
 
 @test
-def ukTimeStamp01(): Result[String, String] = 
+def ukTimeStamp01(): Result[String, System.Error] = 
     TextParser.runs(DirListing.pUkTimeStamp(), "11/04/2019  08:49") 
         |> Result.map(DirListing.printTimeStamp)
 
@@ -66,26 +66,26 @@ def parseFile01(): Unit & Impure =
 
 
 @test
-def fileLength01(): Result[Int32, String] & Impure =  
+def fileLength01(): Result[Int32, System.Error] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
     System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.length(s))
 
 @test
-def fileChar01(): Result[Bool, String] & Impure =  
+def fileChar01(): Result[Bool, System.Error] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
     System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(1, s) == '\r')
 
 @test
-def fileChar02(): Result[Bool, String] & Impure =  
+def fileChar02(): Result[Bool, System.Error] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
     System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(0, s) == '\ufeff')
 
 
 @test
-def fileChar03(): Result[Char, String] & Impure =  
+def fileChar03(): Result[Char, System.Error] & Impure =  
     let path = System/FilePath.new("D:\coding\flix\text-parser\samples\test-data\dir.txt");
     System/File.readFile(path, Text/Charset.utf_16le()) 
         |> Result.map(s -> String.charAt(9, s))
@@ -93,7 +93,7 @@ def fileChar03(): Result[Char, String] & Impure =
 
 
 @test
-def directoryDirective01(): Result[String, String] = 
+def directoryDirective01(): Result[String, System.Error] = 
     TextParser.runs(DirListing.directoryDirective(), "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW") 
 
 
@@ -103,14 +103,14 @@ def makeString(xs: List[String]): String & Impure =
     StringBuilder.toString(sb)
 
 @test
-def directoryDirective02(): Result[String, String] & Impure =  
+def directoryDirective02(): Result[String, System.Error] & Impure =  
     let p1 = seqRight(DirListing.blankLines1(), DirListing.directoryDirective());
     let s = makeString("" :: "" :: "    Directory: V:\PROJECTS\T0975 EDM2\7. Site Data\Site Work Sorted\STW" :: Nil);
     TextParser.runs(p1, s)
 
 
 @test
-def directoryDirective03(): Result[String, String] & Impure =  
+def directoryDirective03(): Result[String, System.Error] & Impure =  
     let p1 = seqRight(
                 DirListing.blankLines1(), 
                 seqLeft(DirListing.directoryDirective(), DirListing.blankLines1())
@@ -120,18 +120,18 @@ def directoryDirective03(): Result[String, String] & Impure =
 
 
 @test
-def directoryHeadings01(): Result[Unit, String] & Impure =  
+def directoryHeadings01(): Result[Unit, System.Error] & Impure =  
     let p1 = seqRight(DirListing.blankLines1(), DirListing.directoryHeadings());
     let s = makeString("" :: "" :: "Mode                LastWriteTime         Length Name                            " :: "----                -------------         ------ ----                            " :: Nil);
     TextParser.runs(p1, s)
 
 @test
-def dirListingLine01(): Result[DirListingLine, String] =  
+def dirListingLine01(): Result[DirListingLine, System.Error] =  
     let s = "-a----       28/02/2020     15:52              0 dir.txt                            ";
     TextParser.runs(DirListing.dirListingLine(), s)
 
 @test
-def dirListingLine02(): Result[List[DirListingLine], String] & Impure =  
+def dirListingLine02(): Result[List[DirListingLine], System.Error] & Impure =  
     let s = makeString(
                    "-a----       28/02/2020     15:52              0 dir.txt                           "
                 :: "-a----       28/02/2020     15:48           1848 dirlisting-test.flix              "

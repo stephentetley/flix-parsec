@@ -12,4 +12,4 @@ Text Parser is intended for parsing string data, although it shares many of the
 combinators from Parsec, FParsec, etc. it is not ideal for parsing highly
 structured / recursive text like program code.
 
-Text-Parser depends on Regex code in `flix-sandbox`.
+Text-Parser depends on code in `flix-sandbox` particular Regex and System.Error.

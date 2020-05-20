@@ -51,7 +51,7 @@ namespace LineCount {
 
     pub def lineCount02(s: String): Int32 & Impure = 
         match runs(lc02(), s) {
-            case Err(msg) => { Console.printLine(msg); -1 }
+            case Err(e) => { Console.printLine(System/Error.toString(e)); -1 }
             case Ok(c) => c
         }
 
@@ -66,7 +66,7 @@ namespace LineCount {
 
     pub def lineCount03(s: String): Int32 & Impure = 
         match runs(lc03(), s) {
-            case Err(msg) => { Console.printLine(msg); -1 }
+            case Err(e) => { Console.printLine(System/Error.toString(e)); -1 }
             case Ok(c) => c
         }
 

@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+use System.Error.{IllegalArgumentException, IllegalStateException, InputMismatchException, 
+                                NoSuchElementException, PatternSyntaxException};
+
+
 use TextParser/Internal.{TextCursor};
 use TextParser/Internal.TextCursor.{TextCursor};
-use TextParser/Error.{PrimError};
-use TextParser/Error.PrimError.{IllegalArgumentException, IllegalStateException, InputMismatchException, 
-                                NoSuchElementException, PatternSyntaxException};
 
 namespace TextParser/Internal {
 
@@ -48,7 +50,7 @@ namespace TextParser/Internal/TextCursor {
         x1.getInput()
 
 
-    pub def string(s: String, x: TextCursor): Result[String, PrimError] & Impure = 
+    pub def string(s: String, x: TextCursor): Result[String, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.stringX(String);
         let TextCursor(x1) = x;
         let ans = x1.stringX(s);
@@ -57,7 +59,7 @@ namespace TextParser/Internal/TextCursor {
         else 
             Ok(ans)
 
-    pub def char(c: Char, x: TextCursor): Result[Char, PrimError] & Impure = 
+    pub def char(c: Char, x: TextCursor): Result[Char, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.charX(Char);
         let TextCursor(x1) = x;
         let ans = x1.charX(c);
@@ -66,7 +68,7 @@ namespace TextParser/Internal/TextCursor {
         else 
             Ok(c)
 
-    pub def anyChar(x: TextCursor): Result[Char, PrimError] & Impure = 
+    pub def anyChar(x: TextCursor): Result[Char, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.anyCharX();
         let TextCursor(x1) = x;
         let str = x1.anyCharX();
@@ -82,7 +84,7 @@ namespace TextParser/Internal/TextCursor {
         let TextCursor(x1) = x;
         x1.skipWhiteSpace()
 
-    pub def whiteSpace1(x: TextCursor): Result[Unit, PrimError] & Impure = 
+    pub def whiteSpace1(x: TextCursor): Result[Unit, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.whiteSpace1X();
         let TextCursor(x1) = x;
         let ok = x1.whiteSpace1X();
@@ -91,7 +93,7 @@ namespace TextParser/Internal/TextCursor {
         else 
             Ok()
 
-    pub def horizon(n: Int32, x: TextCursor): Result[String, PrimError] & Impure = 
+    pub def horizon(n: Int32, x: TextCursor): Result[String, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.horizonX(Int32);
         let TextCursor(x1) = x;
         let s = x1.horizonX(n);
@@ -111,7 +113,7 @@ namespace TextParser/Internal/TextCursor {
         let TextCursor(x1) = x;
         x1.skipChar(c)
     
-    pub def countChar(n: Int32, c: Char, x: TextCursor): Result[String, PrimError] & Impure = 
+    pub def countChar(n: Int32, c: Char, x: TextCursor): Result[String, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.countCharX(Int32, Char);
         let TextCursor(x1) = x;
         let ans = x1.countCharX(n, c);
@@ -186,7 +188,7 @@ namespace TextParser/Internal/TextCursor {
         let s = String.flatten(List.map(Char.toString, cs));
         x1.skipNoneOf(s)
 
-    pub def lookingAt(patt: Regex.Pattern, x: TextCursor): Result[String, PrimError] & Impure = 
+    pub def lookingAt(patt: Regex.Pattern, x: TextCursor): Result[String, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.lookingAtX(##java.util.regex.Pattern);
         use Regex.Pattern.{Pattern};
         let TextCursor(x1) = x;
@@ -222,7 +224,7 @@ namespace TextParser/Internal/TextCursor {
         let TextCursor(x1) = x;
         x1.isEof()
     
-     pub def peekHorizon(n: Int32, x: TextCursor): Result[String, PrimError] & Impure = 
+     pub def peekHorizon(n: Int32, x: TextCursor): Result[String, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.peekHorizonX(Int32);
         let TextCursor(x1) = x;
         let s = x1.peekHorizonX(n);

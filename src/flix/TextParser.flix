@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use TextParser/Error.{ParseError, PrimError};
+use TextParser/Error.{ParseError};
 use TextParser/Internal.{TextCursor};
 
 namespace TextParser {
@@ -44,11 +44,12 @@ namespace TextParser {
         f(defaultConfig(), cursor)
 
     ///
-    /// Simplified version of `run`. On failure the ParseError is converted to a string.
+    /// Simplified version of `run`. On failure the ParseError is converted to a System.Error.
     ///
-    pub def runs(parser: Parser[a], input: String): Result[a, String] =
+    pub def runs(parser: Parser[a], input: String): Result[a, System.Error] =
+        use System.Error.{Generic};
         match parseString(parser, input) {
-            case Err(e) => Err(TextParser/Error.showParserError(e))
+            case Err(e) => Err(Generic(TextParser/Error.showParserError(e)))
             case Ok(a) => Ok(a)
         }
 
@@ -242,13 +243,13 @@ namespace TextParser {
             Ok(a)
         )
 
-   pub def liftPrimResult(f: TextCursor -> Result[a, PrimError] & Impure): Parser[a] =
+   pub def liftPrimResult(f: TextCursor -> Result[a, System.Error] & Impure): Parser[a] =
         use TextParser/Internal/TextCursor.{setPos, getPos, getInput};
-        use TextParser/Error.{makeParseError, showPrimError};
+        use TextParser/Error.{makeParseError};
         Parser((r,s) ->
             match f(s) {
                 case Ok(a) => Ok(a)
-                case Err(e) => Err(applyParseError(showPrimError(e), r, s))
+                case Err(e) => Err(applyParseError(System/Error.toString(e), r, s))
             }
         )
 

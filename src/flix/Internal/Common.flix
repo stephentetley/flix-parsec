@@ -71,21 +71,5 @@ namespace TextParser/Internal/Common {
         }; 
         (before1, after1)
 
-    // pub def justSeen(pos: Int32, s: String): String = 
-    //     let len = String.length(s);
-    //     if (pos > len) 
-    //         ""
-    //     else { 
-    //         if (pos > 40) String.slice(s, pos-40, pos) else String.slice(s, 0, pos)
-    //     }
-            
-    // pub def pendingInput(pos: Int32, s: String): String = 
-    //     let len = String.length(s);
-    //     if (pos > len) 
-    //         ""
-    //     else { 
-    //         if (pos + 40 < len) String.slice(s, pos, pos+40) else String.slice(s, pos, len)
-    //     }
-
 
 }

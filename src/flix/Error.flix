@@ -17,27 +17,6 @@
 namespace TextParser/Error {
 
 
-    pub enum PrimError { 
-        case IOError,
-        case IllegalArgumentException,
-        case IllegalStateException,
-        case InputMismatchException, 
-        case NoSuchElementException,
-        case PatternSyntaxException,
-        case Generic(String)
-    }
-
-    pub def showPrimError (x: PrimError): String = match x {
-        case IOError                    => "IOError"
-        case IllegalArgumentException   => "IllegalArgumentException"
-        case IllegalStateException      => "IllegalStateException"
-        case InputMismatchException     => "InputMismatchException"
-        case NoSuchElementException     => "NoSuchElementException"
-        case PatternSyntaxException     => "PatternSyntaxException"
-        case Generic(s)                 => s
-    }
-
-
     pub opaque type ParseError = 
         { messages: List[String]
         , linenum: Int32
