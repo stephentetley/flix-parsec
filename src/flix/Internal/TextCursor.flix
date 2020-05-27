@@ -54,7 +54,7 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.stringX(String);
         let TextCursor(x1) = x;
         let ans = x1.stringX(s);
-        if (isNull(ans)) 
+        if (Object.isNull(ans)) 
             Err(InputMismatchException)
         else 
             Ok(ans)
@@ -72,7 +72,7 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.anyCharX();
         let TextCursor(x1) = x;
         let str = x1.anyCharX();
-        if (isNull(str)) 
+        if (Object.isNull(str)) 
             Err(InputMismatchException)
         else {
             let c = String.charAt(0, str);
@@ -97,7 +97,7 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.horizonX(Int32);
         let TextCursor(x1) = x;
         let s = x1.horizonX(n);
-        if (isNull(s))
+        if (Object.isNull(s))
             Err(InputMismatchException)
         else 
             Ok(s)
@@ -117,7 +117,7 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.countCharX(Int32, Char);
         let TextCursor(x1) = x;
         let ans = x1.countCharX(n, c);
-        if (isNull(ans))
+        if (Object.isNull(ans))
             Err(InputMismatchException)
         else 
             Ok(ans)
@@ -194,7 +194,7 @@ namespace TextParser/Internal/TextCursor {
         let TextCursor(x1) = x;
         let Pattern(patt1) = patt;
         let ans = x1.lookingAtX(patt1);
-        if (isNull(ans))
+        if (Object.isNull(ans))
             Err(InputMismatchException)
         else 
             Ok(ans)
@@ -228,7 +228,7 @@ namespace TextParser/Internal/TextCursor {
         import flix.runtime.spt.textparser.TextCursor.peekHorizonX(Int32);
         let TextCursor(x1) = x;
         let s = x1.peekHorizonX(n);
-        if (isNull(s))
+        if (Object.isNull(s))
             Err(InputMismatchException)
         else 
             Ok(s)
