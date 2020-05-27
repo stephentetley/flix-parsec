@@ -188,9 +188,9 @@ namespace TextParser/Internal/TextCursor {
         let s = String.flatten(List.map(Char.toString, cs));
         x1.skipNoneOf(s)
 
-    pub def lookingAt(patt: Regex.Pattern, x: TextCursor): Result[String, System.Error] & Impure = 
+    pub def lookingAt(patt: Text/Regex.Pattern, x: TextCursor): Result[String, System.Error] & Impure = 
         import flix.runtime.spt.textparser.TextCursor.lookingAtX(##java.util.regex.Pattern);
-        use Regex.Pattern.{Pattern};
+        use Text/Regex.Pattern.{Pattern};
         let TextCursor(x1) = x;
         let Pattern(patt1) = patt;
         let ans = x1.lookingAtX(patt1);

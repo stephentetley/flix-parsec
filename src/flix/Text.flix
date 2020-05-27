@@ -164,11 +164,11 @@ namespace TextParser/Text {
     pub def skip1NoneOf(cs: List[Char]): Parser[Unit] =
         skipAtLeast1(liftPrim(TextParser/Internal/TextCursor.skipNoneOf(cs)), "skip1NoneOf")
 
-    pub def lookingAt(patt: Regex.Pattern): Parser[String] =
+    pub def lookingAt(patt: Text/Regex.Pattern): Parser[String] =
         liftPrimResult(TextParser/Internal/TextCursor.lookingAt(patt))
 
-    pub def compilePattern(regex: String): Parser[Regex.Pattern] =
-        match Regex/Pattern.compile(regex) {
+    pub def compilePattern(regex: String): Parser[Text/Regex.Pattern] =
+        match Text/Regex/Pattern.compile(regex) {
             case Ok(patt) => return(patt)
             case Err(_) => fail("PatternSyntaxException")
         }
