@@ -77,6 +77,39 @@ namespace Cps2 {
                 nc(pos)
         )
 
+    pub def anyChar(): Parser[Char, t] = 
+        Parser((sc, nc, inp, pos) ->
+            let len = String.length(inp);            
+            if (pos < len) {
+                let c = String.charAt(pos, inp);
+                sc(c, nc, inp, pos + 1)
+            }
+            else
+                nc(pos)
+        )
+
+
+    pub def liftResult(x: Result[r, e]): Parser[r, t] = 
+        Parser((sc, nc, inp, pos) ->
+            match x { 
+                case Ok(a) => sc(a, nc, inp, pos)
+                case Err(_) => nc(pos)
+            }                
+        )
+
+
+
+    pub def lookingAt(patt : Text/Regex.Pattern): Parser[String, t] = 
+        use Text/Regex.{startsWithWithin}; // Name will change...
+        Parser((sc, nc, inp, pos) ->
+            let ans = startsWithWithin(patt, inp, pos, String.length(inp)) as & Pure;
+            match ans { 
+                case Ok(s) => sc(s, nc, inp, pos + String.length(s))
+                case Err(_) => nc(pos)
+            }                
+        )
+
+
     pub def optional(p: Parser[a, t]): Parser[Option[a], t] = 
         alt(map(Some,p), return(None))
 
@@ -91,6 +124,37 @@ namespace Cps2 {
             else
                 nc(pos)
         )
+
+    pub def skipManyTill(p: Parser[r,t], endp: Parser[end,t]): Parser[end, t] = 
+        let* a = optional(endp);
+        match a {
+            case None => {
+                let* _ = p;
+                skipManyTill(p, endp)
+            }
+            case Some(a1) => return(a1)
+        } 
+
+    pub def skipMany(p: Parser[r,t]): Parser[Unit, t] = 
+        alt(skipManyHelper(p), return())
+
+    pub def skipManyHelper(p: Parser[r,t]): Parser[Unit, t] = 
+        let* _ = p;
+        skipManyHelper(p)
+    
+    pub def manyWith(append: (a,ac) -> ac, acc: ac, p: Parser[a, t]): Parser[ac, t] = 
+        let* a = optional(p);
+        match a {
+            case None => return(acc)
+            case Some(a1) => { 
+                let ac1 = append(a1, acc);
+                manyWith(append, ac1, p)
+            }
+        }    
+
+    /// Count how many times parser `p` succeeds
+    pub def ntimes(p: Parser[r, t]): Parser[Int32, t] = 
+        manyWith((_,ac) -> ac + 1, 0, p)
 
     pub def ignore(p: Parser[r, t]) : Parser[Unit, t] =
         map(constant(), p)
@@ -113,15 +177,64 @@ namespace Cps2 {
     pub def one(): Parser[Int32, t] = bind(symbol("one"), _ -> return(1))
     pub def two(): Parser[Int32, t] = bind(symbol("two"), _ -> return(2))
 
+    pub def newline(): Parser[Unit, t] = 
+        use Text/Regex/Pattern.{compile};
+        let* patt = liftResult(compile("\R"));
+        ignore(lookingAt(patt))
+
+
 }
+
+
+namespace LineCount2 {
+
+    pub def timeOperation(thunk: Unit -> a & e): (Int64, a) & Impure = 
+        import java.lang.System:nanoTime();
+        let t0 = nanoTime();
+        let a = thunk() as & Impure;
+        let t1 = nanoTime();
+        (t1 - t0, a)
+
+    pub def runLineCounter(header: String, counter: String -> Int32 & e, s: String): Unit & Impure =         
+        let (nt, a) = timeOperation(_ -> counter(s)) as & Impure;
+        let msg = "Time: ${ Int64.toString(nt) }, lines: ${Int32.toString(a)}";
+        Console.printLine(header);
+        Console.printLine(msg)
+
+    pub def parseLine(): Cps2.Parser[Unit, t] =
+        use Cps2.{skipManyTill, anyChar, newline};
+        skipManyTill(anyChar(), newline())
+
+    pub def lineCount(): Cps2.Parser[Int32, t] = 
+        use Cps2.{ntimes}; 
+        ntimes(parseLine())                
+    
+    pub def runLineCount(path: String): Unit & Impure = 
+        let path1 = System/FilePath.new(path);
+        let runner = s -> match Cps2.runs(lineCount(), s) { 
+            case Err(_) => -1
+            case Ok(i) => i
+        };
+        match System/File.readFile(path1, Text/Charset.utf_16le()) { 
+            case Err(e) => Console.printLine(System/Error.toString(e))
+            case Ok(s) => runLineCounter("lineCount Cps2", runner, s)
+        }
+        
+}
+
+
+def main(): Unit & Impure = 
+    LineCount2.runLineCount("e:\coding\flix\text-parser\testdata\flix_dir.txt")
+
+
 
 // def main(): Result[Int32, String] = 
 //     use Cps2.{runs, one, two, seqRight, swapError};
 //     runs(seqRight(one(), two() `swapError` "two-failed"), "one two")
 
-def main(): Result[Int32, String] = 
-    use Cps2.{runs, one, two, seqRight};
-    runs(seqRight(one(), two()), "onetwo")
+// def main(): Result[Int32, String] = 
+//     use Cps2.{runs, skipManyTill, one, two, seqRight};
+//     runs(skipManyTill(one(), two()), "oneoneoneonetwo")
 
 // def main(): Result[Unit, String] = 
 //     use Cps2.{runs, alt, one, endOfInput, ignore};
