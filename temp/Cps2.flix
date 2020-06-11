@@ -133,16 +133,6 @@ namespace Cps2 {
                 nc(pos)
         )
 
-    /// Note - not a Parsec combinator...
-    // pub def skipManyTill(p: Parser[r,t], endp: Parser[end,t]): Parser[end, t] = 
-    //     let* a = optional(endp);
-    //     match a {
-    //         case None => {
-    //             let* _ = p;
-    //             skipManyTill(p, endp)
-    //         }
-    //         case Some(a1) => return(a1)
-    //     } 
 
     pub def skipManyTill(p: Parser[r,t], endp: Parser[end,t]): Parser[end, t] = 
         ifThenElse(endp, return, bind(p, _ -> skipManyTill(p, endp)))
@@ -154,16 +144,7 @@ namespace Cps2 {
     def skipManyHelper(p: Parser[r,t]): Parser[Unit, t] = 
         let* _ = p;
         skipManyHelper(p)
-    
-    // pub def manyWith(append: (a,ac) -> ac, acc: ac, p: Parser[a, t]): Parser[ac, t] = 
-    //     let* a = optional(p);
-    //     match a {
-    //         case None => return(acc)
-    //         case Some(a1) => { 
-    //             let ac1 = append(a1, acc);
-    //             manyWith(append, ac1, p)
-    //         }
-    //     }    
+
 
     pub def manyWith(append: (a,ac) -> ac, acc: ac, p: Parser[a, t]): Parser[ac, t] = 
         ifThenElse(p, a -> {let acc1 = append(a, acc); manyWith(append, acc1, p)}, return(acc))
@@ -238,9 +219,47 @@ namespace LineCount2 {
         
 }
 
+namespace LineCount3 {
+
+    pub def timeOperation(thunk: Unit -> a & e): (Int64, a) & Impure = 
+        import java.lang.System:nanoTime();
+        let t0 = nanoTime();
+        let a = thunk() as & Impure;
+        let t1 = nanoTime();
+        (t1 - t0, a)
+
+    pub def runLineCounter(header: String, counter: String -> Int32 & e, s: String): Unit & Impure =         
+        let (nt, a) = timeOperation(_ -> counter(s)) as & Impure;
+        let msg = "Time: ${ Int64.toString(nt) }, lines: ${Int32.toString(a)}";
+        Console.printLine(header);
+        Console.printLine(msg)
+
+    pub def parseLine(patt: Text/Regex.Pattern): Cps2.Parser[Unit, t] =
+        use Cps2.{seqRight, lookingAt, newline};
+        seqRight(lookingAt(patt), newline())
+
+    pub def lineCount(): Cps2.Parser[Int32, t] = 
+        use Cps2.{flatMap, liftResult, ntimes}; 
+        let* patt = liftResult(Text/Regex/Pattern.compile(".*"));
+        ntimes(parseLine(patt))
+    
+    pub def runLineCount(path: String): Unit & Impure = 
+        let path1 = System/FilePath.new(path);
+        let runner = s -> match Cps2.runs(lineCount(), s) { 
+            case Err(_) => -1
+            case Ok(i) => i
+        };
+        match System/File.readFile(path1, Text/Charset.utf_16le()) { 
+            case Err(e) => Console.printLine(System/Error.toString(e))
+            case Ok(s) => runLineCounter("lineCount Cps2 with regex", runner, s)
+        }
+        
+}
+
 
 def main(): Unit & Impure = 
-    LineCount2.runLineCount("e:\coding\flix\text-parser\testdata\flix_dir.txt")
+    LineCount2.runLineCount("e:\coding\flix\text-parser\testdata\flix_dir.txt");
+    LineCount3.runLineCount("e:\coding\flix\text-parser\testdata\flix_dir.txt")
 
 
 
