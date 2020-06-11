@@ -53,8 +53,16 @@ namespace Cps2 {
 
     pub def flatMap(k: q -> Parser[r, t], ma: Parser[q, t]):  Parser[r, t] = bind(ma, k)
 
+    // Use Clean optimization or not?
     pub def alt(p: Parser[a, t], q: Parser[a, t]): Parser[a, t] = 
-        Parser((sc, nc, inp, pos) -> apply1(p, sc, apply1(q, sc, nc, inp), inp, pos))
+        Parser((sc, nc, inp, pos) -> 
+            apply1(p, (r,_) -> sc(r, nc), apply1(q, sc, nc, inp), inp, pos))
+
+
+    pub def ifThenElse(cond: Parser[r, t], thenp: r -> Parser[s,t], elsep: Parser[s, t]): Parser[s, t] = 
+        Parser((sc, nc, inp, pos) -> 
+            apply1(cond, x -> apply1(thenp(x),sc), apply1(elsep, sc, nc, inp), inp, pos))
+
 
     pub def seqLeft(p: Parser[a, t], q: Parser[b, t]): Parser[a, t] = 
         let* a = p;
@@ -125,32 +133,40 @@ namespace Cps2 {
                 nc(pos)
         )
 
+    /// Note - not a Parsec combinator...
+    // pub def skipManyTill(p: Parser[r,t], endp: Parser[end,t]): Parser[end, t] = 
+    //     let* a = optional(endp);
+    //     match a {
+    //         case None => {
+    //             let* _ = p;
+    //             skipManyTill(p, endp)
+    //         }
+    //         case Some(a1) => return(a1)
+    //     } 
+
     pub def skipManyTill(p: Parser[r,t], endp: Parser[end,t]): Parser[end, t] = 
-        let* a = optional(endp);
-        match a {
-            case None => {
-                let* _ = p;
-                skipManyTill(p, endp)
-            }
-            case Some(a1) => return(a1)
-        } 
+        ifThenElse(endp, return, bind(p, _ -> skipManyTill(p, endp)))
+
 
     pub def skipMany(p: Parser[r,t]): Parser[Unit, t] = 
         alt(skipManyHelper(p), return())
 
-    pub def skipManyHelper(p: Parser[r,t]): Parser[Unit, t] = 
+    def skipManyHelper(p: Parser[r,t]): Parser[Unit, t] = 
         let* _ = p;
         skipManyHelper(p)
     
+    // pub def manyWith(append: (a,ac) -> ac, acc: ac, p: Parser[a, t]): Parser[ac, t] = 
+    //     let* a = optional(p);
+    //     match a {
+    //         case None => return(acc)
+    //         case Some(a1) => { 
+    //             let ac1 = append(a1, acc);
+    //             manyWith(append, ac1, p)
+    //         }
+    //     }    
+
     pub def manyWith(append: (a,ac) -> ac, acc: ac, p: Parser[a, t]): Parser[ac, t] = 
-        let* a = optional(p);
-        match a {
-            case None => return(acc)
-            case Some(a1) => { 
-                let ac1 = append(a1, acc);
-                manyWith(append, ac1, p)
-            }
-        }    
+        ifThenElse(p, a -> {let acc1 = append(a, acc); manyWith(append, acc1, p)}, return(acc))
 
     /// Count how many times parser `p` succeeds
     pub def ntimes(p: Parser[r, t]): Parser[Int32, t] = 
