@@ -114,7 +114,7 @@ namespace Cps2 {
             match ans { 
                 case Ok(s) => sc(s, nc, inp, pos + String.length(s))
                 case Err(_) => nc(pos)
-            }                
+            }
         )
 
 
