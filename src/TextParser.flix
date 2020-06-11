@@ -58,6 +58,9 @@ namespace TextParser {
     pub def fail(): TextParser[r, t] = 
         TextParser((_, next, _, pos) -> next(pos))
 
+    pub def failure(msg: String) : TextParser[r, t] =
+        TextParser((_, _, _, pos) -> Err({ msg = msg, pos = pos}))
+
     def apply1 (p: TextParser[r, t], sk: Success[r, t], fk: NextRes[t], inp: String, pos: Int32): Result[t, ErrMsg] = 
         let TextParser(pf) = p;
         pf(sk, fk, inp, pos)
@@ -141,22 +144,10 @@ namespace TextParser {
         )
 
 
+    pub def swapError(msg: String, p: TextParser[r,t]) : TextParser[r, t] =
+        TextParser((sc, _, inp, pos) -> apply1(p, sc, _ -> Err({ msg = msg, pos = pos}), inp, pos))
 
 
-
-//     pub def failure(e: ParseError) : Parser[ans] = Parser((_, _) -> Err(e) as & Impure)
-
-
-//     ///
-//     /// Throw a parse error.
-//     ///
-//     /// Note errors are collected in a stack, `throwError` discards any current error stack.
-//     /// Users should prefer `nestError` for exploratory development.
-//     ///
-//     pub def parseError(msg: String): Parser[ans] =
-//         use TextParser/Internal/TextCursor.{getPos, getInput};
-//         use TextParser/Error.{makeParseError};
-//         Parser((r,s) -> Err(applyParseError(msg, r, s)))
 
 
 //     /// Internal helper to make ParseErrors
@@ -168,15 +159,6 @@ namespace TextParser {
 //         let inp = s.getInput();
 //         makeParseError(inp, tabsize, pos, msg)
 
-//     pub def swapError(msg: String, p: Parser[ans]): Parser[ans] =
-//         use TextParser/Error.{swapErrorMessage};
-//         Parser((r,s) ->
-//             let Parser(p1) = p;
-//             match p1(r,s) {
-//                 case Ok(a) => Ok(a)
-//                 case Err(e) => Err(swapErrorMessage(msg, e))
-//             }
-//         )
 
 //     pub def nestError(msg: String, p: Parser[ans]): Parser[ans] =
 //         use TextParser/Error.{nestErrorMessage};
@@ -209,35 +191,7 @@ namespace TextParser {
 //             }
 //         })
 
-//     pub def option(one: ans, p: Parser[a]): Parser[a] =
-//         use TextParser/Internal/TextCursor.{setPos, getPos};
-//         use TextParser/Error.{nestErrorMessage};
-//         Parser((r,s) -> {
-//             let Parser(p1) = p;
-//             let start = s.getPos();
-//             match p1(r,s) {
-//                 case Err(_) => {
-//                     s.setPos(start);
-//                     Ok(one)
-//                 }
-//                 case Ok(a) => Ok(a)
-//             }
-//         })
 
-//     pub def optional(p: Parser[a]): Parser[Option[a]] =
-//         use TextParser/Internal/TextCursor.{setPos, getPos};
-//         use TextParser/Error.{nestErrorMessage};
-//         Parser((r,s) -> {
-//             let Parser(p1) = p;
-//             let start = s.getPos();
-//             match p1(r,s) {
-//                 case Err(_) => {
-//                     s.setPos(start);
-//                     Ok(None)
-//                 }
-//                 case Ok(a) => Ok(Some(a))
-//             }
-//         })
 
 
 
@@ -275,11 +229,5 @@ namespace TextParser {
 //             }
 //         )
 
-//     ///
-//     /// Lift an effectful action e.g. printing to the console for debugging,
-//     /// or creating an array.
-//     ///
-//     pub def liftAction(f: Unit ~> a): Parser[a] =
-//         Parser((_,_) -> { let a = f(); Ok(a)})
 
 }

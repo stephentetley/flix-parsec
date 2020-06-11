@@ -58,7 +58,23 @@ namespace LineCount {
 }
 
 
-def main(): Unit & Impure = 
-    LineCount.runLineCount("e:\coding\flix\text-parser\testdata\flix_dir.txt")
+// def main(): Unit & Impure = 
+//     LineCount.runLineCount("e:\coding\flix\text-parser\testdata\flix_dir.txt")
 
 
+// def main(): Unit & Impure = 
+//     use TextParser.{runs, string, failure};
+//     use TextParser/Combinators.{seqRight};
+//     let p1: TextParser.TextParser[String,String] = seqRight(string("Hello"), failure("world"));
+//     match runs(p1, "Hello Goodbye") { 
+//         case Ok(s) => Console.printLine(s)
+//         case Err(msg) => Console.printLine(msg)
+//     }
+
+def main(): List[Char]  = 
+    use TextParser.{runs, anyChar};
+    use TextParser/Combinators.{many};
+    match runs(many(anyChar()), "123") { 
+        case Ok(s) => s
+        case Err(_) => Nil
+    }

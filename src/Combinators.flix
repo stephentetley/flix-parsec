@@ -38,6 +38,12 @@ namespace TextParser/Combinators {
         case Err(_) => fail()
     }
 
+    pub def optional(p: TextParser[a, t]): TextParser[Option[a], t] = 
+        alt(map(Some,p), return(None))
+
+    pub def optionalWithDefault(p: TextParser[a, t], d: a): TextParser[a, t] = 
+        alt(p, return(d))
+
     pub def seqLeft(p: TextParser[r, t], q: TextParser[s, t]): TextParser[r, t] =
         use TextParser.flatMap;
         let* a = p;
@@ -66,6 +72,17 @@ namespace TextParser/Combinators {
     pub def manyWith(append: (a,ac) -> ac, acc: ac, p: TextParser[a, t]): TextParser[ac, t] = 
         ifThenElse(p, a -> {let acc1 = append(a, acc); manyWith(append, acc1, p)}, return(acc))
 
+
+    pub def many(p: TextParser[r, t]): TextParser[List[r], t] = 
+        use Data/Transient/DList.{empty, snoc, toList};
+        map(toList, manyWith((x,xs) -> snoc(xs,x), empty(), p))
+        
+    pub def many1(p: TextParser[r, t]): TextParser[List[r], t] = 
+        use TextParser.flatMap;
+        let* x = p;
+        let* xs = many(p);
+        return(x :: xs)
+
     /// Count how many times parser `p` succeeds
     pub def ntimes(p: TextParser[r, t]): TextParser[Int32, t] = 
         manyWith((_,ac) -> ac + 1, 0, p)
@@ -73,6 +90,12 @@ namespace TextParser/Combinators {
     pub def ignore(p: TextParser[r, t]): TextParser[Unit, t] =
         map(constant(), p)
 
+    pub def between(openp: TextParser[u, t], closep: TextParser[v, t], p: TextParser[r, t]): TextParser[r, t] = 
+        use TextParser.flatMap;
+        let* _ = openp;
+        let* a = p;
+        let* _ = closep;
+        return(a)
 
     // pub def satisfies(p: Parser[a], test: ans -> Bool): Parser[a] = 
     //     use TextParser.flatMap;
@@ -116,36 +139,11 @@ namespace TextParser/Combinators {
     //         }
     //     }
 
-    // pub def ignore(p: Parser[a]): Parser[Unit] = 
-    //     use TextParser.flatMap;
-    //     let* _ = p;
-    //     return()
+
         
-    // pub def between(open: Parser[z1], close: Parser[z2], p: Parser[a]): Parser[a] = 
-    //     use TextParser.flatMap;
-    //     let* _ = open;
-    //     let* a = p;
-    //     let* _ = close;
-    //     return(a)
 
 
-    // pub def manyWith(append: (a,ac) -> ac, zero: ac, p: Parser[a]): Parser[ac] = 
-    //     manyWithHelper(append, zero, p, return) 
 
-
-    // def manyWithHelper(append: (a, ac) -> ac, zero: ac, p: Parser[a], k: ac -> Parser[ac]): Parser[ac] = 
-    //     use TextParser.flatMap;
-    //     let* ans = optional(p);
-    //     match ans { 
-    //         case None => k(zero)
-    //         case Some(a) => 
-    //             manyWithHelper(
-    //                 append, 
-    //                 zero, 
-    //                 p, 
-    //                 ac -> { let ac1 = append(a, ac); k(ac1) }
-    //             )
-    //     }
 
     // pub def many(p: Parser[a]): Parser[List[a]] = 
     //     manyWith((x,xs) -> x :: xs, Nil, p)
