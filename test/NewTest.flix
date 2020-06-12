@@ -40,8 +40,8 @@ namespace LineCount {
         seqRight(lookingAt(patt), newline())
 
     pub def lineCount(): TextParser[Int32, t] = 
-        use TextParser.{flatMap, map};
-        use TextParser/Combinators.{liftResult, ntimes}; 
+        use TextParser.{flatMap, map, liftResult};
+        use TextParser/Combinators.{ntimes}; 
         let* patt = liftResult(Text/Regex/Pattern.compile(".*"));
         map(x -> x + 1, ntimes(parseLine(patt)))
     

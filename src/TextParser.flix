@@ -88,6 +88,16 @@ namespace TextParser {
         TextParser((sc, nc, inp, pos) -> 
             apply1(cond, x -> apply1(thenp(x),sc), apply1(elsep, sc, nc, inp), inp, pos))
 
+    
+    pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
+        case Some(a) => return(a)
+        case None    => fail()
+    }
+
+    pub def liftResult(x: Result[r, e]): TextParser[r, t] =  match x {
+        case Ok(a) => return(a)
+        case Err(_) => fail()
+    }
 
     pub def endOfInput() : TextParser[Unit, t] =
         TextParser((sc, nc, inp, pos) ->
@@ -143,6 +153,26 @@ namespace TextParser {
             }
         )
 
+
+    pub def skippingAt(patt: Text/Regex.Pattern): TextParser[Unit, t] = 
+        use Text/Regex.{startsWithWithin}; // Name will change...
+        TextParser((sc, nc, inp, pos) ->
+            let ans = startsWithWithin(patt, inp, pos, String.length(inp)) as & Pure;
+            match ans { 
+                case Ok(s) => sc((), nc, inp, pos + String.length(s))
+                case Err(_) => nc(pos)
+            }
+        )
+
+    /// Parsing fails if regex does not compile.
+    pub def lookingAts(regex: String): TextParser[String, t] = 
+        use Text/Regex/Pattern.{compile};
+        bind(liftResult(compile(regex)), lookingAt)
+        
+    /// Parsing fails if regex does not compile.
+    pub def skippingAts(regex: String): TextParser[Unit, t] = 
+        use Text/Regex/Pattern.{compile};
+        bind(liftResult(compile(regex)), skippingAt)
 
     pub def swapError(msg: String, p: TextParser[r,t]) : TextParser[r, t] =
         TextParser((sc, _, inp, pos) -> apply1(p, sc, _ -> Err({ msg = msg, pos = pos}), inp, pos))

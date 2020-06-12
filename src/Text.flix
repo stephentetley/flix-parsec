@@ -16,52 +16,53 @@
 
 
 use TextParser.TextParser;
-use TextParser.{return};
+use TextParser.{return, lookingAts, skippingAts};
 use TextParser/Combinators.{liftResult};
 
 namespace TextParser/Text {
 
-    // Parse a newline recognized by the regular expression "\R".
-    pub def newline(): TextParser[Unit, t] = 
-        use TextParser.flatMap;
-        use Text/Regex/Pattern.{compile};
-        let* patt = liftResult(compile("\R"));
-        let* _ = TextParser.lookingAt(patt);
-        return()
 
 
     // Parse a newline recognized by the regular expression "\R".
-    pub def restOfLine(consumeNewline: Bool): TextParser[Unit, t] = 
-        use TextParser.flatMap;
-        use Text/Regex/Pattern.{compile};
+    pub def newline(): TextParser[Unit, t] = skippingAts("\R")
+        
+
+
+    // Parse a newline recognized by the regular expression "\R".
+    pub def restOfLine(consumeNewline: Bool): TextParser[String, t] = 
         let regex = if (consumeNewline) ".*\R?" else ".*";
-        let* patt = liftResult(compile(regex));
-        let* _ = TextParser.lookingAt(patt);
-        return()
+        lookingAts(regex)
+        
+    /// zero or more
+    pub def whiteSpace(): TextParser[Unit, t] = skippingAts("\s*")
 
-    // def atLeast1(p: Parser[String], errmsg: String): Parser[String] =
-    //     use TextParser.flatMap;
-    //     let* s = p;
-    //     if (s == "")
-    //         fail(errmsg)
-    //     else
-    //         return(s)
+    
+    /// one or more
+    pub def whiteSpace1(): TextParser[Unit, t] = skippingAts("\s+")
 
-    // /// Version of `atLeast1` for "skipping" (counting) parsers.
-    // def skipAtLeast1(p: Parser[Int32], errmsg: String): Parser[Unit] =
-    //     use TextParser.flatMap;
-    //     let* i = p;
-    //     if (i <= 0)
-    //         fail(errmsg)
-    //     else
-    //         return()
+    /// space or tab, zero or more
+    pub def blank(): TextParser[Unit, t] = skippingAts("\p{Blank}*")
+
+    
+    /// space or tab,  one or more
+    pub def blank1(): TextParser[Unit, t] = skippingAts("\p{Blank}+")
+
+    /// zero or more
+    pub def horizontalWhiteSpace(): TextParser[Unit, t] = skippingAts("\h*")
+
+    
+    /// one or more
+    pub def horizontalWhiteSpace1(): TextParser[Unit, t] = skippingAts("\h+")
+
+    pub def manyChar(c: Char): TextParser[String, t] =
+        let regex = Text/Regex/Pattern.quote(Char.toString(c)) + "*";
+        lookingAts(regex)
+
+    pub def many1Char(c: Char): TextParser[String, t] =
+        let regex = Text/Regex/Pattern.quote(Char.toString(c)) + "+";
+        lookingAts(regex)
 
 
-    // pub def whiteSpace(): Parser[Unit] =
-    //     liftPrim(TextParser/Internal/TextCursor.skipWhiteSpace)
-
-    // pub def whiteSpace1(): Parser[Unit] =
-    //     liftPrimResult(TextParser/Internal/TextCursor.whiteSpace1)
 
     // pub def horizon(n: Int32): Parser[String] =
     //     liftPrimResult(TextParser/Internal/TextCursor.horizon(n))
@@ -69,20 +70,8 @@ namespace TextParser/Text {
     // pub def content(n: Int32): Parser[String] =
     //     horizon(n) |> map(String.trim)
 
-    // pub def string(s: String): Parser[String] =
-    //     liftPrimResult(TextParser/Internal/TextCursor.string(s))
 
-    // pub def char(c: Char): Parser[Char] =
-    //     liftPrimResult(TextParser/Internal/TextCursor.char(c))
 
-    // pub def anyChar(): Parser[Char] =
-    //     liftPrimResult(TextParser/Internal/TextCursor.anyChar)
-
-    // pub def manyChar(c: Char): Parser[String] =
-    //     liftPrim(TextParser/Internal/TextCursor.manyChar(c))
-
-    // pub def many1Char(c: Char): Parser[String] =
-    //     atLeast1(manyChar(c), "many1Char")
 
     // pub def skipChar(c: Char): Parser[Unit] =
     //     use TextParser.flatMap;
@@ -181,25 +170,6 @@ namespace TextParser/Text {
     // pub def skip1NoneOf(cs: List[Char]): Parser[Unit] =
     //     skipAtLeast1(liftPrim(TextParser/Internal/TextCursor.skipNoneOf(cs)), "skip1NoneOf")
 
-    // pub def lookingAt(patt: Text/Regex.Pattern): Parser[String] =
-    //     liftPrimResult(TextParser/Internal/TextCursor.lookingAt(patt))
-
-    // pub def compilePattern(regex: String): Parser[Text/Regex.Pattern] =
-    //     match Text/Regex/Pattern.compile(regex) {
-    //         case Ok(patt) => return(patt)
-    //         case Err(_) => fail("PatternSyntaxException")
-    //     }
-
-    // pub def lookingAts(regex: String): Parser[String] =
-    //     use TextParser.flatMap;
-    //     let* patt = compilePattern(regex);
-    //     lookingAt(patt)
-
-
-    // pub def newline(): Parser[Unit] =
-    //     use TextParser.flatMap;
-    //     let* _ = lookingAts("\R");
-    //     return()
 
     // pub def charsTillString(needle: String): Parser[String] =
     //     liftPrim(TextParser/Internal/TextCursor.charsTillString(needle))

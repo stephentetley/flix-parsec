@@ -20,16 +20,6 @@ use TextParser.{return, fail, failure, map, alt, bind, ifThenElse};
 namespace TextParser/Combinators {
 
 
-    pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
-        case Some(a) => return(a)
-        case None    => fail()
-    }
-
-    pub def liftResult(x: Result[r, e]): TextParser[r, t] =  match x {
-        case Ok(a) => return(a)
-        case Err(_) => fail()
-    }
-
     pub def optional(p: TextParser[a, t]): TextParser[Option[a], t] = 
         alt(map(Some,p), return(None))
 
