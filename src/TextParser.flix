@@ -61,6 +61,9 @@ namespace TextParser {
     pub def failure(msg: String) : TextParser[r, t] =
         TextParser((_, _, _, pos) -> Err({ msg = msg, pos = pos}))
 
+    pub def swapError(msg: String, p: TextParser[r,t]) : TextParser[r, t] =
+        TextParser((sc, _, inp, pos) -> apply1(p, sc, _ -> Err({ msg = msg, pos = pos}), inp, pos))
+
     def apply1 (p: TextParser[r, t], sk: Success[r, t], fk: NextRes[t], inp: String, pos: Int32): Result[t, ErrMsg] = 
         let TextParser(pf) = p;
         pf(sk, fk, inp, pos)
@@ -174,90 +177,40 @@ namespace TextParser {
         use Text/Regex/Pattern.{compile};
         bind(liftResult(compile(regex)), skippingAt)
 
-    pub def swapError(msg: String, p: TextParser[r,t]) : TextParser[r, t] =
-        TextParser((sc, _, inp, pos) -> apply1(p, sc, _ -> Err({ msg = msg, pos = pos}), inp, pos))
+
+    pub def horizon(n: Int32): TextParser[String, t] = 
+        TextParser((sc, nc, inp, pos) ->
+            if (n > 0) {
+                let s = String.slice(inp, pos, pos + n);
+                sc(s, nc, inp, pos + String.length(s))
+            } else
+                sc("", nc, inp, pos)
+        )
 
 
+    ///
+    /// lookahead - run the parser but don't consume input on success
+    /// On fail, fail.
+    ///
+    pub def lookahead(p: TextParser[r, t]): TextParser[r, t] =
+        TextParser((sc, nc, inp, pos) ->
+            let sc1 = (ans, nc1, inp1, _) -> sc(ans, nc1, inp1, pos);
+            apply1(p, sc1, nc, inp, pos)
+        )
+
+    ///
+    /// Run parser `p` within a bounded length
+    ///
+    pub def bounded(n: Int32, p: TextParser[r, t]): TextParser[r, t] =
+        TextParser((sc, nc, inp, pos) ->
+            /// Applies parser `p` on a slice of the input, then "restores" the input 
+            /// for the success continuation.
+            let str = String.slice(inp, pos, pos + n);        
+            let sc1 = (ans, nc1, _, _) -> sc(ans, nc1, inp, pos + String.length(str));
+            apply1(p, sc1, nc, str, 0)
+        )
 
 
-//     /// Internal helper to make ParseErrors
-//     def applyParseError(msg: String, r: Config, s: TextCursor): ParseError & Impure =
-//         use TextParser/Internal/TextCursor.{getPos, getInput};
-//         use TextParser/Error.{makeParseError};
-//         let tabsize = r.tabsize;
-//         let pos = s.getPos();
-//         let inp = s.getInput();
-//         makeParseError(inp, tabsize, pos, msg)
-
-
-//     pub def nestError(msg: String, p: Parser[ans]): Parser[ans] =
-//         use TextParser/Error.{nestErrorMessage};
-//         Parser((r,s) ->
-//             let Parser(p1) = p;
-//             match p1(r,s) {
-//                 case Ok(a) => Ok(a)
-//                 case Err(e) => Err(nestErrorMessage(msg, e))
-//             }
-//         )
-
-
-
-//     ///
-//     /// lookahead - run the parser but don't consume input on success
-//     /// On fail, fail.
-//     ///
-//     pub def lookahead(p: Parser[a]): Parser[a] =
-//         use TextParser/Internal/TextCursor.{setPos, getPos};
-//         use TextParser/Error.{nestErrorMessage};
-//         Parser((r,s) -> {
-//             let Parser(p1) = p;
-//             let start = s.getPos();
-//             match p1(r,s) {
-//                 case Err(e) => Err(nestErrorMessage("lookahead", e))
-//                 case Ok(a) => {
-//                     s.setPos(start);
-//                     Ok(a)
-//                 }
-//             }
-//         })
-
-
-
-
-
-//     ///
-//     /// Run parser `p` within a bounded length
-//     ///
-//     pub def bounded(n: Int32, p: Parser[a]): Parser[a] =
-//         use TextParser/Internal/TextCursor.{horizon};
-//         Parser((r,s) ->
-//             match horizon(n, s) {
-//                 case Ok(str) => match parseString(p, str) {
-//                     case Ok(a) => Ok(a)
-//                     case Err(_) => Err(applyParseError("bounded", r, s))
-//                 }
-//                 case Err(_)  => Err(applyParseError("bounded", r, s))
-//             }
-//         )
-
-
-
-//     ///
-//     /// Run parser `p` if it fails reset input and raise the error
-//     ///
-//     pub def tryparse(p: Parser[a]): Parser[a] =
-//         use TextParser/Internal/TextCursor.{getPos, setPos};
-//         Parser((r,s) ->
-//             let Parser(p1) = p;
-//             let start = s.getPos();
-//             match p1(r,s) {
-//                 case Err(e) => {
-//                     s.setPos(start);
-//                     Err(e)
-//                 }
-//                 case Ok(a) => Ok(a)
-//             }
-//         )
 
 
 }

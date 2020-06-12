@@ -72,10 +72,23 @@ namespace LineCount {
 //         case Err(msg) => Console.printLine(msg)
 //     }
 
-def main(): List[Char]  = 
-    use TextParser.{runs, anyChar};
-    use TextParser/Combinators.{many};
-    match runs(many(anyChar()), "123") { 
-        case Ok(s) => s
+// def main(): List[Char]  = 
+//     use TextParser.{runs, anyChar};
+//     use TextParser/Combinators.{many};
+//     match runs(many(anyChar()), "123") { 
+//         case Ok(s) => s
+//         case Err(_) => Nil
+//     }
+
+def main(): List[String]  = 
+    use TextParser.{runs, bounded, flatMap, string, return};
+    use TextParser/Text.{many1Char};
+    let p1 = () -> { 
+        let* s1 = bounded(5, many1Char('a'));
+        let* s2 = string("bb");
+        return(s1 :: s2 :: Nil)
+    };
+    match runs(p1(), "aaaa bb") { 
+        case Ok(xs) => xs
         case Err(_) => Nil
     }

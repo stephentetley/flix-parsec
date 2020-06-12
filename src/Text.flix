@@ -62,11 +62,7 @@ namespace TextParser/Text {
         let regex = Text/Regex/Pattern.quote(Char.toString(c)) + "+";
         lookingAts(regex)
 
-
-
-    // pub def horizon(n: Int32): Parser[String] =
-    //     liftPrimResult(TextParser/Internal/TextCursor.horizon(n))
-
+        
     // pub def content(n: Int32): Parser[String] =
     //     horizon(n) |> map(String.trim)
 
