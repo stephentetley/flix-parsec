@@ -19,14 +19,6 @@ use TextParser.{return, fail, failure, map, alt, bind, ifThenElse};
 
 namespace TextParser/Combinators {
 
-    // Move into "Text" module when available.
-    pub def newline(): TextParser[Unit, t] = 
-        use TextParser.flatMap;
-        use Text/Regex/Pattern.{compile};
-        let* patt = liftResult(compile("\R"));
-        let* _ = TextParser.lookingAt(patt);
-        return()
-
 
     pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
         case Some(a) => return(a)

@@ -35,7 +35,8 @@ namespace LineCount {
 
     pub def parseLine(patt: Text/Regex.Pattern): TextParser[Unit, t] =
         use TextParser.{lookingAt};
-        use TextParser/Combinators.{seqRight, newline};
+        use TextParser/Combinators.{seqRight};
+        use TextParser/Text.{newline};
         seqRight(lookingAt(patt), newline())
 
     pub def lineCount(): TextParser[Int32, t] = 
