@@ -110,17 +110,25 @@ namespace LineCount {
 //     }
 
 // def main(): Option[Bool]  = 
-//     use TextParser.{runs, anyChar};
+//     use TextParser.{runs};
 //     use TextParser/Text.{isEof};
 //     match runs(isEof(), "no") { 
 //         case Ok(b) => Some(b)
 //         case Err(_) => None
 //     }
 
-def main(): Option[Int8]  = 
-    use TextParser.{runs, anyChar};
-    use TextParser/Token1.{int8};
-    match runs(int8(), "45") { 
+// def main(): Option[Int8]  = 
+//     use TextParser.{runs};
+//     use TextParser/Token1.{int8};
+//     match runs(int8(), "45") { 
+//         case Ok(b) => Some(b)
+//         case Err(_) => None
+//     }
+
+def main(): Option[Float64]  = 
+    use TextParser.{runs};
+    use TextParser/Token1.{float64};
+    match runs(float64(), "-45.5") { 
         case Ok(b) => Some(b)
         case Err(_) => None
     }

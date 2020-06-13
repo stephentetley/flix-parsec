@@ -15,7 +15,7 @@
  */
 
 use TextParser.TextParser;
-use TextParser.{string, liftResult};
+use TextParser.{string, liftResult, lookingAts};
 use TextParser/Combinators.{seqLeft, between, sepBy, sepBy1};
 use TextParser/Text.{whiteSpace, digits};
 
@@ -55,7 +55,7 @@ namespace TextParser/Token1 {
     pub def int8(): TextParser[Int8, t] = 
         use TextParser.flatMap;
         let body = { 
-            let* s = digits();
+            let* s = lookingAts("-?\d+");
             liftResult(Int8.fromString(s))
         };
         lexeme(body)
@@ -63,7 +63,7 @@ namespace TextParser/Token1 {
     pub def int16(): TextParser[Int16, t] = 
         use TextParser.flatMap;
         let body = { 
-            let* s = digits();
+            let* s = lookingAts("-?\d+");
             liftResult(Int16.fromString(s))
         };
         lexeme(body)
@@ -71,7 +71,7 @@ namespace TextParser/Token1 {
     pub def int32(): TextParser[Int32, t] = 
         use TextParser.flatMap;
         let body = { 
-            let* s = digits();
+            let* s = lookingAts("-?\d+");
             liftResult(Int32.fromString(s))
         };
         lexeme(body)
@@ -79,9 +79,32 @@ namespace TextParser/Token1 {
     pub def int64(): TextParser[Int64, t] = 
         use TextParser.flatMap;
         let body = { 
-            let* s = digits();
+            let* s = lookingAts("-?\d+");
             liftResult(Int64.fromString(s))
         };
         lexeme(body)
 
+    pub def bigInt(): TextParser[BigInt, t] = 
+        use TextParser.flatMap;
+        let body = { 
+            let* s = lookingAts("-?\d+");
+            liftResult(BigInt.fromString(s))
+        };
+        lexeme(body)
+
+    pub def float64(): TextParser[Float64, t] = 
+        use TextParser.flatMap;
+        let body = { 
+            let* s = lookingAts("-?\d+\.\d+");
+            liftResult(Float64.fromString(s))
+        };
+        lexeme(body)
+
+    pub def float32(): TextParser[Float32, t] = 
+        use TextParser.flatMap;
+        let body = { 
+            let* s = lookingAts("-?\d+\.\d+");
+            liftResult(Float32.fromString(s))
+        };
+        lexeme(body)
 }
