@@ -80,15 +80,39 @@ namespace LineCount {
 //         case Err(_) => Nil
 //     }
 
-def main(): List[String]  = 
-    use TextParser.{runs, bounded, flatMap, string, return};
-    use TextParser/Text.{many1Char};
-    let p1 = () -> { 
-        let* s1 = bounded(5, many1Char('a'));
-        let* s2 = string("bb");
-        return(s1 :: s2 :: Nil)
-    };
-    match runs(p1(), "aaaa bb") { 
-        case Ok(xs) => xs
-        case Err(_) => Nil
+// def main(): List[String]  = 
+//     use TextParser.{runs, bounded, flatMap, string, return};
+//     use TextParser/Text.{many1Char};
+//     let p1 = () -> { 
+//         let* s1 = bounded(5, many1Char('a'));
+//         let* s2 = string("bb");
+//         return(s1 :: s2 :: Nil)
+//     };
+//     match runs(p1(), "aaaa bb") { 
+//         case Ok(xs) => xs
+//         case Err(_) => Nil
+//     }
+
+// def main(): String  = 
+//     use TextParser.{runs, anyChar};
+//     use TextParser/Text.{hexDigits};
+//     match runs(hexDigits(), "E34b") { 
+//         case Ok(s) => s
+//         case Err(_) => "ERROR"
+//     }
+
+// def main(): Option[Bool]  = 
+//     use TextParser.{runs, anyChar};
+//     use TextParser/Text.{isEof};
+//     match runs(isEof(), "") { 
+//         case Ok(b) => Some(b)
+//         case Err(_) => None
+//     }
+
+def main(): Option[Bool]  = 
+    use TextParser.{runs, anyChar};
+    use TextParser/Text.{isEof};
+    match runs(isEof(), "no") { 
+        case Ok(b) => Some(b)
+        case Err(_) => None
     }

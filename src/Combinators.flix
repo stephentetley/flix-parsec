@@ -15,7 +15,7 @@
  */
 
 use TextParser.{TextParser};
-use TextParser.{return, fail, failure, map, alt, bind, ifThenElse};
+use TextParser.{return, fail, failure, map, alt, bind, ifThenElse, lookahead};
 
 namespace TextParser/Combinators {
 
@@ -41,6 +41,7 @@ namespace TextParser/Combinators {
     pub def ignore(p: TextParser[r, t]): TextParser[Unit, t] =
         map(constant(), p)
 
+
     pub def between(openp: TextParser[u, t], closep: TextParser[v, t], p: TextParser[r, t]): TextParser[r, t] = 
         use TextParser.flatMap;
         let* _ = openp;
@@ -55,6 +56,10 @@ namespace TextParser/Combinators {
             return(a)
         else
             failure("satisfies")
+            
+    /// `p` is run with `lookahead`, no text is consumed
+    pub def succeeds(p: TextParser[r, t]): TextParser[Bool, t] = 
+        alt(seqRight(lookahead(p), return(true)), return(false))
 
     pub def choice(ps: List[TextParser[a, t]]): TextParser[a, t] = 
         match ps { 

@@ -203,7 +203,7 @@ namespace TextParser {
     ///
     pub def bounded(n: Int32, p: TextParser[r, t]): TextParser[r, t] =
         TextParser((sc, nc, inp, pos) ->
-            /// Applies parser `p` on a slice of the input, then "restores" the input 
+            /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
             let str = String.slice(inp, pos, pos + n);        
             let sc1 = (ans, nc1, _, _) -> sc(ans, nc1, inp, pos + String.length(str));
