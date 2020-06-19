@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-namespace TextParser/Internal/Common {
 
 
+namespace TextParser/Internal/Error {
 
-    pub def textPos(i: Int32, tabsize: Int32, s: String): Option[(Int32, Int32)] = 
-        textPosHelper(String.length(s), i, tabsize, s, 1, 1, 0) 
+    
 
-    def textPosHelper(len: Int32, pos: Int32, tabsize: Int32, src: String, linenum: Int32, colnum: Int32, ix: Int32): Option[(Int32, Int32)] = 
+    pub def textPos(tabsize: Int32, pos: Int32, s: String): (Int32, Int32) = 
+        match textPosHelper(String.length(s), pos, tabsize, s, 1, 1, 0) {
+            case Some(x) => x
+            case None => (0,0)
+        }
+
+
+    /// TODO - we could do a simpler version of this with Regex ranges and `countMatch("\R")`
+    def textPosHelper(len: Int32, pos: Int32, tabsize: Int32, src: String, linenum: Int32, col: Int32, ix: Int32): Option[(Int32, Int32)] = 
         if (ix == pos)
-            Some (linenum, colnum)
+            Some((linenum, col))
         else { 
             if (ix > len)
                 None        
@@ -33,26 +40,26 @@ namespace TextParser/Internal/Common {
                     case '\r' =>
                         if (ix+1 <= pos && ix + 1 <= len) {
                             if (String.charAt(ix+1,src) == '\n') { 
-                                // carriage retrun & line feed
+                                // carriage return & line feed
                                 textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+2)
                             } else {
-                                // jsut carraige return
+                                // jsut carriage return
                                 textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+1)
                             }
                         } else {
                             // At end anyway, just seen newline so increment to next
                             Some(linenum+1, 1)
                         }
-                    case '\t' => textPosHelper(len, pos, tabsize, src, linenum, colnum+tabsize, ix+1)
-                    case _ => textPosHelper(len, pos, tabsize, src, linenum, colnum+1, ix+1)
+                    case '\t' => textPosHelper(len, pos, tabsize, src, linenum, col + tabsize, ix+1)
+                    case _ => textPosHelper(len, pos, tabsize, src, linenum, col + 1, ix+1)
                 }
             }
         }
 
-    pub def getBeforeAndAfter(pos: Int32, s: String): (String,String) = 
+    pub def getBeforeAndAfter(pos: Int32, s: String): (String, String) = 
         getBeforeAndAfterHelper(pos, s) as & Pure 
 
-    def getBeforeAndAfterHelper(pos: Int32, s: String): (String,String) & Impure = 
+    def getBeforeAndAfterHelper(pos: Int32, s: String): (String, String) & Impure = 
         let (before, after) = String.splitAt(pos, s);
         let beforeArr = String.split(before, "\R{1}");
         let afterArr = String.split(after, "\R{1}");
@@ -70,6 +77,5 @@ namespace TextParser/Internal/Common {
                 before
         }; 
         (before1, after1)
-
 
 }

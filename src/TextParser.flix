@@ -28,26 +28,59 @@ namespace TextParser {
 
     pub opaque type TextParser[r, t] = Success[r, t] -> NextRes[t] -> Parser1[t]
 
+    type alias Position = { lineNumber: Int32, column: Int32 }
+
+    type alias ParseError = 
+        { message: String
+        , position: Position
+        , textBefore: String
+        , textAfter: String
+        }
+
+    pub def showPosition(pos: Position): String = 
+        "Line=" + Int32.toString(pos.lineNumber) + ", Col=" + Int32.toString(pos.column)
+
+    pub def showParseError(err: ParseError): String = 
+        String.unlines(err.message :: showPosition(err.position) 
+                            :: "Seen:" :: "-----" :: err.textBefore 
+                            :: "Pending:" :: "--------" :: err.textAfter :: Nil)
+
+
     ///
     /// Alias for `parseString`.
     ///
-    pub def run(p: TextParser[t, t], input: String) : Result[t, ErrMsg] = 
+    pub def run(p: TextParser[t, t], input: String) : Result[t, ParseError] = 
+        use TextParser/Internal/Error.{textPos, getBeforeAndAfter};
+        let tabsize = 4;    /// TODO make configurable
         let fk = pos -> Err({ msg = "Parse error!", pos = pos });
         let sk = (a, _, _, _) -> Ok(a);
         let TextParser(p1) = p;
-        p1(sk, fk, input, 0)
+        match p1(sk, fk, input, 0) {
+            case Ok(a) => Ok(a)
+            case Err(e1) => {
+                let (l,c) = textPos(tabsize, e1.pos, input);
+                let pos = { lineNumber = l, column = c };
+                let (before, after) = getBeforeAndAfter(e1.pos, input);
+                Err({ message = e1.msg, position = pos, textBefore = before, textAfter = after })
+            }
+        }
+
+
 
     /// TODO - convert pos into line and column...
     /// 
     pub def runs(p: TextParser[t, t], input: String) : Result[t, String] = 
         match run(p, input) { 
             case Ok(a) => Ok(a)
-            case Err(e) => Err(Int32.toString(e.pos) + ": " + e.msg)
+            case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFile(parser: TextParser[t, t], path: System.FilePath, cs: Text.Charset): Result[t, ErrMsg] & Impure =
+    pub def parseFile(parser: TextParser[t, t], path: System.FilePath, cs: Text.Charset): Result[t, ParseError] & Impure =
         match System/File.readFile(path, cs) {
-            case Err(_) => Err({ msg = "IO Error - could not read file", pos = 0 })
+            case Err(_) => Err({ message = "IO Error - could not read file"
+                                , position = { lineNumber = 0, column = 0 }
+                                , textBefore = ""
+                                , textAfter = "" })
             case Ok(text) => run(parser, text)
         }
 
