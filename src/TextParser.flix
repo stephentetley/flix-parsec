@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-
+use System.Error.{IOException, Generic};
 
 namespace TextParser {
 
@@ -75,13 +75,13 @@ namespace TextParser {
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFile(parser: TextParser[t, t], path: System.FilePath, cs: Text.Charset): Result[t, ParseError] & Impure =
+    pub def parseFile(parser: TextParser[t, t], path: System.FilePath, cs: Text.Charset): Result[t, System.Error] & Impure =
         match System/File.readFile(path, cs) {
-            case Err(_) => Err({ message = "IO Error - could not read file"
-                                , position = { lineNumber = 0, column = 0 }
-                                , textBefore = ""
-                                , textAfter = "" })
-            case Ok(text) => run(parser, text)
+            case Err(e) => Err(e)
+            case Ok(text) => match run(parser, text) {
+                case Ok(a) => Ok(a)
+                case Err(e1) => Err(Generic(showParseError(e1)))
+            }
         }
 
 
