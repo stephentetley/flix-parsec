@@ -40,6 +40,9 @@ namespace TextParser {
     pub def showPosition(pos: Position): String = 
         "Line=" + Int32.toString(pos.lineNumber) + ", Col=" + Int32.toString(pos.column)
 
+    pub def samePosition(pos1: Position, pos2: Position): Bool = 
+        pos1.lineNumber == pos2.lineNumber && pos1.column == pos2.column
+
     pub def showParseError(err: ParseError): String = 
         String.unlines(err.message :: showPosition(err.position) 
                             :: "Seen:" :: "-----" :: err.textBefore 
@@ -96,6 +99,8 @@ namespace TextParser {
 
     pub def swapError(msg: String, p: TextParser[r,t]) : TextParser[r, t] =
         TextParser((sc, _, inp, pos) -> apply1(p, sc, _ -> Err({ msg = msg, pos = pos}), inp, pos))
+
+    pub def <!!>(p: TextParser[r,t], msg: String) : TextParser[r, t] = swapError(msg, p)
 
     def apply1 (p: TextParser[r, t], sk: Success[r, t], fk: NextRes[t], inp: String, pos: Int32): Result[t, ErrMsg] = 
         let TextParser(pf) = p;

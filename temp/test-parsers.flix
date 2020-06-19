@@ -2,17 +2,12 @@
 def fail01() : Result[Unit, String] = 
     TextParser.runs(TextParser.fail(), "")
 
-@test
-def return01() : Result[Int32, String] =
-    TextParser.runs(TextParser.return(1), "")
 
 @test
 def bind01() : Result[Int32, String] =
     TextParser.runs(TextParser.bind(TextParser.return(1), v -> TextParser.return(v)), "")
 
-@test
-def map01() : Result[Int32, String] =
-    TextParser.runs(TextParser.map(x -> x + 1, TextParser.return(1)), "")
+
 
 
  @test
