@@ -16,7 +16,7 @@
 
 
 use TextParser.TextParser;
-use TextParser.{return, map, lookingAts, skippingAts};
+use TextParser.{return, map, lookahead, lookingAts, skippingAts};
 use TextParser/Combinators.{liftResult};
 
 namespace TextParser/Text {
@@ -28,11 +28,15 @@ namespace TextParser/Text {
         
 
 
-    // Parse a newline recognized by the regular expression "\R".
+    /// Parse the rest of the line.
     pub def restOfLine(consumeNewline: Bool): TextParser[String, t] = 
         let regex = if (consumeNewline) ".*\R?" else ".*";
         lookingAts(regex)
         
+    /// Peek rest of line.
+    pub def peekRestOfLine(): TextParser[String, t] = 
+        lookahead(restOfLine(false))
+    
     /// zero or more
     pub def whiteSpace(): TextParser[Unit, t] = skippingAts("\s*")
 
