@@ -18,15 +18,13 @@ use System.Error.{IOException, Generic};
 
 namespace TextParser {
 
-    type alias ErrMsg = { msg: String, pos: Int32 }
+    type alias Error1 = { msg: String, pos: Int32 }
 
-    type alias NextRes[t] = Int32 -> Result[t, ErrMsg]
+    type alias FailK[t] = Int32 -> Result[t, Error1]
 
-    type alias Parser1[t] = String -> Int32 -> Result[t, ErrMsg] 
+    type alias SuccessK[r, t] = r -> FailK[t] -> String -> Int32 -> Result[t, Error1]
 
-    type alias Success[r, t] = r -> NextRes[t] -> Parser1[t]
-
-    pub opaque type TextParser[r, t] = Success[r, t] -> NextRes[t] -> Parser1[t]
+    pub opaque type TextParser[r, t] = SuccessK[r, t] -> FailK[t] -> String -> Int32 -> Result[t, Error1]
 
     type alias Position = { lineNumber: Int32, column: Int32 }
 
@@ -55,7 +53,7 @@ namespace TextParser {
     pub def run(p: TextParser[t, t], input: String) : Result[t, ParseError] = 
         use TextParser/Internal/Error.{textPos, getBeforeAndAfter};
         let tabsize = 4;    /// TODO make configurable
-        let fk = pos -> Err({ msg = "Parse error!", pos = pos });
+        let fk = (pos) -> Err({ msg = "Parse Error", pos = pos });
         let sk = (a, _, _, _) -> Ok(a);
         let TextParser(p1) = p;
         match p1(sk, fk, input, 0) {
@@ -70,8 +68,7 @@ namespace TextParser {
 
 
 
-    /// TODO - convert pos into line and column...
-    /// 
+    ///
     pub def runs(p: TextParser[t, t], input: String) : Result[t, String] = 
         match run(p, input) { 
             case Ok(a) => Ok(a)
@@ -91,18 +88,20 @@ namespace TextParser {
     pub def return(x: a): TextParser[a, t] = 
         TextParser((succ, next, inp, pos) -> succ(x, next, inp, pos))
 
-    pub def fail(): TextParser[r, t] = 
-        TextParser((_, next, _, pos) -> next(pos))
+    pub def failure(message: String) : TextParser[r, t] =
+        TextParser((_, _, _, pos) -> Err({ pos = pos, msg = message}))
 
-    pub def failure(msg: String) : TextParser[r, t] =
-        TextParser((_, _, _, pos) -> Err({ msg = msg, pos = pos}))
+    pub def swapError(p: TextParser[r,t], message: String) : TextParser[r, t] =
+        TextParser((sc, nc, inp, pos) ->
+            match apply1(p, sc, nc, inp, pos) {
+                case Ok(a) => Ok(a)
+                case Err(e) => Err({ msg = message | e})
+            }
+        )
 
-    pub def swapError(msg: String, p: TextParser[r,t]) : TextParser[r, t] =
-        TextParser((sc, _, inp, pos) -> apply1(p, sc, _ -> Err({ msg = msg, pos = pos}), inp, pos))
 
-    pub def <!!>(p: TextParser[r,t], msg: String) : TextParser[r, t] = swapError(msg, p)
-
-    def apply1 (p: TextParser[r, t], sk: Success[r, t], fk: NextRes[t], inp: String, pos: Int32): Result[t, ErrMsg] = 
+    
+    def apply1 (p: TextParser[r, t], sk: SuccessK[r, t], fk: FailK[t], inp: String, pos: Int32): Result[t, Error1] =
         let TextParser(pf) = p;
         pf(sk, fk, inp, pos)
 
@@ -132,12 +131,12 @@ namespace TextParser {
     
     pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
         case Some(a) => return(a)
-        case None    => fail()
+        case None    => failure("None")
     }
 
     pub def liftResult(x: Result[r, e]): TextParser[r, t] =  match x {
         case Ok(a) => return(a)
-        case Err(_) => fail()
+        case Err(_) => failure("Err")
     }
 
     pub def endOfInput() : TextParser[Unit, t] =
@@ -147,7 +146,7 @@ namespace TextParser {
                 sc((), nc, inp, pos)
             else
                 nc(pos)
-        )
+        ) 
 
     pub def string(s: String): TextParser[String, t] = 
         TextParser((sc, nc, inp, pos) ->
@@ -186,6 +185,7 @@ namespace TextParser {
 
     pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] = 
         use Text/Regex.{boundedStartsWith};
+        use Text/Regex/Pattern.{toString};
         TextParser((sc, nc, inp, pos) ->
             let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
             match ans { 
@@ -208,12 +208,12 @@ namespace TextParser {
     /// Parsing fails if regex does not compile.
     pub def lookingAts(regex: String): TextParser[String, t] = 
         use Text/Regex/Pattern.{compile};
-        bind(liftResult(compile(regex)), lookingAt)
+        bind(liftResult(compile(regex)), lookingAt) `swapError` "lookingAts"
         
     /// Parsing fails if regex does not compile.
     pub def skippingAts(regex: String): TextParser[Unit, t] = 
         use Text/Regex/Pattern.{compile};
-        bind(liftResult(compile(regex)), skippingAt)
+        bind(liftResult(compile(regex)), skippingAt) `swapError` "skippingAts"
 
 
     pub def horizon(n: Int32): TextParser[String, t] = 
