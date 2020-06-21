@@ -40,7 +40,7 @@ namespace TextParser {
     pub def showPosition(pos: Position): String = 
         "Line=" + Int32.toString(pos.lineNumber) + ", Col=" + Int32.toString(pos.column)
 
-    pub def samePosition(pos1: Position, pos2: Position): Bool = 
+    pub def samePosition(pos1: Position, pos2: Position): Bool =
         pos1.lineNumber == pos2.lineNumber && pos1.column == pos2.column
 
     pub def showParseError(err: ParseError): String = 
@@ -185,9 +185,9 @@ namespace TextParser {
         )
 
     pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] = 
-        use Text/Regex.{startsWithWithin}; // Name will change...
+        use Text/Regex.{boundedStartsWith};
         TextParser((sc, nc, inp, pos) ->
-            let ans = startsWithWithin(patt, inp, pos, String.length(inp)) as & Pure;
+            let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
             match ans { 
                 case Ok(s) => sc(s, nc, inp, pos + String.length(s))
                 case Err(_) => nc(pos)
@@ -196,9 +196,9 @@ namespace TextParser {
 
 
     pub def skippingAt(patt: Text/Regex.Pattern): TextParser[Unit, t] = 
-        use Text/Regex.{startsWithWithin}; // Name will change...
+        use Text/Regex.{boundedStartsWith};
         TextParser((sc, nc, inp, pos) ->
-            let ans = startsWithWithin(patt, inp, pos, String.length(inp)) as & Pure;
+            let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
             match ans { 
                 case Ok(s) => sc((), nc, inp, pos + String.length(s))
                 case Err(_) => nc(pos)
