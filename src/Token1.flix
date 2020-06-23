@@ -15,8 +15,8 @@
  */
 
 use TextParser.TextParser;
-use TextParser.{string, liftResult, lookingAts};
-use TextParser/Combinators.{seqLeft, between, sepBy, sepBy1};
+use TextParser.{string, liftResult, lookingAts, seqLeft};
+use TextParser/Combinators.{between, sepBy, sepBy1};
 use TextParser/Text.{whiteSpace, digits};
 
 

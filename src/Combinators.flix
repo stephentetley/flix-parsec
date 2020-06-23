@@ -15,7 +15,7 @@
  */
 
 use TextParser.{TextParser};
-use TextParser.{return, fail, failure, map, alt, bind, ifThenElse, lookahead};
+use TextParser.{return, fail, failure, map, alt, bind, ifThenElse, lookahead, seqLeft, seqRight};
 
 namespace TextParser/Combinators {
 
@@ -26,17 +26,7 @@ namespace TextParser/Combinators {
     pub def optionalWithDefault(p: TextParser[a, t], d: a): TextParser[a, t] = 
         alt(p, return(d))
 
-    pub def seqLeft(p: TextParser[r, t], q: TextParser[s, t]): TextParser[r, t] =
-        use TextParser.flatMap;
-        let* a = p;
-        let* _ = q;
-        return(a)
 
-    pub def seqRight(p: TextParser[r, t], q: TextParser[s, t]): TextParser[s, t] =
-        use TextParser.flatMap;
-        let* _ = p;
-        let* b = q;
-        return(b)
 
     pub def ignore(p: TextParser[r, t]): TextParser[Unit, t] =
         map(constant(), p)
