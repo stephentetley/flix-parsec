@@ -67,8 +67,7 @@ def errorPos01(): Bool =
 
 @test
 def errorPos02(): Bool =
-    use TextParser.{run, string, samePosition};
-    use TextParser/Combinators.{seqRight};
+    use TextParser.{run, string, samePosition, seqRight};
     let p1 = string("a");
     run(seqRight(p1,p1), "ab") |> Result.mapErr(e -> e.position) |> x -> whenErr(x, samePosition({ lineNumber = 1, column = 2}))
 
@@ -101,48 +100,41 @@ def endOfInput02(): Bool =
 @test
 def swapError01(): Bool =
     use TextParser.{run, string, swapError};
-    let p1 = swapError("p1", string("a"));
+    let p1 = string("a") `swapError` "p1";
     run(p1, "") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
 def swapError02(): Bool =
-    use TextParser.{run, string, swapError};
-    use TextParser/Combinators.{seqRight};
-    let p1 = swapError("p1", string("a"));
-    let p2 = swapError("p2", string("b"));
+    use TextParser.{run, string, seqRight, swapError};
+    let p1 = string("a") `swapError` "p1";
+    let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "bb") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
 def swapError03(): Bool =
-    use TextParser.{run, string, swapError};
-    use TextParser/Combinators.{seqRight};
-    let p1 = swapError("p1", string("a"));
-    let p2 = swapError("p2", string("b"));
+    use TextParser.{run, string, seqRight, swapError};
+    let p1 = string("a") `swapError` "p1";
+    let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "ac") |> Result.mapErr(e -> e.message) == Err("p2")
 
 @test
 def swapError04(): Bool =
-    use TextParser.{run, string};
-    use TextParser.{<!!>};
-    let p1 = string("a") <!!> "p1";
+    use TextParser.{run, string, swapError};
+    let p1 = string("a") `swapError` "p1";
     run(p1, "") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
 def swapError05(): Bool =
-    use TextParser.{run, string};
-    use TextParser.{<!!>};
-    use TextParser/Combinators.{seqRight};
-    let p1 = string("a") <!!> "p1";
-    let p2 = string("b") <!!> "p2";
+    use TextParser.{run, string, seqRight, swapError};
+    let p1 = string("a") `swapError` "p1";
+    let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "bb") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
 def swapError06(): Bool =
-    use TextParser.{run, string};
-    use TextParser/Combinators.{seqRight};
-    use TextParser.{<!!>};
-    let p1 = string("a") <!!> "p1";
-    let p2 = string("b") <!!> "p2";
+    use TextParser.{run, string, seqRight, swapError};
+    let p1 = string("a") `swapError` "p1";
+    let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "ac") |> Result.mapErr(e -> e.message) == Err("p2")
 
 }

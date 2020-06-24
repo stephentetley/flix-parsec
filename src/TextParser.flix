@@ -106,11 +106,17 @@ namespace TextParser {
         use Data/Transient/DList.{singleton};
         TextParser((_, fk, _, pos, _) -> fk(pos, singleton(message)))
 
+    ///
+    /// `swapError` is quite subtle. Swapping the error continuate needs to be
+    /// a "local" operation which is undone (restored) afterwards (c.f. local in the Reader
+    /// monad). It must not be a "stateful" operation with unlimited extent.
+    ///
     pub def swapError(p: TextParser[r,t], message: String) : TextParser[r, t] =
         use Data/Transient/DList.{singleton};
-        TextParser((sk, fk) ->
-            let fk1 = (pos, _) -> fk(pos, singleton(message));
-            apply1(p, sk, fk1)
+        TextParser((sk, fk, inp, pos, errs) ->
+            let fk1 = (pos1, _) -> fk(pos1, singleton(message));
+            let sk1 = (x, _, _, pos1, _) -> sk(x, fk, inp, pos1, errs);
+            apply1(p, sk1, fk1, inp, pos, errs)
         )
 
     def apply1 (p: TextParser[r, t], sk: SuccessK[r, t], fk: FailK[t], inp: String, pos: Int32, errs: Failures): t =
