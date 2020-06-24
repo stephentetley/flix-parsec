@@ -20,5 +20,6 @@ import ca.uwaterloo.flix.util.{FlixTest, Options}
 import org.scalatest.Suites
 
 class TestTextParser extends Suites(
+  new FlixTest("TestCombinators", "main/test/spt/textparser/TestCombinators.flix")(Options.TestWithLibrary),
   new FlixTest("TestTextParser", "main/test/spt/textparser/TestTextParser.flix")(Options.TestWithLibrary),
 )

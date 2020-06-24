@@ -37,6 +37,61 @@ def return01() : Bool =
     use TextParser.{run, return};
     run(return(1), "") |> x -> whenOk(x, v -> v == 1)
 
+
+/////////////////////////////////////////////////////////////////////////////
+// ifThenElse                                                              //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def ifTheElse01(): Bool =
+    use TextParser.{run, char, failure, ifThenElse};
+    let p1 = ifThenElse(char('a'), _ -> char('b'), failure("ifTheElse"));
+    run(p1, "ab") |> x -> whenOk(x, c -> c == 'b')
+
+@test
+def ifTheElse02(): Bool =
+    use TextParser.{run, char, string, ifThenElse};
+    let p1 = ifThenElse(char('x'), _ -> string("yz"), string("abc"));
+    run(p1, "xyz") |> x -> whenOk(x, s -> s == "yz")
+
+@test
+def ifTheElse03(): Bool =
+    use TextParser.{run, char, string, ifThenElse};
+    let p1 = ifThenElse(char('x'), _ -> string("yz"), string("abc"));
+    run(p1, "abc") |> x -> whenOk(x, s -> s == "abc")
+
+
+/////////////////////////////////////////////////////////////////////////////
+// char                                                                    //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def char01(): Bool =
+    use TextParser.{run, char};
+    let p1 = char('a');
+    run(p1, "a") |> x -> whenOk(x, c -> c == 'a')
+
+@test
+def char02(): Bool =
+    use TextParser.{run, char, flatMap, return};
+    let p1 = {
+        let* _ = char('a');
+        let* b = char('b');
+        return(b)
+    };
+    run(p1, "ab") |> x -> whenOk(x, c -> c == 'b')
+
+@test
+def char03(): Bool =
+    use TextParser.{run, char, flatMap, return};
+    let p1 = {
+        let* _ = char('a');
+        let* _ = char('b');
+        let* c = char('c');
+        return(c)
+    };
+    run(p1, "abc") |> x -> whenOk(x, c -> c == 'c')
+
 /////////////////////////////////////////////////////////////////////////////
 // map                                                                     //
 /////////////////////////////////////////////////////////////////////////////
@@ -136,5 +191,6 @@ def swapError06(): Bool =
     let p1 = string("a") `swapError` "p1";
     let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "ac") |> Result.mapErr(e -> e.message) == Err("p2")
+
 
 }
