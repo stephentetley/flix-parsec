@@ -273,14 +273,17 @@ namespace TextParser {
         use Text/Regex/Pattern.{compile};
         bind(liftResult(compile(regex)), skippingAt) `swapError` "skippingAts"
 
-
+    // Truncates if eof...
     pub def horizon(n: Int32): TextParser[String, t] = 
-        TextParser((sc, nc, inp, pos) ->
-            if (n > 0) {
-                let s = String.slice(inp, pos, pos + n);
-                sc(s, nc, inp, pos + String.length(s))
-            } else
-                sc("", nc, inp, pos)
+        use Data/Transient/DList.{singleton};
+        TextParser((sk, fk, inp, pos, errs) ->
+            if (n < 0) {
+                let msg = "horizon - invalid size";
+                fk(pos, singleton(msg))
+            } else {
+                let str = String.slice(inp, pos, pos + n);
+                sk(str, fk, inp, pos + String.length(str), errs)
+            } 
         )
 
 
@@ -289,21 +292,23 @@ namespace TextParser {
     /// On fail, fail.
     ///
     pub def lookahead(p: TextParser[r, t]): TextParser[r, t] =
-        TextParser((sc, nc, inp, pos) ->
-            let sc1 = (ans, nc1, inp1, _) -> sc(ans, nc1, inp1, pos);
-            apply1(p, sc1, nc, inp, pos)
+        TextParser((sk, fk, inp, pos) ->
+            let sk1 = (ans, fk1, _, _) -> sk(ans, fk1, inp, pos);
+            apply1(p, sk1, fk, inp, pos)
         )
 
     ///
     /// Run parser `p` within a bounded length
     ///
     pub def bounded(n: Int32, p: TextParser[r, t]): TextParser[r, t] =
-        TextParser((sc, nc, inp, pos) ->
+        use Data/Transient/DList.{singleton};
+        TextParser((sk, fk, inp, pos, errs) ->
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
-            let str = String.slice(inp, pos, pos + n);        
-            let sc1 = (ans, nc1, _, _) -> sc(ans, nc1, inp, pos + String.length(str));
-            apply1(p, sc1, nc, str, 0)
+            let str = String.slice(inp, pos, pos + n);
+            let fk1 = (_, _) -> fk(pos, singleton("bounded"));
+            let sk1 = (ans, _, _, _) -> sk(ans, fk, inp, pos + String.length(str));
+            apply1(p, sk1, fk1, str, 0, errs)
         )
 
 
