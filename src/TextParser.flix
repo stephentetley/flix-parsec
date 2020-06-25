@@ -176,6 +176,15 @@ namespace TextParser {
         case Err(_) => failure("Err")
     }
 
+
+    pub def getPosition(): TextParser[Position, t] =  
+        TextParser((sk, fk, inp, pos) ->
+            let tabsize = 4;    // TODO make configurable
+            let (x,y) = TextParser/Internal/Error.textPos(tabsize, pos, inp);
+            sk({ lineNumber = x, column = y }, fk, inp, pos)
+        )
+
+
     pub def endOfInput() : TextParser[Unit, t] =
         use Data/Transient/DList.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
