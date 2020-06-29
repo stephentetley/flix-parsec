@@ -21,11 +21,11 @@ namespace TextParser {
 
     type alias Failures = DList[String]
 
-    type alias FailK[t] = Int32 -> Failures -> t
+    type alias FailK[t] = Int32 -> Failures ~> t
 
-    type alias SuccessK[r, t] = r -> FailK[t] -> String -> Int32 -> Failures -> t
+    type alias SuccessK[r, t] = r -> FailK[t] -> String -> Int32 -> Failures ~> t
 
-    pub opaque type TextParser[r, t] = SuccessK[r, t] -> FailK[t] -> String -> Int32 -> Failures -> t
+    pub opaque type TextParser[r, t] = SuccessK[r, t] -> FailK[t] -> String -> Int32 -> Failures ~> t
 
     type alias Position = { lineNumber: Int32, column: Int32 }
 
@@ -63,12 +63,12 @@ namespace TextParser {
     ///
     /// Alias for `parseString`.
     ///
-    pub def run(p: TextParser[t, Result[t, Error1]], input: String) : Result[t, ParseError] =
+    pub def run(p: TextParser[t, Result[t, Error1]], input: String) : Result[t, ParseError] & Impure =
         use Data/Transient/DList.{toList, empty};
         use TextParser/Internal/Error.{textPos, getBeforeAndAfter};
         let tabsize = 4;    // TODO make configurable
-        let fk = (pos, errs) -> Err({ msgs = toList(errs), pos = pos });
-        let sk = (a, _, _, _, _) -> Ok(a);
+        let fk = (pos, errs) -> Err({ msgs = toList(errs), pos = pos }) as & Impure;
+        let sk = (a, _, _, _, _) -> Ok(a) as & Impure;
         let TextParser(p1) = p;
         match p1(sk, fk, input, 0, empty()) {
             case Ok(a) => Ok(a)
@@ -84,7 +84,7 @@ namespace TextParser {
         }
 
     ///
-    pub def runs(p: TextParser[t, Result[t, Error1]], input: String) : Result[t, String] =
+    pub def runs(p: TextParser[t, Result[t, Error1]], input: String) : Result[t, String] & Impure =
         match run(p, input) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
@@ -119,7 +119,7 @@ namespace TextParser {
             apply1(p, sk1, fk1, inp, pos, errs)
         )
 
-    def apply1 (p: TextParser[r, t], sk: SuccessK[r, t], fk: FailK[t], inp: String, pos: Int32, errs: Failures): t =
+    def apply1 (p: TextParser[r, t], sk: SuccessK[r, t], fk: FailK[t], inp: String, pos: Int32, errs: Failures): t & Impure =
         let TextParser(pf) = p;
         pf(sk, fk, inp, pos, errs)
 
@@ -142,28 +142,28 @@ namespace TextParser {
 
     pub def alt(p: TextParser[a, t], q: TextParser[a, t]): TextParser[a, t] =
         use Data/Transient/DList.{append};
-        TextParser((sc, nc, inp, pos, errs) ->
-            let pnc = (_, perrs) -> {
-                let qnc = (_, qerrs) -> nc(pos, append(perrs, qerrs));
-                apply1(q, sc, qnc, inp, pos, perrs)
+        TextParser((sk, fk, inp, pos, errs) ->
+            let pfk = (_, perrs) -> {
+                let qfk = (_, qerrs) -> fk(pos, append(perrs, qerrs));
+                apply1(q, sk, qfk, inp, pos, perrs)
             };
-            apply1(p, sc, pnc, inp, pos, errs)
+            apply1(p, sk, pfk, inp, pos, errs)
         )
 
 
     pub def seqLeft(p: TextParser[r, t], q: TextParser[s, t]): TextParser[r, t] =
-        TextParser(sc ->
-            apply1(p, x -> apply1(q, _ -> sc(x)))
+        TextParser(sk ->
+            apply1(p, x -> apply1(q, _ -> sk(x)))
         )
 
     pub def seqRight(p: TextParser[r, t], q: TextParser[s, t]): TextParser[s, t] =
-        TextParser(sc ->
-            apply1(p, _ -> apply1(q, y -> sc(y)))
+        TextParser(sk ->
+            apply1(p, _ -> apply1(q, y -> sk(y)))
         )
 
     pub def ifThenElse(cond: TextParser[r, t], thenp: r -> TextParser[s,t], elsep: TextParser[s, t]): TextParser[s, t] = 
-        TextParser((sc, nc, inp, pos) -> 
-            apply1(cond, x -> apply1(thenp(x),sc), apply1(elsep, sc, nc, inp), inp, pos))
+        TextParser((sk, fk, inp, pos) ->
+            apply1(cond, x -> apply1(thenp(x), sk), apply1(elsep, sk, fk, inp), inp, pos))
 
     
     pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
@@ -176,6 +176,11 @@ namespace TextParser {
         case Err(_) => failure("Err")
     }
 
+    pub def liftAction(f: Unit ~> r): TextParser[r, t] =
+        TextParser((sk, fk, inp, pos, errs) ->
+            let a = f();
+            sk(a, fk, inp, pos, errs)
+        )
 
     pub def getPosition(): TextParser[Position, t] =  
         TextParser((sk, fk, inp, pos) ->

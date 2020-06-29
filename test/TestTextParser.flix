@@ -33,7 +33,7 @@ def whenOk(x: Result[a, e], test: a -> Bool): Bool = match x {
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def return01() : Bool =
+def return01() : Bool & Impure =
     use TextParser.{run, return};
     run(return(1), "") |> x -> whenOk(x, v -> v == 1)
 
@@ -43,19 +43,19 @@ def return01() : Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def ifTheElse01(): Bool =
+def ifTheElse01(): Bool & Impure =
     use TextParser.{run, char, failure, ifThenElse};
     let p1 = ifThenElse(char('a'), _ -> char('b'), failure("ifTheElse"));
     run(p1, "ab") |> x -> whenOk(x, c -> c == 'b')
 
 @test
-def ifTheElse02(): Bool =
+def ifTheElse02(): Bool & Impure =
     use TextParser.{run, char, string, ifThenElse};
     let p1 = ifThenElse(char('x'), _ -> string("yz"), string("abc"));
     run(p1, "xyz") |> x -> whenOk(x, s -> s == "yz")
 
 @test
-def ifTheElse03(): Bool =
+def ifTheElse03(): Bool & Impure =
     use TextParser.{run, char, string, ifThenElse};
     let p1 = ifThenElse(char('x'), _ -> string("yz"), string("abc"));
     run(p1, "abc") |> x -> whenOk(x, s -> s == "abc")
@@ -66,13 +66,13 @@ def ifTheElse03(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def char01(): Bool =
+def char01(): Bool & Impure =
     use TextParser.{run, char};
     let p1 = char('a');
     run(p1, "a") |> x -> whenOk(x, c -> c == 'a')
 
 @test
-def char02(): Bool =
+def char02(): Bool & Impure =
     use TextParser.{run, char, flatMap, return};
     let p1 = {
         let* _ = char('a');
@@ -82,7 +82,7 @@ def char02(): Bool =
     run(p1, "ab") |> x -> whenOk(x, c -> c == 'b')
 
 @test
-def char03(): Bool =
+def char03(): Bool & Impure =
     use TextParser.{run, char, flatMap, return};
     let p1 = {
         let* _ = char('a');
@@ -97,7 +97,7 @@ def char03(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def map01(): Bool =
+def map01(): Bool & Impure =
     use TextParser.{run, map, return};
     run(map(x -> x+1, return(1)), "") |> x -> whenOk(x, v -> v == 2)
 
@@ -106,7 +106,7 @@ def map01(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def failure() : Bool =
+def failure() : Bool & Impure =
     use TextParser.{run, failure};
     run(failure("*Parse Error*"), "") |> x -> whenErr(x, v -> v.message == "*Parse Error*")
 
@@ -115,19 +115,19 @@ def failure() : Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def errorPos01(): Bool =
+def errorPos01(): Bool & Impure =
     use TextParser.{run, string, samePosition};
     let p1 = string("a");
     run(p1, "") |> Result.mapErr(e -> e.position) |> x -> whenErr(x, samePosition({ lineNumber = 1, column = 1}))
 
 @test
-def errorPos02(): Bool =
+def errorPos02(): Bool & Impure =
     use TextParser.{run, string, samePosition, seqRight};
     let p1 = string("a");
     run(seqRight(p1,p1), "ab") |> Result.mapErr(e -> e.position) |> x -> whenErr(x, samePosition({ lineNumber = 1, column = 2}))
 
 @test
-def errorPos03(): Bool =
+def errorPos03(): Bool & Impure =
     use TextParser.{run, string, samePosition};
     use TextParser/Combinators.{count};
     let p1 = string("a");
@@ -139,12 +139,12 @@ def errorPos03(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def endOfInput01(): Bool =
+def endOfInput01(): Bool & Impure =
     use TextParser.{runs, endOfInput};
     runs(endOfInput(), "") |> Result.isOk
 
 @test
-def endOfInput02(): Bool =
+def endOfInput02(): Bool & Impure =
     use TextParser.{runs, endOfInput};
     runs(endOfInput(), "a") |> Result.isErr
 
@@ -153,40 +153,40 @@ def endOfInput02(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def swapError01(): Bool =
+def swapError01(): Bool & Impure =
     use TextParser.{run, string, swapError};
     let p1 = string("a") `swapError` "p1";
     run(p1, "") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
-def swapError02(): Bool =
+def swapError02(): Bool & Impure =
     use TextParser.{run, string, seqRight, swapError};
     let p1 = string("a") `swapError` "p1";
     let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "bb") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
-def swapError03(): Bool =
+def swapError03(): Bool & Impure =
     use TextParser.{run, string, seqRight, swapError};
     let p1 = string("a") `swapError` "p1";
     let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "ac") |> Result.mapErr(e -> e.message) == Err("p2")
 
 @test
-def swapError04(): Bool =
+def swapError04(): Bool & Impure =
     use TextParser.{run, string, swapError};
     let p1 = string("a") `swapError` "p1";
     run(p1, "") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
-def swapError05(): Bool =
+def swapError05(): Bool & Impure =
     use TextParser.{run, string, seqRight, swapError};
     let p1 = string("a") `swapError` "p1";
     let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "bb") |> Result.mapErr(e -> e.message) == Err("p1")
 
 @test
-def swapError06(): Bool =
+def swapError06(): Bool & Impure =
     use TextParser.{run, string, seqRight, swapError};
     let p1 = string("a") `swapError` "p1";
     let p2 = string("b") `swapError` "p2";

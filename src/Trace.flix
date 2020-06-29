@@ -19,13 +19,9 @@ use TextParser.TextParser;
 
 namespace TextParser/Trace {
 
-    def liftAction(fn: Unit ~> a): TextParser[a, t] = 
-        use TextParser.{flatMap, return};
-        let a = fn() as & Pure;
-        return(a)
 
     pub def trace(message: String, p: TextParser[a, t]): TextParser[a, t] = 
-        use TextParser.{flatMap, return, getPosition, showPosition};
+        use TextParser.{flatMap, return, getPosition, showPosition, liftAction};
         let* pos1 = getPosition();
         let* ans = p;
         let* pos2 = getPosition();

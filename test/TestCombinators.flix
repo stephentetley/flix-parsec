@@ -23,19 +23,19 @@ namespace TestCombinators {
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def many01(): Bool =
+def many01(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{many};
     runs(many(char('a')), "") |> Result.isOk
 
 @test
-def many02(): Bool =
+def many02(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{many};
     runs(many(char('a')), "a") |> Result.isOk
 
 @test
-def many03(): Bool =
+def many03(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{many};
     runs(many(char('a')), "aa") |> Result.isOk
@@ -45,19 +45,19 @@ def many03(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def manyTill01(): Bool =
+def manyTill01(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{manyTill};
     runs(manyTill(char('a'), endOfInput()), "") |> Result.isOk
 
 @test
-def manyTill02(): Bool =
+def manyTill02(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{manyTill};
     runs(manyTill(char('a'), endOfInput()), "a") |> Result.isOk
 
 @test
-def manyTill03(): Bool =
+def manyTill03(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{manyTill};
     runs(manyTill(char('a'), endOfInput()), "aa") |> Result.isOk
@@ -67,19 +67,19 @@ def manyTill03(): Bool =
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def many1Till01(): Bool =
+def many1Till01(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{many1Till};
     runs(many1Till(char('a'), endOfInput()), "") |> Result.isErr
 
 @test
-def many1Till02(): Bool =
+def many1Till02(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{many1Till};
     runs(many1Till(char('a'), endOfInput()), "a") |> Result.isOk
 
 @test
-def many1Till03(): Bool =
+def many1Till03(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
     use TextParser/Combinators.{many1Till};
     runs(many1Till(char('a'), endOfInput()), "aa") |> Result.isOk
