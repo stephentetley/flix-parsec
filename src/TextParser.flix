@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use System.Error.{IOException, Generic};
+use System.Error.{FileNotFoundException, Generic};
 use Data/Transient.DList;
 
 namespace TextParser {
@@ -91,13 +91,14 @@ namespace TextParser {
         }
 
     pub def parseFile(parser: TextParser[t, Result[t, Error1]], path: System.FilePath, cs: Text.Charset): Result[t, System.Error] & Impure =
-        match System/File.readFile(path, cs) {
-            case Err(e) => Err(e)
-            case Ok(text) => match run(parser, text) {
-                case Ok(a) => Ok(a)
-                case Err(e1) => Err(Generic(showParseError(e1)))
-            }
-        }
+        use Result.flatMap;
+        let* exists = System/File.exists(path);
+        if (exists) {
+            let* src = System/File.readFile(path, cs) ;
+            run(parser, src) |> Result.mapErr(e -> (Generic(showParseError(e))))
+        } else
+            Err(FileNotFoundException)
+
 
 
     pub def return(x: a): TextParser[a, t] = TextParser(succ -> succ(x))
