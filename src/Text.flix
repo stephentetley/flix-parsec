@@ -16,11 +16,13 @@
 
 
 use TextParser.TextParser;
-use TextParser.{return, map, lookahead, lookingAts, skippingAts};
-use TextParser/Combinators.{liftResult};
+use TextParser.{return, failure, map, lookahead, lookingAts, skippingAts, swapError, liftResult};
+
 
 namespace TextParser/Text {
 
+    pub def makePattern(regex: String): TextParser[Text/Regex.Pattern, t] = 
+        liftResult(Text/Regex/Pattern.compile(regex)) `swapError` "makePattern"
 
 
     // Parse a newline recognized by the regular expression "\R".
@@ -45,6 +47,25 @@ namespace TextParser/Text {
     pub def skipLine(): TextParser[Unit, t] =
         skippingAts(".*\R?")
 
+
+    
+    pub def anchorLineMatches(regex: String): TextParser[Unit, t] = 
+        use TextParser.flatMap;        
+        let* rest1 = restOfLine(true);
+        let* patt = makePattern(regex);
+        if (Text/Regex.matches(rest1, patt)) 
+            return()
+        else
+            failure("anchorLineMatches not matched")
+
+    pub def anchorLine(regex: String): TextParser[Unit, t] = 
+        use TextParser.flatMap;        
+        let* rest1 = restOfLine(true);
+        let* patt = makePattern(regex);
+        if (Text/Regex.contains(rest1, patt)) 
+            return()
+        else
+            failure("anchorLine not matched")
 
     /// zero or more
     pub def whiteSpace(): TextParser[Unit, t] = skippingAts("\s*")
