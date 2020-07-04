@@ -25,9 +25,15 @@ namespace TextParser/Trace {
         let* pos1 = getPosition();
         let* ans = p;
         let* pos2 = getPosition();
-        let msg = "// " + message + ". Start {" + showPosition(pos1) +"), End {" + showPosition(pos2) + "}";
+        let msg = "// " + message + ". Start {" + showPosition(pos1) + "}, End {" + showPosition(pos2) + "}";
         let* _ =  liftAction(_ -> Console.printLine(msg));
         return(ans)
 
+    pub def tell(message: String): TextParser[Unit, t] = 
+        use TextParser.{flatMap, return, getPosition, showPosition, liftAction};
+        let* pos1 = getPosition();
+        let msg = "// " + message + ". Position {" + showPosition(pos1) +  "}";
+        let* _ =  liftAction(_ -> Console.printLine(msg));
+        return()
 
 }
