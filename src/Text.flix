@@ -37,6 +37,10 @@ namespace TextParser/Text {
     pub def peekRestOfLine(): TextParser[String, t] = 
         lookahead(restOfLine(false))
 
+    /// Does not consume input.
+    pub def restOfLineLength(): TextParser[Int32, t] = 
+        map(String.length, peekRestOfLine())
+
     /// Skip the rest of the line including the terminating newline if present.
     pub def skipLine(): TextParser[Unit, t] =
         skippingAts(".*\R?")

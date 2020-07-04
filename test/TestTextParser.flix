@@ -192,5 +192,24 @@ def swapError06(): Bool & Impure =
     let p2 = string("b") `swapError` "p2";
     run(seqRight(p1, p2), "ac") |> Result.mapErr(e -> e.message) == Err("p2")
 
+/////////////////////////////////////////////////////////////////////////////
+// parseLine                                                               //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def parseLine01(): Bool & Impure =
+    use TextParser.{run, string, parseLine};
+    use TextParser/Text.{alphas};
+    let p1 = parseLine(alphas(), true);
+    let input = "abc";
+    run(p1, input).whenOk(x -> x == "abc")
+
+@test
+def parseLine02(): Bool & Impure =
+    use TextParser.{run, string, parseLine};
+    use TextParser/Text.{alphas};
+    let p1 = parseLine(alphas(), true);
+    let input = String.unlines("abc" :: "def" :: Nil);
+    run(p1, input).whenOk(x -> x == "abc")
 
 }

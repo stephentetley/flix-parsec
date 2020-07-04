@@ -317,7 +317,13 @@ namespace TextParser {
             apply1(p, sk1, fk1, str, 0, errs)
         )
 
-
+    /// Run parser `p` bounding the input to only the rest of the current line.
+    /// If `p` succeeds continue parsing the whole input.
+    pub def parseLine(p: TextParser[r, t], consumeNewline: Bool): TextParser[r, t] =
+        let regex = if (consumeNewline) ".*\R?" else ".*";
+        let* restofline = lookahead(lookingAts(regex));
+        let* ans = bounded(String.length(restofline), p);
+        return(ans)
 
 
 }
