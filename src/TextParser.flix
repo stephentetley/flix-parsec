@@ -169,18 +169,28 @@ namespace TextParser {
     
     pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
         case Some(a) => return(a)
-        case None    => failure("None")
+        case None    => failure("liftOption")
     }
 
     pub def liftResult(x: Result[r, e]): TextParser[r, t] =  match x {
         case Ok(a) => return(a)
-        case Err(_) => failure("Err")
+        case Err(_) => failure("liftResult")
     }
 
-    pub def liftAction(f: Unit ~> r): TextParser[r, t] =
+    pub def liftAction(f: Unit -> r & ef): TextParser[r, t] =
         TextParser((sk, fk, inp, pos, errs) ->
-            let a = f();
+            let a = f() as & Impure;
             sk(a, fk, inp, pos, errs)
+        )
+
+    pub def liftActionResult(f: Unit -> Result[r, e] & ef): TextParser[r, t] =
+        use Data/Transient/DList.{singleton};
+        TextParser((sk, fk, inp, pos, errs) ->
+            let ans = f() as & Impure;
+            match ans {
+                case Ok(a) => sk(a, fk, inp, pos, errs)
+                case Err(_) => fk(pos, singleton("listActionResult"))
+            }
         )
 
     pub def getPosition(): TextParser[Position, t] =  

@@ -16,6 +16,7 @@
 
 use System.Error.{IllegalArgumentException, InputMismatchException};
 
+use TextParser.TextParser;
 use TextParser.RowParser;
 use TextParser.RowParser.{RowParser};
 
@@ -26,9 +27,14 @@ namespace TextParser {
 
 namespace TextParser/RowParser {
 
-    // pub def toParser(splitter: String ~> Array[String], eval: RowParser[a]): TextParser[a, t] =
-    //     let RowParser(f) = eval;
-    //     LineEvaluator(s -> let arr = splitter(s); f(arr))
+    pub def row(splitter: String ~> Array[String], rowp: RowParser[a]): TextParser[a, t] =
+        use TextParser.{flatMap, return, liftAction, liftActionResult};
+        use TextParser/Text.{restOfLine};
+        let* s0 = restOfLine(true);
+        let s1 = Text/Regex.replace(s0, Text/Regex/Pattern.irrefutablePattern("\R"), "");
+        let* arr = liftAction(_ -> splitter(s1));
+        let* ans = liftActionResult(_ -> apply1(rowp, arr));
+        return(ans)
 
     pub def return(x: a): RowParser[a] =
         RowParser(_ -> Ok(x) as & Impure)

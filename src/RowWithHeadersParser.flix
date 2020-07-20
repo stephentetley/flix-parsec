@@ -16,6 +16,7 @@
 
 use System.Error.{IllegalArgumentException, InputMismatchException};
 
+use TextParser.TextParser;
 use TextParser.RowWithHeadersParser;
 use TextParser.RowWithHeadersParser.{RowWithHeadersParser};
 
@@ -27,9 +28,14 @@ namespace TextParser {
 
 namespace TextParser/RowWithHeadersParser {
 
-    // pub def toLineEvaluator(splitter: String ~> Array[String], headers: Map[String, Int32], eval: RowWithHeadersParser[a]): LineEvaluator[a] =
-    //     let RowWithHeadersParser(f) = eval;
-    //     LineEvaluator(s -> let arr = splitter(s); f(headers, arr))
+    pub def rowWithHeaders(splitter: String ~> Array[String], headers: Map[String, Int32], rowp: RowWithHeadersParser[a]): TextParser[a, t] =
+        use TextParser.{flatMap, return, liftAction, liftActionResult};
+        use TextParser/Text.{restOfLine};
+        let* s0 = restOfLine(true);
+        let s1 = Text/Regex.replace(s0, Text/Regex/Pattern.irrefutablePattern("\R"), "");
+        let* arr = liftAction(_ -> splitter(s1));
+        let* ans = liftActionResult(_ -> apply1(rowp, headers, arr));
+        return(ans)
 
     pub def makeHeaders(names: Array[String]): Map[String,Int32] & Impure =
         let step = (acc, x) -> { let (i, mx) = acc; (i + 1, Map.insert(x, i, mx)) };
