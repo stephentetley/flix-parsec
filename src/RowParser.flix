@@ -27,7 +27,7 @@ namespace TextParser {
 
 namespace TextParser/RowParser {
 
-    pub def row(splitter: String ~> Array[String], rowp: RowParser[a]): TextParser[a, t] =
+    pub def rowTextParser(splitter: String ~> Array[String], rowp: RowParser[a]): TextParser[a, t] =
         use TextParser.{flatMap, return, liftAction, liftActionResult};
         use TextParser/Text.{restOfLine};
         let* s0 = restOfLine(true);

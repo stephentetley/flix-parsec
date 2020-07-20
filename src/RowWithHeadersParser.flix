@@ -28,7 +28,7 @@ namespace TextParser {
 
 namespace TextParser/RowWithHeadersParser {
 
-    pub def rowWithHeaders(splitter: String ~> Array[String], headers: Map[String, Int32], rowp: RowWithHeadersParser[a]): TextParser[a, t] =
+    pub def rowWithHeadersTextParser(splitter: String ~> Array[String], headers: Map[String, Int32], rowp: RowWithHeadersParser[a]): TextParser[a, t] =
         use TextParser.{flatMap, return, liftAction, liftActionResult};
         use TextParser/Text.{restOfLine};
         let* s0 = restOfLine(true);
