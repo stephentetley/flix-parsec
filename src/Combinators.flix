@@ -19,6 +19,12 @@ use TextParser.{return, fail, failure, map, alt, bind, ifThenElse, lookahead, se
 
 namespace TextParser/Combinators {
 
+    /// Alias for `seqRight`
+    pub def *>(p1: TextParser[a, t], p2: TextParser[b, t]): TextParser[b, t] = seqRight(p1, p2)
+
+    /// Alias for `seqLeft`
+    pub def <*(p1: TextParser[a, t], p2: TextParser[b, t]): TextParser[a, t] = seqLeft(p1, p2)
+
 
     pub def optional(p: TextParser[a, t]): TextParser[Option[a], t] = 
         alt(map(Some,p), return(None))

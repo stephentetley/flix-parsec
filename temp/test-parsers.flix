@@ -35,7 +35,7 @@ def alt02(): Bool =
 
 @test
 def count01() : Result[List[Char], String] = 
-    let parser = TextParser.count(3, TextParser.letter());
+    let parser = TextParser/Combinators.count(3, TextParser.letter());
     TextParser.runs(parser, "ABCdefg")
 
 

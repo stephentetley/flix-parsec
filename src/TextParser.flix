@@ -61,9 +61,15 @@ namespace TextParser {
     }
 
     ///
-    /// Alias for `parseString`.
+    /// This is exposed so client code can implement wrappers over `run` etc. without
+    /// knowing about the internal error type `Error1`.
     ///
-    pub def run(p: TextParser[t, Result[t, Error1]], input: String) : Result[t, ParseError] & Impure =
+    type alias TextParser1[t] = TextParser[t, Result[t, TextParser.Error1]]
+
+    ///
+    /// Run parser `p` on the string `input`.
+    ///
+    pub def run(p: TextParser1[t], input: String) : Result[t, ParseError] & Impure =
         use Data/Transient/DList.{toList, empty};
         use TextParser/Internal/Error.{textPos, getBeforeAndAfter};
         let tabsize = 4;    // TODO make configurable
@@ -84,13 +90,13 @@ namespace TextParser {
         }
 
     ///
-    pub def runs(p: TextParser[t, Result[t, Error1]], input: String) : Result[t, String] & Impure =
+    pub def runs(p: TextParser1[t], input: String) : Result[t, String] & Impure =
         match run(p, input) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFile(parser: TextParser[t, Result[t, Error1]], path: System.FilePath, cs: Text.Charset): Result[t, System.Error] & Impure =
+    pub def parseFile(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, System.Error] & Impure =
         use Result.flatMap;
         let* exists = System/File.exists(path);
         if (exists) {
@@ -267,6 +273,20 @@ namespace TextParser {
             }
         )
 
+    /// Version of `lookingAt` with a MatchEvaluator
+    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
+        use Data/Transient/DList.{singleton};
+        use Text/Regex.{evalBoundedStartsWith};
+        use Text/Regex/Pattern.{toString};
+        use Text/Regex/MatchEvaluator.{tuple2, getLength};
+        let eval2 = tuple2(getLength(), eval);
+        TextParser((sk, fk, inp, pos, errs) ->
+            let ans = evalBoundedStartsWith(inp, patt, pos, String.length(inp), eval2) as & Pure;
+            match ans {
+                case Ok(len, x) => sk(x, fk, inp, pos + len, errs)
+                case Err(_) => fk(pos, singleton("evalLookingAt failed"))
+            }
+        )
 
     pub def skippingAt(patt: Text/Regex.Pattern): TextParser[Unit, t] = 
         use Data/Transient/DList.{singleton};
@@ -283,7 +303,13 @@ namespace TextParser {
     pub def lookingAts(regex: String): TextParser[String, t] = 
         use Text/Regex/Pattern.{compile};
         bind(liftResult(compile(regex)), lookingAt) `swapError` "lookingAts"
-        
+
+    /// Parsing fails if regex does not compile.
+    pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
+        use Text/Regex/Pattern.{compile};
+        bind(liftResult(compile(regex)), patt -> evalLookingAt(patt, eval)) `swapError` "evalLookingAts"
+
+
     /// Parsing fails if regex does not compile.
     pub def skippingAts(regex: String): TextParser[Unit, t] = 
         use Text/Regex/Pattern.{compile};

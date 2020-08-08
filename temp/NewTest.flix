@@ -34,8 +34,7 @@ namespace LineCount {
         Console.printLine(msg)
 
     pub def parseLine(patt: Text/Regex.Pattern): TextParser[Unit, t] =
-        use TextParser.{lookingAt};
-        use TextParser/Combinators.{seqRight};
+        use TextParser.{lookingAt, seqRight};
         use TextParser/Text.{newline};
         seqRight(lookingAt(patt), newline())
 
@@ -125,10 +124,9 @@ namespace LineCount {
 //         case Err(_) => None
 //     }
 
-def main(): Option[Float64]  = 
-    use TextParser.{runs};
-    use TextParser/Token1.{float64};
-    match runs(float64(), "-45.5") { 
-        case Ok(b) => Some(b)
-        case Err(_) => None
-    }
+def main(): Result[String, String] & Impure = 
+    use TextParser.{runs, string, parseLine};
+    use TextParser/Text.{alphas};
+    let p1 = parseLine(alphas(), true);
+    let input = String.unlines("abc" :: "def" :: Nil);
+    runs(p1, input)
