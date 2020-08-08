@@ -18,12 +18,12 @@
 
 namespace TestTextParser {
 
-def whenErr(x: Result[a, e], test: e -> Bool): Bool = match x {
+def whenErr(x: Result[a, e], test: e -> Bool & ef): Bool & ef = match x {
     case Ok(_) => false
     case Err(e) => test(e)
 }
 
-def whenOk(x: Result[a, e], test: a -> Bool): Bool = match x {
+def whenOk(x: Result[a, e], test: a -> Bool & ef): Bool & ef = match x {
     case Ok(a) => test(a)
     case Err(_) => false
 }
@@ -99,7 +99,19 @@ def char03(): Bool & Impure =
 @test
 def map01(): Bool & Impure =
     use TextParser.{run, map, return};
-    run(map(x -> x+1, return(1)), "") |> x -> whenOk(x, v -> v == 2)
+    run(map(x -> x + 1, return(1)), "") |> x -> whenOk(x, v -> v == 2)
+
+@test
+def map02(): Bool & Impure =
+    use TextParser.{run, map, return};
+    run(map(x -> [x], return(1)), "1") |> x -> whenOk(x, v -> v[0] == 1)
+
+@test
+def map03(): Bool & Impure =
+    use TextParser.{run, map, return, anyChar, seqRight};
+    let p1 = map(x -> [x], anyChar());
+    let p2 = anyChar();
+    run(seqRight(p1, p2), "12") |> x -> whenOk(x, v -> v == '2')
 
 /////////////////////////////////////////////////////////////////////////////
 // failure                                                                 //

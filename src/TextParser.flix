@@ -130,15 +130,16 @@ namespace TextParser {
         let TextParser(pf) = p;
         pf(sk, fk, inp, pos, errs)
 
-    pub def map(f: a -> b, p: TextParser[a, t]): TextParser[b, t] =
-        TextParser(sk ->
-            apply1(p, x -> sk(f(x)))
+    pub def map(f: a -> b & ef, p: TextParser[a, t]): TextParser[b, t] =
+        TextParser((sk, fk, inp, pos, errs) ->
+            let sk1 = (x, fk1, inp1, pos1, errs1) -> sk(f(x) as & Impure, fk1, inp1, pos1, errs1);
+            apply1(p, sk1, fk, inp, pos, errs)
         )
 
-    pub def ap(mf: TextParser[a -> b, t], ma: TextParser[a, t]): TextParser[b, t] = 
-        TextParser(sk ->
-            apply1(mf, f -> apply1(ma, x -> sk(f(x))))
-        )
+    pub def ap(mf: TextParser[a -> b & ef, t], ma: TextParser[a, t]): TextParser[b, t] =
+        let* f = mf;
+        let* a = ma;
+        liftAction(_ -> f(a) as & Impure)
 
     pub def bind(ma: TextParser[q, t], k: q -> TextParser[r, t]):  TextParser[r, t] =
         TextParser(sk ->
