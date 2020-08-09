@@ -173,7 +173,19 @@ namespace TextParser {
         TextParser((sk, fk, inp, pos) ->
             apply1(cond, x -> apply1(thenp(x), sk), apply1(elsep, sk, fk, inp), inp, pos))
 
-    
+    pub def choice(ps: List[TextParser[a, t]]): TextParser[a, t] =
+        use Data/Transient/DList.{singleton};
+        TextParser((sk, fk, inp, pos, errs) ->
+            match ps {
+                case Nil => fk(pos, singleton("choice"))
+                case p :: rs => {
+                    let fk1 = (_, _) -> apply1(choice(rs), sk, fk, inp, pos, errs);
+                    apply1(p, sk, fk1, inp, pos, errs)
+                }
+            }
+        )
+
+
     pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
         case Some(a) => return(a)
         case None    => failure("liftOption")

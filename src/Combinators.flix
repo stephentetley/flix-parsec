@@ -15,7 +15,7 @@
  */
 
 use TextParser.{TextParser};
-use TextParser.{return, fail, failure, map, alt, bind, ifThenElse, lookahead, seqLeft, seqRight};
+use TextParser.{return, fail, failure, map, ap, alt, bind, ifThenElse, lookahead, seqLeft, seqRight};
 
 namespace TextParser/Combinators {
 
@@ -24,6 +24,21 @@ namespace TextParser/Combinators {
 
     /// Alias for `seqLeft`
     pub def <*(p1: TextParser[a, t], p2: TextParser[b, t]): TextParser[a, t] = seqLeft(p1, p2)
+
+    pub def <!>(p1: TextParser[a, t], p2: TextParser[a, t]): TextParser[a, t] =
+        alt(p1, p2)
+
+    // Haskell's <$>
+    pub def <&>(f: a -> b, p2: TextParser[a, t]): TextParser[b, t] =
+        map(f, p2)
+
+    pub def <&(x: b, p2: TextParser[a, t]): TextParser[b, t] =
+        p2 *> return(x)
+
+
+    // Haskell's ap <*>
+    pub def <*>(mf: TextParser[a -> b, t], p2: TextParser[a, t]): TextParser[b, t] =
+        ap(mf, p2)
 
 
     pub def optional(p: TextParser[a, t]): TextParser[Option[a], t] = 
@@ -57,11 +72,11 @@ namespace TextParser/Combinators {
     pub def succeeds(p: TextParser[r, t]): TextParser[Bool, t] = 
         alt(seqRight(lookahead(p), return(true)), return(false))
 
-    pub def choice(ps: List[TextParser[a, t]]): TextParser[a, t] = 
-        match ps { 
-            case Nil => failure("choice")
-            case p :: rs => ifThenElse(p, return, choice(rs))
-        }
+    // pub def choice(ps: List[TextParser[a, t]]): TextParser[a, t] =
+    //    match ps {
+    //        case Nil => failure("choice")
+    //        case p :: rs => ifThenElse(p, return, choice(rs))
+    //    }
 
     pub def countWith(append: (a, ac) -> ac, acc: ac, n: Int32, p: TextParser[a, t]): TextParser[ac, t] = 
         use TextParser.flatMap;

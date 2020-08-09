@@ -30,9 +30,9 @@ namespace TextParser/Token1 {
 
     pub def braces(p: TextParser[r, t]): TextParser[r, t] = between(symbol("{"), symbol("}"), p)
 
-    pub def brackets(p: TextParser[r, t]): TextParser[r, t] = between(symbol("<"), symbol(">"), p)
+    pub def angles(p: TextParser[r, t]): TextParser[r, t] = between(symbol("<"), symbol(">"), p)
 
-    pub def squares(p: TextParser[r, t]): TextParser[r, t] = between(symbol("["), symbol("]"), p)
+    pub def brackets(p: TextParser[r, t]): TextParser[r, t] = between(symbol("["), symbol("]"), p)
 
     pub def semi(): TextParser[String, t] = symbol(";")
 
