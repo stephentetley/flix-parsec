@@ -72,11 +72,6 @@ namespace TextParser/Combinators {
     pub def succeeds(p: TextParser[r, t]): TextParser[Bool, t] = 
         alt(seqRight(lookahead(p), return(true)), return(false))
 
-    // pub def choice(ps: List[TextParser[a, t]]): TextParser[a, t] =
-    //    match ps {
-    //        case Nil => failure("choice")
-    //        case p :: rs => ifThenElse(p, return, choice(rs))
-    //    }
 
     pub def countWith(append: (a, ac) -> ac, acc: ac, n: Int32, p: TextParser[a, t]): TextParser[ac, t] = 
         use TextParser.flatMap;
