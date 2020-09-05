@@ -105,6 +105,14 @@ namespace TextParser {
         } else
             Err(FileNotFoundException)
 
+    pub def parseFileWithBOM(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, System.Error] & Impure =
+        use Result.flatMap;
+        let* exists = System/File.exists(path);
+        if (exists) {
+            let* src = System/File.readFileWithBOM(path, cs) ;
+            run(parser, src) |> Result.mapErr(e -> (Generic(showParseError(e))))
+        } else
+            Err(FileNotFoundException)
 
 
     pub def return(x: a): TextParser[a, t] = TextParser(succ -> succ(x))
