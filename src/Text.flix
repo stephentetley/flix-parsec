@@ -15,15 +15,19 @@
  */
 
 
-use TextParser.TextParser;
-use TextParser.{return, failure, map, lookahead, lookingAts, skippingAts, swapError, liftResult};
 
 
 namespace TextParser/Text {
 
+    use TextParser.TextParser;
+    use TextParser.{return, failure, map, lookahead, lookingAts, skippingAts, swapError, liftResult, char};
+    use TextParser/Combinators.{ignore};
+
     pub def makePattern(regex: String): TextParser[Text/Regex.Pattern, t] = 
         liftResult(Text/Regex/Pattern.compile(regex)) `swapError` "makePattern"
 
+    pub def makePatternWithFlags(regex: String, flags: List[Text/Regex/Pattern.Flag]): TextParser[Text/Regex.Pattern, t] = 
+        liftResult(Text/Regex/Pattern.compileWithFlags(regex, flags)) `swapError` "makePattern"
 
     // Parse a newline recognized by the regular expression "\R".
     pub def newline(): TextParser[Unit, t] = skippingAts("\R")
@@ -66,6 +70,16 @@ namespace TextParser/Text {
             return()
         else
             failure("anchorLine not matched")
+
+
+    pub def tabulation(): TextParser[Unit, t] = ignore(char('\u0009'))
+
+    pub def space(): TextParser[Unit, t] = ignore(char('\u0020'))
+    
+    pub def carriageReturn(): TextParser[Unit, t] = ignore(char('\u000D'))
+
+    pub def lineFeed(): TextParser[Unit, t] = ignore(char('\u000A'))
+
 
     /// zero or more
     pub def whiteSpace(): TextParser[Unit, t] = skippingAts("\s*")
