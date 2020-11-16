@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-use TextParser.{TextParser};
-use TextParser.{return, fail, failure, map, ap, alt, bind, ifThenElse, lookahead, seqLeft, seqRight};
 
 namespace TextParser/Combinators {
+
+    use TextParser.{TextParser};
+    use TextParser.{return, fail, failure, map, ap, alt, bind, 
+        ifThenElse, lookahead, seqLeft, seqRight};
 
     /// Alias for `seqRight`
     pub def *>(p1: TextParser[a, t], p2: TextParser[b, t]): TextParser[b, t] = seqRight(p1, p2)

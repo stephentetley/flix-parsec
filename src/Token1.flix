@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-use TextParser.TextParser;
-use TextParser.{string, liftResult, lookingAts, seqLeft};
-use TextParser/Combinators.{between, sepBy, sepBy1};
-use TextParser/Text.{whiteSpace, digits};
 
 
 namespace TextParser/Token1 {
+
+    use TextParser.TextParser;
+    use TextParser.{string, liftResult, lookingAts, seqLeft};
+    use TextParser/Combinators.{between, sepBy, sepBy1};
+    use TextParser/Text.{whiteSpace, digits};
 
     pub def lexeme(p: TextParser[r, t]): TextParser[r, t] = seqLeft(p, whiteSpace())
 

@@ -15,8 +15,6 @@
  */
 
 
-
-
 namespace TextParser/Text {
 
     use TextParser.TextParser;

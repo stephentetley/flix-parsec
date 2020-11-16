@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-use System.Error.{FileNotFoundException, Generic};
-use Data/Transient.DList;
 
 namespace TextParser {
+
+    use System.Error.{FileNotFoundException, Generic};
+    use Data/Transient.DList;
 
     type alias Failures = DList[String]
 

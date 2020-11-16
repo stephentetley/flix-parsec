@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-use TextParser.TextParser;
 
 
 namespace TextParser/Trace {
 
+    use TextParser.TextParser;
 
     pub def trace(message: String, p: TextParser[a, t]): TextParser[a, t] = 
         use TextParser.{flatMap, return, getPosition, showPosition, liftAction};
