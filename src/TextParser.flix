@@ -43,7 +43,7 @@ namespace TextParser {
         "Line=" + Int32.toString(pos.lineNumber) + ", Col=" + Int32.toString(pos.column)
 
     pub def samePosition(pos1: Position, pos2: Position): Bool =
-        pos1.lineNumber == pos2.lineNumber && pos1.column == pos2.column
+        pos1.lineNumber == pos2.lineNumber and pos1.column == pos2.column
 
     pub def showParseError(err: ParseError): String = 
         String.unlines(err.message :: showPosition(err.position) 

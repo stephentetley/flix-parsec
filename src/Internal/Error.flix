@@ -38,7 +38,7 @@ namespace TextParser/Internal/Error {
                 match String.charAt(ix, src) {
                     case '\n' => textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+1)
                     case '\r' =>
-                        if (ix+1 <= pos && ix + 1 <= len) {
+                        if (ix+1 <= pos and ix + 1 <= len) {
                             if (String.charAt(ix+1,src) == '\n') { 
                                 // carriage return & line feed
                                 textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+2)
