@@ -120,6 +120,13 @@ namespace TextParser {
         } else
             Err(fileNotFoundError(path))
 
+
+    pub def parsesFile(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, String] & Impure =
+        match parseFile(parser, path, cs) {
+            case Ok(a) => Ok(a)
+            case Err(e) => Err(showPosition(e.position) + ": " + e.message)
+        }
+
     pub def parseFileWithBOM(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, ParseError] & Impure =
         use Result.flatMap;
         let* exists = System/File.exists(path) |> Result.mapErr(generalError);
@@ -129,6 +136,11 @@ namespace TextParser {
         } else
             Err(fileNotFoundError(path))
 
+    pub def parsesFileWithBOM(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, String] & Impure =
+        match parseFileWithBOM(parser, path, cs) {
+            case Ok(a) => Ok(a)
+            case Err(e) => Err(showPosition(e.position) + ": " + e.message)
+        }
 
     pub def return(x: a): TextParser[a, t] = TextParser(succ -> succ(x))
 
