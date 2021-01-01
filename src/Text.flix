@@ -18,14 +18,14 @@
 namespace TextParser/Text {
 
     use TextParser.TextParser;
-    use TextParser.{return, failure, map, lookahead, lookingAts, skippingAts, swapError, liftResult, char};
+    use TextParser.{return, failure, map, lookahead, lookingAts, skippingAts, swapError, liftOption, char};
     use TextParser/Combinators.{ignore};
 
     pub def makePattern(regex: String): TextParser[Text/Regex.Pattern, t] = 
-        liftResult(Text/Regex/Pattern.compile(regex)) `swapError` "makePattern"
+        liftOption(Text/Regex/Pattern.compile(regex),  "makePattern")
 
     pub def makePatternWithFlags(regex: String, flags: List[Text/Regex/Pattern.Flag]): TextParser[Text/Regex.Pattern, t] = 
-        liftResult(Text/Regex/Pattern.compileWithFlags(regex, flags)) `swapError` "makePattern"
+        liftOption(Text/Regex/Pattern.compileWithFlags(regex, flags),  "makePatternWithFlags")
 
     // Parse a newline recognized by the regular expression "\R".
     pub def newline(): TextParser[Unit, t] = skippingAts("\R")

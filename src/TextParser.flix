@@ -195,9 +195,9 @@ namespace TextParser {
         )
 
 
-    pub def liftOption(x: Option[r]): TextParser[r, t] =  match x {
+    pub def liftOption(x: Option[r], errMsg: String): TextParser[r, t] =  match x {
         case Some(a) => return(a)
-        case None    => failure("liftOption")
+        case None    => failure(errMsg)
     }
 
     pub def liftResult(x: Result[r, e]): TextParser[r, t] =  match x {
@@ -322,18 +322,18 @@ namespace TextParser {
     /// Parsing fails if regex does not compile.
     pub def lookingAts(regex: String): TextParser[String, t] = 
         use Text/Regex/Pattern.{compile};
-        bind(liftResult(compile(regex)), lookingAt) `swapError` "lookingAts"
+        bind(liftOption(compile(regex), "lookingAts"), lookingAt)
 
     /// Parsing fails if regex does not compile.
     pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
         use Text/Regex/Pattern.{compile};
-        bind(liftResult(compile(regex)), patt -> evalLookingAt(patt, eval)) `swapError` "evalLookingAts"
+        bind(liftOption(compile(regex), "evalLookingAts"), patt -> evalLookingAt(patt, eval))
 
 
     /// Parsing fails if regex does not compile.
     pub def skippingAts(regex: String): TextParser[Unit, t] = 
         use Text/Regex/Pattern.{compile};
-        bind(liftResult(compile(regex)), skippingAt) `swapError` "skippingAts"
+        bind(liftOption(compile(regex), "skippingAts"), skippingAt)
 
     // Truncates if eof...
     pub def horizon(n: Int32): TextParser[String, t] = 
