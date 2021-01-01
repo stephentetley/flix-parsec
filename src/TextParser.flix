@@ -286,7 +286,6 @@ namespace TextParser {
     pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] =
         use Data/Transient/DList.{singleton};
         use Text/Regex.{boundedStartsWith};
-        use Text/Regex/Pattern.{toString};
         TextParser((sk, fk, inp, pos, errs) ->
             let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
             match ans { 
@@ -299,7 +298,6 @@ namespace TextParser {
     pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
         use Data/Transient/DList.{singleton};
         use Text/Regex.{evalBoundedStartsWith};
-        use Text/Regex/Pattern.{toString};
         use Text/Regex/MatchEvaluator.{tuple2, getLength};
         let eval2 = tuple2(getLength(), eval);
         TextParser((sk, fk, inp, pos, errs) ->
