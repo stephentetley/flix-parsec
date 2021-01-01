@@ -17,7 +17,7 @@
 
 namespace TextParser {
 
-    use System.Error.{FileNotFoundException, Generic};
+
     use Data/Transient.DList;
 
     type alias Failures = DList[String]
@@ -61,6 +61,20 @@ namespace TextParser {
         case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
     }
 
+    def fileNotFoundError(path: System.FilePath): ParseError = 
+        { message = "File not found: ${path}"
+        , position = {lineNumber = 0, column = 0}
+        , textBefore = ""
+        , textAfter = ""
+        }
+
+    def generalError[a: ToString](err: a): ParseError = 
+        { message = "${err}"
+        , position = {lineNumber = 0, column = 0}
+        , textBefore = ""
+        , textAfter = ""
+        }
+
     ///
     /// This is exposed so client code can implement wrappers over `run` etc. without
     /// knowing about the internal error type `Error1`.
@@ -97,23 +111,23 @@ namespace TextParser {
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFile(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, System.Error] & Impure =
+    pub def parseFile(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, ParseError] & Impure =
         use Result.flatMap;
-        let* exists = System/File.exists(path);
+        let* exists = System/File.exists(path) |> Result.mapErr(generalError);
         if (exists) {
-            let* src = System/File.readFile(path, cs) ;
-            run(parser, src) |> Result.mapErr(e -> (Generic(showParseError(e))))
+            let* src = System/File.readFile(path, cs) |> Result.mapErr(generalError);
+            run(parser, src)
         } else
-            Err(FileNotFoundException)
+            Err(fileNotFoundError(path))
 
-    pub def parseFileWithBOM(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, System.Error] & Impure =
+    pub def parseFileWithBOM(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, ParseError] & Impure =
         use Result.flatMap;
-        let* exists = System/File.exists(path);
+        let* exists = System/File.exists(path) |> Result.mapErr(generalError);
         if (exists) {
-            let* src = System/File.readFileWithBOM(path, cs) ;
-            run(parser, src) |> Result.mapErr(e -> (Generic(showParseError(e))))
+            let* src = System/File.readFileWithBOM(path, cs) |> Result.mapErr(generalError);
+            run(parser, src)
         } else
-            Err(FileNotFoundException)
+            Err(fileNotFoundError(path))
 
 
     pub def return(x: a): TextParser[a, t] = TextParser(succ -> succ(x))
