@@ -23,14 +23,14 @@ namespace FlixParsec {
 
     type alias Failures = Chain[String]
 
-    type alias FailK[t] = Int32 -> Failures ~> t
+    type alias FailK[t1] = Int32 -> Failures ~> t1
 
-    type alias SuccessK[u, r, t] = r -> FailK[t] -> ParseContext -> ParseState[u] -> Failures ~> t
+    type alias SuccessK[u, t1, ans] = ans -> FailK[t1] -> ParseContext -> ParseState[u] -> Failures ~> t1
 
-    pub opaque type TextParser[u, r, t] = SuccessK[u, r, t] -> FailK[t] -> ParseContext -> ParseState[u] -> Failures ~> t
+    pub opaque type TextParser[u, t1, ans] = SuccessK[u, t1, ans] -> FailK[t1] -> ParseContext -> ParseState[u] -> Failures ~> t1
 
     /// instance Functor[TextParser[r]] {
-    ///     def map(f: a -> b & ef, x: TextParser[a, t]): TextParser[b, t] & ef = map(f, x)
+    ///     def map(f: a -> b & ef, x: TextParser[u, t1, a]): TextParser[u, t1, b] & ef = map(f, x)
     /// }
 
 }
@@ -42,7 +42,7 @@ namespace FlixParsec/Prim {
 
     type alias Position = { lineNumber: Int32, column: Int32 }
 
-    type alias Error1 = { msgs: List[String], pos: Int32 }
+    type alias Error1 = { messages: List[String], position: Int32 }
 
     type alias ParseError = 
         { message: String
@@ -91,26 +91,26 @@ namespace FlixParsec/Prim {
     /// This is exposed so client code can implement wrappers over `run` etc. without
     /// knowing about the internal error type `Error1`.
     ///
-    type alias TextParser1[t] = TextParser[Unit, t, Result[t, Error1]]
+    type alias TextParser1[ans] = TextParser[Unit, Result[ans, Error1], ans]
 
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def run(p: TextParser1[t], input: String) : Result[t, ParseError] & Impure =
+    pub def run(p: TextParser1[ans], input: String) : Result[ans, ParseError] & Impure =
         use Chain.{toList, empty};
         use FlixParsec/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
         let context = {input = input, tabSize = 4};
         let state = {pos = 0, userState = ()};
-        let fk = (posn, errs) -> Err({ msgs = toList(errs), pos = posn }) as & Impure;
+        let fk = (posn, errs) -> Err({ messages = toList(errs), position = posn }) as & Impure;
         let sk = (a, _, _, _, _) -> Ok(a) as & Impure;
         let TextParser(p1) = p;
         match p1(sk, fk, context, state, empty()) {
             case Ok(a) => Ok(a)
             case Err(e1) => {
-                let (l,c) = textPos(context.tabSize, e1.pos, input);
+                let (l,c) = textPos(context.tabSize, e1.position, input);
                 let posn = { lineNumber = l, column = c };
-                let (before, after) = getTextBeforeAndAfter(e1.pos, input);
-                Err({ message = showErrorsList(e1.msgs)
+                let (before, after) = getTextBeforeAndAfter(e1.position, input);
+                Err({ message = showErrorsList(e1.messages)
                     , position = posn
                     , textBefore = before
                     , textAfter = after })
@@ -118,13 +118,13 @@ namespace FlixParsec/Prim {
         }
 
     ///
-    pub def runs(p: TextParser1[t], input: String) : Result[t, String] & Impure =
+    pub def runs(p: TextParser1[ans], input: String) : Result[ans, String] & Impure =
         match run(p, input) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFile(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, ParseError] & Impure =
+    pub def parseFile(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
         let* exists = System/File.exists(path) |> Result.mapErr(generalError);
         if (exists) {
@@ -134,13 +134,13 @@ namespace FlixParsec/Prim {
             Err(fileNotFoundError(path))
 
 
-    pub def parsesFile(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, String] & Impure =
+    pub def parsesFile(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
         match parseFile(parser, path, cs) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFileWithBOM(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, ParseError] & Impure =
+    pub def parseFileWithBOM(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
         let* exists = System/File.exists(path) |> Result.mapErr(generalError);
         if (exists) {
@@ -149,15 +149,15 @@ namespace FlixParsec/Prim {
         } else
             Err(fileNotFoundError(path))
 
-    pub def parsesFileWithBOM(parser: TextParser1[t], path: System.FilePath, cs: Text.Charset): Result[t, String] & Impure =
+    pub def parsesFileWithBOM(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
         match parseFileWithBOM(parser, path, cs) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def return(x: a): TextParser[u, a, t] = TextParser(succ -> succ(x))
+    pub def return(x: a): TextParser[u, t1, a] = TextParser(succ -> succ(x))
 
-    pub def failure(message: String) : TextParser[u, r, t] =
+    pub def failure(message: String) : TextParser[u, t1, ans] =
         use Chain.{singleton};
         TextParser((_, fk, _, st, _) -> fk(st.pos, singleton(message)))
 
@@ -166,7 +166,7 @@ namespace FlixParsec/Prim {
     /// a "local" operation which is undone (restored) afterwards (c.f. local in the Reader
     /// monad). It must not be a "stateful" operation with unlimited extent.
     ///
-    pub def swapError(p: TextParser[u, r,t], message: String) : TextParser[u, r, t] =
+    pub def swapError(p: TextParser[u, t1, ans], message: String) : TextParser[u, t1, ans] =
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             let fk1 = (pos, _) -> fk(pos, singleton(message));
@@ -174,29 +174,34 @@ namespace FlixParsec/Prim {
             apply1(p, sk1, fk1, ctx, st, errs)
         )
 
-    def apply1 (p: TextParser[u, r, t], sk: SuccessK[u, r, t], fk: FailK[t], ctx: ParseContext, st: ParseState[u], errs: Failures): t & Impure =
+    def apply1 (p: TextParser[u, t1, ans], 
+                sk: SuccessK[u, t1, ans], 
+                fk: FailK[t1], 
+                ctx: ParseContext, 
+                st: ParseState[u], 
+                errs: Failures): t1 & Impure =
         let TextParser(pf) = p;
         pf(sk, fk, ctx, st, errs)
 
-    pub def map(f: a -> b & ef, p: TextParser[u, a, t]): TextParser[u, b, t] =
+    pub def map(f: a -> b & ef, p: TextParser[u, t1, a]): TextParser[u, t1, b] =
         TextParser((sk, fk, ctx, pos, errs) ->
             let sk1 = (x, fk1, _, pos1, errs1) -> sk(f(x) as & Impure, fk1, ctx, pos1, errs1);
             apply1(p, sk1, fk, ctx, pos, errs)
         )
 
-    pub def ap(mf: TextParser[u, a -> b & ef, t], ma: TextParser[u, a, t]): TextParser[u, b, t] =
+    pub def ap(mf: TextParser[u, t1, a -> b & ef], ma: TextParser[u, t1, a]): TextParser[u, t1, b] =
         let* f = mf;
         let* a = ma;
         liftAction(_ -> f(a) as & Impure)
 
-    pub def bind(ma: TextParser[u, q, t], k: q -> TextParser[u, r, t]):  TextParser[u, r, t] =
+    pub def bind(ma: TextParser[u, t1, a], k: a -> TextParser[u, t1, b]):  TextParser[u, t1, b] =
         TextParser(sk ->
             apply1(ma, x -> apply1(k(x), sk))
         )
 
-    pub def flatMap(k: q -> TextParser[u, r, t], ma: TextParser[u, q, t]):  TextParser[u, r, t] = bind(ma, k)
+    pub def flatMap(k: a -> TextParser[u, t1, b], ma: TextParser[u, t1, a]):  TextParser[u, t1, b] = bind(ma, k)
 
-    pub def alt(p: TextParser[u, a, t], q: TextParser[u, a, t]): TextParser[u, a, t] =
+    pub def alt(p: TextParser[u, t1, a], q: TextParser[u, t1, a]): TextParser[u, t1, a] =
         use Chain.{append};
         TextParser((sk, fk, ctx, st, errs) ->
             let pfk = (_, perrs) -> {
@@ -207,21 +212,23 @@ namespace FlixParsec/Prim {
         )
 
 
-    pub def seqLeft(p: TextParser[u, r, t], q: TextParser[u, s, t]): TextParser[u, r, t] =
+    pub def seqLeft(p: TextParser[u, t1, a], q: TextParser[u, t1, b]): TextParser[u, t1, a] =
         TextParser(sk ->
             apply1(p, x -> apply1(q, _ -> sk(x)))
         )
 
-    pub def seqRight(p: TextParser[u, r, t], q: TextParser[u, s, t]): TextParser[u, s, t] =
+    pub def seqRight(p: TextParser[u, t1, a], q: TextParser[u, t1, b]): TextParser[u, t1, b] =
         TextParser(sk ->
             apply1(p, _ -> apply1(q, y -> sk(y)))
         )
 
-    pub def ifThenElse(cond: TextParser[u, r, t], thenp: r -> TextParser[u, s, t], elsep: TextParser[u, s, t]): TextParser[u, s, t] = 
+    pub def ifThenElse(cond: TextParser[u, t1, a], 
+                        thenp: a -> TextParser[u, t1, b], 
+                        elsep: TextParser[u, t1, b]): TextParser[u, t1, b] = 
         TextParser((sk, fk, ctx, st) ->
             apply1(cond, x -> apply1(thenp(x), sk), _ -> apply1(elsep, sk, fk, ctx, st), ctx, st))
 
-    pub def choice(ps: List[TextParser[u, a, t]]): TextParser[u, a, t] =
+    pub def choice(ps: List[TextParser[u, t1, a]]): TextParser[u, t1, a] =
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             match ps {
@@ -234,23 +241,23 @@ namespace FlixParsec/Prim {
         )
 
 
-    pub def liftOption(x: Option[r], errMsg: String): TextParser[u, r, t] =  match x {
+    pub def liftOption(x: Option[a], errMsg: String): TextParser[u, t1, a] =  match x {
         case Some(a) => return(a)
         case None    => failure(errMsg)
     }
 
-    pub def liftResult(x: Result[r, e]): TextParser[u, r, t] =  match x {
+    pub def liftResult(x: Result[a, e]): TextParser[u, t1, a] =  match x {
         case Ok(a) => return(a)
         case Err(_) => failure("liftResult")
     }
 
-    pub def liftAction(f: Unit -> r & ef): TextParser[u, r, t] =
+    pub def liftAction(f: Unit -> a & ef): TextParser[u, t1, a] =
         TextParser((sk, fk, ctx, st, errs) ->
             let a = f() as & Impure;
             sk(a, fk, ctx, st, errs)
         )
 
-    pub def liftActionResult(f: Unit -> Result[r, e] & ef): TextParser[u, r, t] =
+    pub def liftActionResult(f: Unit -> Result[a, e] & ef): TextParser[u, t1, a] =
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             let ans = f() as & Impure;
@@ -260,14 +267,14 @@ namespace FlixParsec/Prim {
             }
         )
 
-    pub def getPosition(): TextParser[u, Position, t] =  
+    pub def getPosition(): TextParser[u, t1, Position] =  
         TextParser((sk, fk, ctx, st) ->
             let (x,y) = FlixParsec/Internal/ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
             sk({ lineNumber = x, column = y }, fk, ctx, st)
         )
 
 
-    pub def endOfInput() : TextParser[u, Unit, t] =
+    pub def endOfInput() : TextParser[u, t1, Unit] =
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
@@ -277,7 +284,7 @@ namespace FlixParsec/Prim {
                 fk(st.pos, singleton("eof - not at end"))
         ) 
 
-    pub def string(s: String): TextParser[u, String, t] =
+    pub def string(s: String): TextParser[u, t1, String] =
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             let strlen = String.length(s);
@@ -290,7 +297,7 @@ namespace FlixParsec/Prim {
             }
         )
 
-    pub def char(ch: Char): TextParser[u, Char, t] = 
+    pub def char(ch: Char): TextParser[u, t1, Char] = 
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
@@ -308,7 +315,7 @@ namespace FlixParsec/Prim {
             }
         )
 
-    pub def anyChar(): TextParser[u, Char, t] =
+    pub def anyChar(): TextParser[u, t1, Char] =
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
@@ -323,7 +330,7 @@ namespace FlixParsec/Prim {
 
 
     // Truncates if eof...
-    pub def horizon(n: Int32): TextParser[u, String, t] = 
+    pub def horizon(n: Int32): TextParser[u, t1, String] = 
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             if (n < 0) {
@@ -340,7 +347,7 @@ namespace FlixParsec/Prim {
     /// lookahead - run the parser but don't consume input on success
     /// On fail, fail.
     ///
-    pub def lookahead(p: TextParser[u, r, t]): TextParser[u, r, t] =
+    pub def lookahead(p: TextParser[u, t1, a]): TextParser[u, t1, a] =
         TextParser((sk, fk, ctx, st) ->
             let sk1 = (ans, fk1, _, _) -> sk(ans, fk1, ctx, st);
             apply1(p, sk1, fk, ctx, st)
@@ -349,7 +356,7 @@ namespace FlixParsec/Prim {
     ///
     /// Run parser `p` within a bounded length
     ///
-    pub def bounded(n: Int32, p: TextParser[u, r, t]): TextParser[u, r, t] =
+    pub def bounded(n: Int32, p: TextParser[u, t1, a]): TextParser[u, t1, a] =
         use Chain.{singleton};
         TextParser((sk, fk, ctx, st, errs) ->
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
