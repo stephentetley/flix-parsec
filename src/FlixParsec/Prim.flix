@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Stephen Tetley
+ * Copyright 2021 Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 
-namespace TextParser {
+namespace FlixParsec {
 
 
     type alias Failures = Chain[String]
@@ -29,6 +29,13 @@ namespace TextParser {
     /// instance Functor[TextParser[r]] {
     ///     def map(f: a -> b & ef, x: TextParser[a, t]): TextParser[b, t] & ef = map(f, x)
     /// }
+    
+}
+
+namespace FlixParsec/Prim {
+
+    use FlixParsec.{TextParser, Failures, SuccessK, FailK};
+    use FlixParsec.TextParser.{TextParser};
 
     type alias Position = { lineNumber: Int32, column: Int32 }
 
@@ -81,14 +88,14 @@ namespace TextParser {
     /// This is exposed so client code can implement wrappers over `run` etc. without
     /// knowing about the internal error type `Error1`.
     ///
-    type alias TextParser1[t] = TextParser[t, Result[t, TextParser.Error1]]
+    type alias TextParser1[t] = TextParser[t, Result[t, Error1]]
 
     ///
     /// Run parser `p` on the string `input`.
     ///
     pub def run(p: TextParser1[t], input: String) : Result[t, ParseError] & Impure =
         use Chain.{toList, empty};
-        use TextParser/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
+        use FlixParsec/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
         let tabsize = 4;    // TODO make configurable
         let fk = (pos, errs) -> Err({ msgs = toList(errs), pos = pos }) as & Impure;
         let sk = (a, _, _, _, _) -> Ok(a) as & Impure;
@@ -252,7 +259,7 @@ namespace TextParser {
     pub def getPosition(): TextParser[Position, t] =  
         TextParser((sk, fk, inp, pos) ->
             let tabsize = 4;    // TODO make configurable
-            let (x,y) = TextParser/Internal/ErrorUtils.textPos(tabsize, pos, inp);
+            let (x,y) = FlixParsec/Internal/ErrorUtils.textPos(tabsize, pos, inp);
             sk({ lineNumber = x, column = y }, fk, inp, pos)
         )
 

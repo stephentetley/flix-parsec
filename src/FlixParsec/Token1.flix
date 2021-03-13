@@ -16,13 +16,13 @@
 
 
 
-namespace TextParser/Token1 {
+namespace FlixParsec/Token1 {
 
-    use TextParser.TextParser;
-    use TextParser.{string, liftResult, seqLeft};
-    use TextParser/Combinators.{between, sepBy, sepBy1};
-    use TextParser/Regex.{lookingAts};
-    use TextParser/Text.{whiteSpace, digits};
+    use FlixParsec.TextParser;
+    use FlixParsec/Prim.{string, liftResult, seqLeft};
+    use FlixParsec/Combinators.{between, sepBy, sepBy1};
+    use FlixParsec/Regex.{lookingAts};
+    use FlixParsec/Text.{whiteSpace, digits};
 
     pub def lexeme(p: TextParser[r, t]): TextParser[r, t] = seqLeft(p, whiteSpace())
 
@@ -55,7 +55,7 @@ namespace TextParser/Token1 {
 
 
     pub def int8(): TextParser[Int8, t] = 
-        use TextParser.flatMap;
+        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int8.fromString(s))
@@ -63,7 +63,7 @@ namespace TextParser/Token1 {
         lexeme(body)
 
     pub def int16(): TextParser[Int16, t] = 
-        use TextParser.flatMap;
+        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int16.fromString(s))
@@ -71,7 +71,7 @@ namespace TextParser/Token1 {
         lexeme(body)
     
     pub def int32(): TextParser[Int32, t] = 
-        use TextParser.flatMap;
+        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int32.fromString(s))
@@ -79,7 +79,7 @@ namespace TextParser/Token1 {
         lexeme(body)
 
     pub def int64(): TextParser[Int64, t] = 
-        use TextParser.flatMap;
+        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int64.fromString(s))
@@ -87,7 +87,7 @@ namespace TextParser/Token1 {
         lexeme(body)
 
     pub def bigInt(): TextParser[BigInt, t] = 
-        use TextParser.flatMap;
+        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(BigInt.fromString(s))
@@ -95,7 +95,7 @@ namespace TextParser/Token1 {
         lexeme(body)
 
     pub def float64(): TextParser[Float64, t] = 
-        use TextParser.flatMap;
+        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
             liftResult(Float64.fromString(s))
@@ -103,7 +103,7 @@ namespace TextParser/Token1 {
         lexeme(body)
 
     pub def float32(): TextParser[Float32, t] = 
-        use TextParser.flatMap;
+        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
             liftResult(Float32.fromString(s))

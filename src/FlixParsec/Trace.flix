@@ -16,12 +16,12 @@
 
 
 
-namespace TextParser/Trace {
+namespace FlixParsec/Trace {
 
-    use TextParser.TextParser;
+    use FlixParsec.TextParser;
 
     pub def trace(message: String, p: TextParser[a, t]): TextParser[a, t] = 
-        use TextParser.{flatMap, return, getPosition, showPosition, liftAction};
+        use FlixParsec/Prim.{flatMap, return, getPosition, showPosition, liftAction};
         let* pos1 = getPosition();
         let* ans = p;
         let* pos2 = getPosition();
@@ -30,7 +30,7 @@ namespace TextParser/Trace {
         return(ans)
 
     pub def tell(message: String): TextParser[Unit, t] = 
-        use TextParser.{flatMap, return, getPosition, showPosition, liftAction};
+        use FlixParsec/Prim.{flatMap, return, getPosition, showPosition, liftAction};
         let* pos1 = getPosition();
         let msg = "// " + message + ". Position {" + showPosition(pos1) +  "}";
         let* _ =  liftAction(_ -> Console.printLine(msg));

@@ -15,12 +15,12 @@
  */
 
 
-namespace TextParser/Text {
+namespace FlixParsec/Text {
 
-    use TextParser.TextParser;
-    use TextParser.{return, failure, map, lookahead, swapError, liftOption, char};
-    use TextParser/Combinators.{ignore};
-    use TextParser/Regex.{lookingAts, skippingAts};
+    use FlixParsec.TextParser;
+    use FlixParsec/Prim.{return, failure, map, lookahead, swapError, liftOption, char};
+    use FlixParsec/Combinators.{ignore};
+    use FlixParsec/Regex.{lookingAts, skippingAts};
 
     pub def makePattern(regex: String): TextParser[Text/Regex.Pattern, t] = 
         liftOption(Text/Regex/Pattern.compile(regex),  "makePattern")
@@ -35,7 +35,7 @@ namespace TextParser/Text {
     /// Run parser `p` bounding the input to only the rest of the current line.
     /// If `p` succeeds continue parsing the whole input.
     pub def parseLine(p: TextParser[r, t], consumeNewline: Bool): TextParser[r, t] =
-        use TextParser.{flatMap, bounded};
+        use FlixParsec/Prim.{flatMap, bounded};
         let regex = if (consumeNewline) ".*\R?" else ".*";
         let* restofline = lookahead(lookingAts(regex));
         let* ans = bounded(String.length(restofline), p);
@@ -61,7 +61,7 @@ namespace TextParser/Text {
 
     
     pub def anchorLineMatches(regex: String): TextParser[Unit, t] = 
-        use TextParser.flatMap;        
+        use FlixParsec/Prim.flatMap;        
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
         if (Text/Regex.matches(rest1, patt)) 
@@ -70,7 +70,7 @@ namespace TextParser/Text {
             failure("anchorLineMatches not matched")
 
     pub def anchorLine(regex: String): TextParser[Unit, t] = 
-        use TextParser.flatMap;        
+        use FlixParsec/Prim.flatMap;        
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
         if (Text/Regex.contains(rest1, patt)) 
@@ -119,7 +119,7 @@ namespace TextParser/Text {
 
         
     pub def content(n: Int32): TextParser[String, t] =
-        map(String.trim, TextParser.horizon(n))
+        map(String.trim, FlixParsec/Prim.horizon(n))
 
     /// One or more ASCII digits [0-9].
     pub def digits(): TextParser[String, t] = lookingAts("\d+")
@@ -141,6 +141,6 @@ namespace TextParser/Text {
 
 
     pub def isEof(): TextParser[Bool, t] = 
-        TextParser/Combinators.succeeds(TextParser.endOfInput())
+        FlixParsec/Combinators.succeeds(FlixParsec/Prim.endOfInput())
         
 }

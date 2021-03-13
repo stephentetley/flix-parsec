@@ -16,10 +16,10 @@
 
 
 
-namespace TextParser/Regex {
+namespace FlixParsec/Regex {
 
-    use TextParser.TextParser;
-    use TextParser.TextParser.{TextParser};
+    use FlixParsec.TextParser;
+    use FlixParsec.TextParser.{TextParser};
 
     pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] =
         use Chain.{singleton};
@@ -61,20 +61,20 @@ namespace TextParser/Regex {
     /// Parsing fails if regex does not compile.
     pub def lookingAts(regex: String): TextParser[String, t] = 
         use Text/Regex/Pattern.{compile};
-        use TextParser.{bind, liftOption};
+        use FlixParsec/Prim.{bind, liftOption};
         bind(liftOption(compile(regex), "lookingAts"), lookingAt)
 
     /// Parsing fails if regex does not compile.
     pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
         use Text/Regex/Pattern.{compile};
-        use TextParser.{bind, liftOption};
+        use FlixParsec/Prim.{bind, liftOption};
         bind(liftOption(compile(regex), "evalLookingAts"), patt -> evalLookingAt(patt, eval))
 
 
     /// Parsing fails if regex does not compile.
     pub def skippingAts(regex: String): TextParser[Unit, t] = 
         use Text/Regex/Pattern.{compile};
-        use TextParser.{bind, liftOption};
+        use FlixParsec/Prim.{bind, liftOption};
         bind(liftOption(compile(regex), "skippingAts"), skippingAt)
 
 

@@ -16,7 +16,7 @@
 
 
 
-namespace TextParser/Internal/ErrorUtils {
+namespace FlixParsec/Internal/ErrorUtils {
 
     
 
