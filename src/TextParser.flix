@@ -18,10 +18,7 @@
 namespace TextParser {
 
 
-    use Data/Transient.DList;
-
-    /// TODO: change to Chain...
-    type alias Failures = DList[String]
+    type alias Failures = Chain[String]
 
     type alias FailK[t] = Int32 -> Failures ~> t
 
@@ -90,7 +87,7 @@ namespace TextParser {
     /// Run parser `p` on the string `input`.
     ///
     pub def run(p: TextParser1[t], input: String) : Result[t, ParseError] & Impure =
-        use Data/Transient/DList.{toList, empty};
+        use Chain.{toList, empty};
         use TextParser/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
         let tabsize = 4;    // TODO make configurable
         let fk = (pos, errs) -> Err({ msgs = toList(errs), pos = pos }) as & Impure;
@@ -150,7 +147,7 @@ namespace TextParser {
     pub def return(x: a): TextParser[a, t] = TextParser(succ -> succ(x))
 
     pub def failure(message: String) : TextParser[r, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((_, fk, _, pos, _) -> fk(pos, singleton(message)))
 
     ///
@@ -159,7 +156,7 @@ namespace TextParser {
     /// monad). It must not be a "stateful" operation with unlimited extent.
     ///
     pub def swapError(p: TextParser[r,t], message: String) : TextParser[r, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             let fk1 = (pos1, _) -> fk(pos1, singleton(message));
             let sk1 = (x, _, _, pos1, _) -> sk(x, fk, inp, pos1, errs);
@@ -189,7 +186,7 @@ namespace TextParser {
     pub def flatMap(k: q -> TextParser[r, t], ma: TextParser[q, t]):  TextParser[r, t] = bind(ma, k)
 
     pub def alt(p: TextParser[a, t], q: TextParser[a, t]): TextParser[a, t] =
-        use Data/Transient/DList.{append};
+        use Chain.{append};
         TextParser((sk, fk, inp, pos, errs) ->
             let pfk = (_, perrs) -> {
                 let qfk = (_, qerrs) -> fk(pos, append(perrs, qerrs));
@@ -214,7 +211,7 @@ namespace TextParser {
             apply1(cond, x -> apply1(thenp(x), sk), apply1(elsep, sk, fk, inp), inp, pos))
 
     pub def choice(ps: List[TextParser[a, t]]): TextParser[a, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             match ps {
                 case Nil => fk(pos, singleton("choice"))
@@ -243,7 +240,7 @@ namespace TextParser {
         )
 
     pub def liftActionResult(f: Unit -> Result[r, e] & ef): TextParser[r, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             let ans = f() as & Impure;
             match ans {
@@ -261,7 +258,7 @@ namespace TextParser {
 
 
     pub def endOfInput() : TextParser[Unit, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             let len = String.length(inp);
             if (pos >= len)
@@ -271,7 +268,7 @@ namespace TextParser {
         ) 
 
     pub def string(s: String): TextParser[String, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             let strlen = String.length(s);
             let s1 = String.slice(inp, pos, pos + strlen);
@@ -284,7 +281,7 @@ namespace TextParser {
         )
 
     pub def char(ch: Char): TextParser[Char, t] = 
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             let len = String.length(inp);            
             if (pos < len) {
@@ -302,7 +299,7 @@ namespace TextParser {
         )
 
     pub def anyChar(): TextParser[Char, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             let len = String.length(inp);            
             if (pos < len) {
@@ -314,61 +311,61 @@ namespace TextParser {
             }
         )
 
-    pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] =
-        use Data/Transient/DList.{singleton};
-        use Text/Regex.{boundedStartsWith};
-        TextParser((sk, fk, inp, pos, errs) ->
-            let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
-            match ans { 
-                case Some(s) => sk(s, fk, inp, pos + String.length(s), errs)
-                case None(_) => fk(pos, singleton("lookingAt failed"))
-            }
-        )
+    /// pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] =
+    ///     use Chain.{singleton};
+    ///     use Text/Regex.{boundedStartsWith};
+    ///     TextParser((sk, fk, inp, pos, errs) ->
+    ///         let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
+    ///         match ans { 
+    ///             case Some(s) => sk(s, fk, inp, pos + String.length(s), errs)
+    ///             case None(_) => fk(pos, singleton("lookingAt failed"))
+    ///         }
+    ///     )
 
-    /// Version of `lookingAt` with a MatchEvaluator
-    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
-        use Data/Transient/DList.{singleton};
-        use Text/Regex.{evalBoundedStartsWith};
-        use Text/Regex/MatchEvaluator.{tuple2, getLength};
-        let eval2 = tuple2(getLength(), eval);
-        TextParser((sk, fk, inp, pos, errs) ->
-            let ans = evalBoundedStartsWith(inp, patt, pos, String.length(inp), eval2) as & Pure;
-            match ans {
-                case Ok(len, x) => sk(x, fk, inp, pos + len, errs)
-                case Err(_) => fk(pos, singleton("evalLookingAt failed"))
-            }
-        )
+    /// /// Version of `lookingAt` with a MatchEvaluator
+    /// pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
+    ///     use Chain.{singleton};
+    ///     use Text/Regex.{evalBoundedStartsWith};
+    ///     use Text/Regex/MatchEvaluator.{tuple2, getLength};
+    ///     let eval2 = tuple2(getLength(), eval);
+    ///     TextParser((sk, fk, inp, pos, errs) ->
+    ///         let ans = evalBoundedStartsWith(inp, patt, pos, String.length(inp), eval2) as & Pure;
+    ///         match ans {
+    ///             case Ok(len, x) => sk(x, fk, inp, pos + len, errs)
+    ///             case Err(_) => fk(pos, singleton("evalLookingAt failed"))
+    ///         }
+    ///     )
 
-    pub def skippingAt(patt: Text/Regex.Pattern): TextParser[Unit, t] = 
-        use Data/Transient/DList.{singleton};
-        use Text/Regex.{boundedStartsWith};
-        TextParser((sk, fk, inp, pos, errs) ->
-            let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
-            match ans { 
-                case Some(s) => sk((), fk, inp, pos + String.length(s), errs)
-                case None => fk(pos, singleton("skippingAt failed"))
-            }
-        )
+    /// pub def skippingAt(patt: Text/Regex.Pattern): TextParser[Unit, t] = 
+    ///     use Chain.{singleton};
+    ///     use Text/Regex.{boundedStartsWith};
+    ///     TextParser((sk, fk, inp, pos, errs) ->
+    ///         let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
+    ///         match ans { 
+    ///             case Some(s) => sk((), fk, inp, pos + String.length(s), errs)
+    ///             case None => fk(pos, singleton("skippingAt failed"))
+    ///         }
+    ///     )
 
-    /// Parsing fails if regex does not compile.
-    pub def lookingAts(regex: String): TextParser[String, t] = 
-        use Text/Regex/Pattern.{compile};
-        bind(liftOption(compile(regex), "lookingAts"), lookingAt)
+    /// /// Parsing fails if regex does not compile.
+    /// pub def lookingAts(regex: String): TextParser[String, t] = 
+    ///     use Text/Regex/Pattern.{compile};
+    ///     bind(liftOption(compile(regex), "lookingAts"), lookingAt)
 
-    /// Parsing fails if regex does not compile.
-    pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
-        use Text/Regex/Pattern.{compile};
-        bind(liftOption(compile(regex), "evalLookingAts"), patt -> evalLookingAt(patt, eval))
+    /// /// Parsing fails if regex does not compile.
+    /// pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
+    ///     use Text/Regex/Pattern.{compile};
+    ///     bind(liftOption(compile(regex), "evalLookingAts"), patt -> evalLookingAt(patt, eval))
 
 
-    /// Parsing fails if regex does not compile.
-    pub def skippingAts(regex: String): TextParser[Unit, t] = 
-        use Text/Regex/Pattern.{compile};
-        bind(liftOption(compile(regex), "skippingAts"), skippingAt)
+    /// /// Parsing fails if regex does not compile.
+    /// pub def skippingAts(regex: String): TextParser[Unit, t] = 
+    ///     use Text/Regex/Pattern.{compile};
+    ///     bind(liftOption(compile(regex), "skippingAts"), skippingAt)
 
     // Truncates if eof...
     pub def horizon(n: Int32): TextParser[String, t] = 
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             if (n < 0) {
                 let msg = "horizon - invalid size";
@@ -394,7 +391,7 @@ namespace TextParser {
     /// Run parser `p` within a bounded length
     ///
     pub def bounded(n: Int32, p: TextParser[r, t]): TextParser[r, t] =
-        use Data/Transient/DList.{singleton};
+        use Chain.{singleton};
         TextParser((sk, fk, inp, pos, errs) ->
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
@@ -404,13 +401,6 @@ namespace TextParser {
             apply1(p, sk1, fk1, str, 0, errs)
         )
 
-    /// Run parser `p` bounding the input to only the rest of the current line.
-    /// If `p` succeeds continue parsing the whole input.
-    pub def parseLine(p: TextParser[r, t], consumeNewline: Bool): TextParser[r, t] =
-        let regex = if (consumeNewline) ".*\R?" else ".*";
-        let* restofline = lookahead(lookingAts(regex));
-        let* ans = bounded(String.length(restofline), p);
-        return(ans)
 
 
 }

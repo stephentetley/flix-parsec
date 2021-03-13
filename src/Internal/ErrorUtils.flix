@@ -16,7 +16,7 @@
 
 
 
-namespace TextParser/Internal/Error {
+namespace TextParser/Internal/ErrorUtils {
 
     
 
@@ -56,10 +56,10 @@ namespace TextParser/Internal/Error {
             }
         }
 
-    pub def getBeforeAndAfter(pos: Int32, s: String): (String, String) = 
-        getBeforeAndAfterHelper(pos, s) as & Pure 
+    pub def getTextBeforeAndAfter(pos: Int32, s: String): (String, String) = 
+        getTextBeforeAndAfterHelper(pos, s) as & Pure 
 
-    def getBeforeAndAfterHelper(pos: Int32, s: String): (String, String) & Impure = 
+    def getTextBeforeAndAfterHelper(pos: Int32, s: String): (String, String) & Impure = 
         let (before, after) = String.splitAt(pos, s);
         let beforeArr = String.split(before, "\R{1}");
         let afterArr = String.split(after, "\R{1}");

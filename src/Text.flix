@@ -18,8 +18,9 @@
 namespace TextParser/Text {
 
     use TextParser.TextParser;
-    use TextParser.{return, failure, map, lookahead, lookingAts, skippingAts, swapError, liftOption, char};
+    use TextParser.{return, failure, map, lookahead, swapError, liftOption, char};
     use TextParser/Combinators.{ignore};
+    use TextParser/Regex.{lookingAts, skippingAts};
 
     pub def makePattern(regex: String): TextParser[Text/Regex.Pattern, t] = 
         liftOption(Text/Regex/Pattern.compile(regex),  "makePattern")
@@ -31,6 +32,14 @@ namespace TextParser/Text {
     pub def newline(): TextParser[Unit, t] = skippingAts("\R")
         
 
+    /// Run parser `p` bounding the input to only the rest of the current line.
+    /// If `p` succeeds continue parsing the whole input.
+    pub def parseLine(p: TextParser[r, t], consumeNewline: Bool): TextParser[r, t] =
+        use TextParser.{flatMap, bounded};
+        let regex = if (consumeNewline) ".*\R?" else ".*";
+        let* restofline = lookahead(lookingAts(regex));
+        let* ans = bounded(String.length(restofline), p);
+        return(ans)
 
     /// Parse the rest of the line.
     pub def restOfLine(consumeNewline: Bool): TextParser[String, t] = 

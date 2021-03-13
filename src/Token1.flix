@@ -19,8 +19,9 @@
 namespace TextParser/Token1 {
 
     use TextParser.TextParser;
-    use TextParser.{string, liftResult, lookingAts, seqLeft};
+    use TextParser.{string, liftResult, seqLeft};
     use TextParser/Combinators.{between, sepBy, sepBy1};
+    use TextParser/Regex.{lookingAts};
     use TextParser/Text.{whiteSpace, digits};
 
     pub def lexeme(p: TextParser[r, t]): TextParser[r, t] = seqLeft(p, whiteSpace())
