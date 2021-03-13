@@ -24,10 +24,10 @@ namespace FlixParsec/Regex {
     pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] =
         use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
-        TextParser((sk, fk, inp, pos, errs) ->
-            let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
+        TextParser((sk, fk, ctx, pos, errs) ->
+            let ans = boundedStartsWith(ctx.input, patt, pos, String.length(ctx.input)) as & Pure;
             match ans { 
-                case Some(s) => sk(s, fk, inp, pos + String.length(s), errs)
+                case Some(s) => sk(s, fk, ctx, pos + String.length(s), errs)
                 case None(_) => fk(pos, singleton("lookingAt failed"))
             }
         )
@@ -39,10 +39,10 @@ namespace FlixParsec/Regex {
         use Text/Regex.{evalBoundedStartsWith};
         use Text/Regex/MatchEvaluator.{tuple2, getLength};
         let eval2 = tuple2(getLength(), eval);
-        TextParser((sk, fk, inp, pos, errs) ->
-            let ans = evalBoundedStartsWith(inp, patt, pos, String.length(inp), eval2) as & Pure;
+        TextParser((sk, fk, ctx, pos, errs) ->
+            let ans = evalBoundedStartsWith(ctx.input, patt, pos, String.length(ctx.input), eval2) as & Pure;
             match ans {
-                case Ok(len, x) => sk(x, fk, inp, pos + len, errs)
+                case Ok(len, x) => sk(x, fk, ctx, pos + len, errs)
                 case Err(_) => fk(pos, singleton("evalLookingAt failed"))
             }
         )
@@ -50,10 +50,10 @@ namespace FlixParsec/Regex {
     pub def skippingAt(patt: Text/Regex.Pattern): TextParser[Unit, t] = 
         use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
-        TextParser((sk, fk, inp, pos, errs) ->
-            let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
+        TextParser((sk, fk, ctx, pos, errs) ->
+            let ans = boundedStartsWith(ctx.input, patt, pos, String.length(ctx.input)) as & Pure;
             match ans { 
-                case Some(s) => sk((), fk, inp, pos + String.length(s), errs)
+                case Some(s) => sk((), fk, ctx, pos + String.length(s), errs)
                 case None => fk(pos, singleton("skippingAt failed"))
             }
         )
