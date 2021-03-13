@@ -20,6 +20,7 @@ namespace TextParser {
 
     use Data/Transient.DList;
 
+    /// TODO: change to Chain...
     type alias Failures = DList[String]
 
     type alias FailK[t] = Int32 -> Failures ~> t
@@ -27,6 +28,10 @@ namespace TextParser {
     type alias SuccessK[r, t] = r -> FailK[t] -> String -> Int32 -> Failures ~> t
 
     pub opaque type TextParser[r, t] = SuccessK[r, t] -> FailK[t] -> String -> Int32 -> Failures ~> t
+
+    /// instance Functor[TextParser[r]] {
+    ///     def map(f: a -> b & ef, x: TextParser[a, t]): TextParser[b, t] & ef = map(f, x)
+    /// }
 
     type alias Position = { lineNumber: Int32, column: Int32 }
 
@@ -86,7 +91,7 @@ namespace TextParser {
     ///
     pub def run(p: TextParser1[t], input: String) : Result[t, ParseError] & Impure =
         use Data/Transient/DList.{toList, empty};
-        use TextParser/Internal/Error.{textPos, getBeforeAndAfter};
+        use TextParser/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
         let tabsize = 4;    // TODO make configurable
         let fk = (pos, errs) -> Err({ msgs = toList(errs), pos = pos }) as & Impure;
         let sk = (a, _, _, _, _) -> Ok(a) as & Impure;
@@ -96,7 +101,7 @@ namespace TextParser {
             case Err(e1) => {
                 let (l,c) = textPos(tabsize, e1.pos, input);
                 let posn = { lineNumber = l, column = c };
-                let (before, after) = getBeforeAndAfter(e1.pos, input);
+                let (before, after) = getTextBeforeAndAfter(e1.pos, input);
                 Err({ message = showErrorsList(e1.msgs)
                     , position = posn
                     , textBefore = before
@@ -250,7 +255,7 @@ namespace TextParser {
     pub def getPosition(): TextParser[Position, t] =  
         TextParser((sk, fk, inp, pos) ->
             let tabsize = 4;    // TODO make configurable
-            let (x,y) = TextParser/Internal/Error.textPos(tabsize, pos, inp);
+            let (x,y) = TextParser/Internal/ErrorUtils.textPos(tabsize, pos, inp);
             sk({ lineNumber = x, column = y }, fk, inp, pos)
         )
 
@@ -315,8 +320,8 @@ namespace TextParser {
         TextParser((sk, fk, inp, pos, errs) ->
             let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
             match ans { 
-                case Ok(s) => sk(s, fk, inp, pos + String.length(s), errs)
-                case Err(_) => fk(pos, singleton("lookingAt failed"))
+                case Some(s) => sk(s, fk, inp, pos + String.length(s), errs)
+                case None(_) => fk(pos, singleton("lookingAt failed"))
             }
         )
 
@@ -340,8 +345,8 @@ namespace TextParser {
         TextParser((sk, fk, inp, pos, errs) ->
             let ans = boundedStartsWith(inp, patt, pos, String.length(inp)) as & Pure;
             match ans { 
-                case Ok(s) => sk((), fk, inp, pos + String.length(s), errs)
-                case Err(_) => fk(pos, singleton("skippingAt failed"))
+                case Some(s) => sk((), fk, inp, pos + String.length(s), errs)
+                case None => fk(pos, singleton("skippingAt failed"))
             }
         )
 
