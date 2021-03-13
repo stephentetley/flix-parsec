@@ -22,19 +22,19 @@ namespace FlixParsec/Text {
     use FlixParsec/Combinators.{ignore};
     use FlixParsec/Regex.{lookingAts, skippingAts};
 
-    pub def makePattern(regex: String): TextParser[Text/Regex.Pattern, t] = 
+    pub def makePattern(regex: String): TextParser[u, Text/Regex.Pattern, t] = 
         liftOption(Text/Regex/Pattern.compile(regex),  "makePattern")
 
-    pub def makePatternWithFlags(regex: String, flags: List[Text/Regex/Pattern.Flag]): TextParser[Text/Regex.Pattern, t] = 
+    pub def makePatternWithFlags(regex: String, flags: List[Text/Regex/Pattern.Flag]): TextParser[u, Text/Regex.Pattern, t] = 
         liftOption(Text/Regex/Pattern.compileWithFlags(regex, flags),  "makePatternWithFlags")
 
     // Parse a newline recognized by the regular expression "\R".
-    pub def newline(): TextParser[Unit, t] = skippingAts("\R")
+    pub def newline(): TextParser[u, Unit, t] = skippingAts("\R")
         
 
     /// Run parser `p` bounding the input to only the rest of the current line.
     /// If `p` succeeds continue parsing the whole input.
-    pub def parseLine(p: TextParser[r, t], consumeNewline: Bool): TextParser[r, t] =
+    pub def parseLine(p: TextParser[u, r, t], consumeNewline: Bool): TextParser[u, r, t] =
         use FlixParsec/Prim.{flatMap, bounded};
         let regex = if (consumeNewline) ".*\R?" else ".*";
         let* restofline = lookahead(lookingAts(regex));
@@ -42,25 +42,25 @@ namespace FlixParsec/Text {
         return(ans)
 
     /// Parse the rest of the line.
-    pub def restOfLine(consumeNewline: Bool): TextParser[String, t] = 
+    pub def restOfLine(consumeNewline: Bool): TextParser[u, String, t] = 
         let regex = if (consumeNewline) ".*\R?" else ".*";
         lookingAts(regex)
         
     /// Peek rest of line.
-    pub def peekRestOfLine(): TextParser[String, t] = 
+    pub def peekRestOfLine(): TextParser[u, String, t] = 
         lookahead(restOfLine(false))
 
     /// Does not consume input.
-    pub def restOfLineLength(): TextParser[Int32, t] = 
+    pub def restOfLineLength(): TextParser[u, Int32, t] = 
         map(String.length, peekRestOfLine())
 
     /// Skip the rest of the line including the terminating newline if present.
-    pub def skipLine(): TextParser[Unit, t] =
+    pub def skipLine(): TextParser[u, Unit, t] =
         skippingAts(".*\R?")
 
 
     
-    pub def anchorLineMatches(regex: String): TextParser[Unit, t] = 
+    pub def anchorLineMatches(regex: String): TextParser[u, Unit, t] = 
         use FlixParsec/Prim.flatMap;        
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
@@ -69,7 +69,7 @@ namespace FlixParsec/Text {
         else
             failure("anchorLineMatches not matched")
 
-    pub def anchorLine(regex: String): TextParser[Unit, t] = 
+    pub def anchorLine(regex: String): TextParser[u, Unit, t] = 
         use FlixParsec/Prim.flatMap;        
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
@@ -79,68 +79,68 @@ namespace FlixParsec/Text {
             failure("anchorLine not matched")
 
 
-    pub def tabulation(): TextParser[Unit, t] = ignore(char('\u0009'))
+    pub def tabulation(): TextParser[u, Unit, t] = ignore(char('\u0009'))
 
-    pub def space(): TextParser[Unit, t] = ignore(char('\u0020'))
+    pub def space(): TextParser[u, Unit, t] = ignore(char('\u0020'))
     
-    pub def carriageReturn(): TextParser[Unit, t] = ignore(char('\u000D'))
+    pub def carriageReturn(): TextParser[u, Unit, t] = ignore(char('\u000D'))
 
-    pub def lineFeed(): TextParser[Unit, t] = ignore(char('\u000A'))
+    pub def lineFeed(): TextParser[u, Unit, t] = ignore(char('\u000A'))
 
 
     /// zero or more
-    pub def whiteSpace(): TextParser[Unit, t] = skippingAts("\s*")
+    pub def whiteSpace(): TextParser[u, Unit, t] = skippingAts("\s*")
 
     
     /// one or more
-    pub def whiteSpace1(): TextParser[Unit, t] = skippingAts("\s+")
+    pub def whiteSpace1(): TextParser[u, Unit, t] = skippingAts("\s+")
 
     /// space or tab, zero or more
-    pub def blank(): TextParser[Unit, t] = skippingAts("\p{Blank}*")
+    pub def blank(): TextParser[u, Unit, t] = skippingAts("\p{Blank}*")
 
     
     /// space or tab,  one or more
-    pub def blank1(): TextParser[Unit, t] = skippingAts("\p{Blank}+")
+    pub def blank1(): TextParser[u, Unit, t] = skippingAts("\p{Blank}+")
 
     /// zero or more
-    pub def horizontalWhiteSpace(): TextParser[Unit, t] = skippingAts("\h*")
+    pub def horizontalWhiteSpace(): TextParser[u, Unit, t] = skippingAts("\h*")
 
     
     /// one or more
-    pub def horizontalWhiteSpace1(): TextParser[Unit, t] = skippingAts("\h+")
+    pub def horizontalWhiteSpace1(): TextParser[u, Unit, t] = skippingAts("\h+")
 
-    pub def manyChar(c: Char): TextParser[String, t] =
+    pub def manyChar(c: Char): TextParser[u, String, t] =
         let regex = Text/Regex/Pattern.quote(Char.toString(c)) + "*";
         lookingAts(regex)
 
-    pub def many1Char(c: Char): TextParser[String, t] =
+    pub def many1Char(c: Char): TextParser[u, String, t] =
         let regex = Text/Regex/Pattern.quote(Char.toString(c)) + "+";
         lookingAts(regex)
 
         
-    pub def content(n: Int32): TextParser[String, t] =
+    pub def content(n: Int32): TextParser[u, String, t] =
         map(String.trim, FlixParsec/Prim.horizon(n))
 
     /// One or more ASCII digits [0-9].
-    pub def digits(): TextParser[String, t] = lookingAts("\d+")
+    pub def digits(): TextParser[u, String, t] = lookingAts("\d+")
 
     /// One or more ASCII hex digits.
-    pub def hexDigits(): TextParser[String, t] = lookingAts("\p{XDigit}+")
+    pub def hexDigits(): TextParser[u, String, t] = lookingAts("\p{XDigit}+")
 
     /// One or more.
-    pub def lowerLetters(): TextParser[String, t] = lookingAts("\p{Lower}+")
+    pub def lowerLetters(): TextParser[u, String, t] = lookingAts("\p{Lower}+")
 
     /// One or more.
-    pub def upperLetters(): TextParser[String, t] = lookingAts("\p{Upper}+")
+    pub def upperLetters(): TextParser[u, String, t] = lookingAts("\p{Upper}+")
 
     /// One or more.
-    pub def alphas(): TextParser[String, t] = lookingAts("\p{Alpha}+")
+    pub def alphas(): TextParser[u, String, t] = lookingAts("\p{Alpha}+")
 
     /// One or more.
-    pub def alphanums(): TextParser[String, t] = lookingAts("\p{Alnum}+")
+    pub def alphanums(): TextParser[u, String, t] = lookingAts("\p{Alnum}+")
 
 
-    pub def isEof(): TextParser[Bool, t] = 
+    pub def isEof(): TextParser[u, Bool, t] = 
         FlixParsec/Combinators.succeeds(FlixParsec/Prim.endOfInput())
         
 }

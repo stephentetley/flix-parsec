@@ -21,58 +21,58 @@ namespace FlixParsec/Regex {
     use FlixParsec.TextParser;
     use FlixParsec.TextParser.{TextParser};
 
-    pub def lookingAt(patt: Text/Regex.Pattern): TextParser[String, t] =
+    pub def lookingAt(patt: Text/Regex.Pattern): TextParser[u, String, t] =
         use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
-        TextParser((sk, fk, ctx, pos, errs) ->
-            let ans = boundedStartsWith(ctx.input, patt, pos, String.length(ctx.input)) as & Pure;
+        TextParser((sk, fk, ctx, st, errs) ->
+            let ans = boundedStartsWith(ctx.input, patt, st.pos, String.length(ctx.input)) as & Pure;
             match ans { 
-                case Some(s) => sk(s, fk, ctx, pos + String.length(s), errs)
-                case None(_) => fk(pos, singleton("lookingAt failed"))
+                case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
+                case None(_) => fk(st.pos, singleton("lookingAt failed"))
             }
         )
 
 
     /// Version of `lookingAt` with a MatchEvaluator
-    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
+    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): TextParser[u, a, t] =
         use Chain.{singleton};
         use Text/Regex.{evalBoundedStartsWith};
         use Text/Regex/MatchEvaluator.{tuple2, getLength};
         let eval2 = tuple2(getLength(), eval);
-        TextParser((sk, fk, ctx, pos, errs) ->
-            let ans = evalBoundedStartsWith(ctx.input, patt, pos, String.length(ctx.input), eval2) as & Pure;
+        TextParser((sk, fk, ctx, st, errs) ->
+            let ans = evalBoundedStartsWith(ctx.input, patt, st.pos, String.length(ctx.input), eval2) as & Pure;
             match ans {
-                case Ok(len, x) => sk(x, fk, ctx, pos + len, errs)
-                case Err(_) => fk(pos, singleton("evalLookingAt failed"))
+                case Ok(len, x) => sk(x, fk, ctx, {pos = st.pos + len | st}, errs)
+                case Err(_) => fk(st.pos, singleton("evalLookingAt failed"))
             }
         )
 
-    pub def skippingAt(patt: Text/Regex.Pattern): TextParser[Unit, t] = 
+    pub def skippingAt(patt: Text/Regex.Pattern): TextParser[u, Unit, t] = 
         use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
-        TextParser((sk, fk, ctx, pos, errs) ->
-            let ans = boundedStartsWith(ctx.input, patt, pos, String.length(ctx.input)) as & Pure;
+        TextParser((sk, fk, ctx, st, errs) ->
+            let ans = boundedStartsWith(ctx.input, patt, st.pos, String.length(ctx.input)) as & Pure;
             match ans { 
-                case Some(s) => sk((), fk, ctx, pos + String.length(s), errs)
-                case None => fk(pos, singleton("skippingAt failed"))
+                case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
+                case None => fk(st.pos, singleton("skippingAt failed"))
             }
         )
 
     /// Parsing fails if regex does not compile.
-    pub def lookingAts(regex: String): TextParser[String, t] = 
+    pub def lookingAts(regex: String): TextParser[u, String, t] = 
         use Text/Regex/Pattern.{compile};
         use FlixParsec/Prim.{bind, liftOption};
         bind(liftOption(compile(regex), "lookingAts"), lookingAt)
 
     /// Parsing fails if regex does not compile.
-    pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): TextParser[a, t] =
+    pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): TextParser[u, a, t] =
         use Text/Regex/Pattern.{compile};
         use FlixParsec/Prim.{bind, liftOption};
         bind(liftOption(compile(regex), "evalLookingAts"), patt -> evalLookingAt(patt, eval))
 
 
     /// Parsing fails if regex does not compile.
-    pub def skippingAts(regex: String): TextParser[Unit, t] = 
+    pub def skippingAts(regex: String): TextParser[u, Unit, t] = 
         use Text/Regex/Pattern.{compile};
         use FlixParsec/Prim.{bind, liftOption};
         bind(liftOption(compile(regex), "skippingAts"), skippingAt)
