@@ -18,9 +18,9 @@
 
 namespace FlixParsec/Trace {
 
-    use FlixParsec.TextParser;
+    use FlixParsec.{GenParser};
 
-    pub def trace(message: String, p: TextParser[u, t1, a]): TextParser[u, t1, a] = 
+    pub def trace(message: String, p: GenParser[t1, u, a]): GenParser[t1, u, a] = 
         use FlixParsec/Prim.{flatMap, return, getPosition, showPosition, liftAction};
         let* pos1 = getPosition();
         let* ans = p;
@@ -29,7 +29,7 @@ namespace FlixParsec/Trace {
         let* _ =  liftAction(_ -> Console.printLine(msg));
         return(ans)
 
-    pub def tell(message: String): TextParser[u, t1, Unit] = 
+    pub def tell(message: String): GenParser[t1, u, Unit] = 
         use FlixParsec/Prim.{flatMap, return, getPosition, showPosition, liftAction};
         let* pos1 = getPosition();
         let msg = "// " + message + ". Position {" + showPosition(pos1) +  "}";

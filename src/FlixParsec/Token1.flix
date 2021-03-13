@@ -18,43 +18,43 @@
 
 namespace FlixParsec/Token1 {
 
-    use FlixParsec.TextParser;
+    use FlixParsec.{GenParser};
     use FlixParsec/Prim.{string, liftResult, seqLeft};
     use FlixParsec/Combinators.{between, sepBy, sepBy1};
     use FlixParsec/Regex.{lookingAts};
     use FlixParsec/Text.{whiteSpace, digits};
 
-    pub def lexeme(p: TextParser[u, t1, r]): TextParser[u, t1, r] = seqLeft(p, whiteSpace())
+    pub def lexeme(p: GenParser[t1, u, r]): GenParser[t1, u, r] = seqLeft(p, whiteSpace())
 
-    pub def symbol(s: String): TextParser[u, t1, String] = lexeme(string(s))
+    pub def symbol(s: String): GenParser[t1, u, String] = lexeme(string(s))
 
-    pub def parens(p: TextParser[u, t1, a]): TextParser[u, t1, a] = between(symbol("("), symbol(")"), p)
+    pub def parens(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("("), symbol(")"), p)
 
-    pub def braces(p: TextParser[u, t1, a]): TextParser[u, t1, a] = between(symbol("{"), symbol("}"), p)
+    pub def braces(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("{"), symbol("}"), p)
 
-    pub def angles(p: TextParser[u, t1, a]): TextParser[u, t1, a] = between(symbol("<"), symbol(">"), p)
+    pub def angles(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("<"), symbol(">"), p)
 
-    pub def brackets(p: TextParser[u, t1, a]): TextParser[u, t1, a] = between(symbol("["), symbol("]"), p)
+    pub def brackets(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("["), symbol("]"), p)
 
-    pub def semi(): TextParser[u, t1, String] = symbol(";")
+    pub def semi(): GenParser[t1, u, String] = symbol(";")
 
-    pub def comma(): TextParser[u, t1, String] = symbol(",")
+    pub def comma(): GenParser[t1, u, String] = symbol(",")
 
-    pub def colon(): TextParser[u, t1, String] = symbol(":")
+    pub def colon(): GenParser[t1, u, String] = symbol(":")
 
-    pub def dot(): TextParser[u, t1, String] = symbol(".")
+    pub def dot(): GenParser[t1, u, String] = symbol(".")
 
-    pub def semiSep(p: TextParser[u, t1, a]): TextParser[u, t1, List[a]] = sepBy(p, semi())
+    pub def semiSep(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy(p, semi())
 
-    pub def semiSep1(p: TextParser[u, t1, a]): TextParser[u, t1, List[a]] = sepBy1(p, semi())
+    pub def semiSep1(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy1(p, semi())
 
-    pub def commaSep(p: TextParser[u, t1, a]): TextParser[u, t1, List[a]] = sepBy(p, comma())
+    pub def commaSep(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy(p, comma())
 
-    pub def commaSep1(p: TextParser[u, t1, a]): TextParser[u, t1, List[a]] = sepBy1(p, comma())
+    pub def commaSep1(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy1(p, comma())
 
 
 
-    pub def int8(): TextParser[u, t1, Int8] = 
+    pub def int8(): GenParser[t1, u, Int8] = 
         use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
@@ -62,7 +62,7 @@ namespace FlixParsec/Token1 {
         };
         lexeme(body)
 
-    pub def int16(): TextParser[u, t1, Int16] = 
+    pub def int16(): GenParser[t1, u, Int16] = 
         use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
@@ -70,7 +70,7 @@ namespace FlixParsec/Token1 {
         };
         lexeme(body)
     
-    pub def int32(): TextParser[u, t1, Int32] = 
+    pub def int32(): GenParser[t1, u, Int32] = 
         use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
@@ -78,7 +78,7 @@ namespace FlixParsec/Token1 {
         };
         lexeme(body)
 
-    pub def int64(): TextParser[u, t1, Int64] = 
+    pub def int64(): GenParser[t1, u, Int64] = 
         use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
@@ -86,7 +86,7 @@ namespace FlixParsec/Token1 {
         };
         lexeme(body)
 
-    pub def bigInt(): TextParser[u, t1, BigInt] = 
+    pub def bigInt(): GenParser[t1, u, BigInt] = 
         use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
@@ -94,7 +94,7 @@ namespace FlixParsec/Token1 {
         };
         lexeme(body)
 
-    pub def float64(): TextParser[u, t1, Float64] = 
+    pub def float64(): GenParser[t1, u, Float64] = 
         use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
@@ -102,7 +102,7 @@ namespace FlixParsec/Token1 {
         };
         lexeme(body)
 
-    pub def float32(): TextParser[u, t1, Float32] = 
+    pub def float32(): GenParser[t1, u, Float32] = 
         use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
