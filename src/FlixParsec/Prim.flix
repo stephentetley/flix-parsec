@@ -39,7 +39,7 @@ namespace FlixParsec {
 
 namespace FlixParsec/Prim {
 
-    use FlixParsec.{GenParser, ParseContext, ParseState, Failures, SuccessK, FailK};
+    use FlixParsec.{GenParser, Parser, ParseContext, ParseState, Failures, SuccessK, FailK};
     use FlixParsec.GenParser.{GenParser};
 
     type alias Position = { lineNumber: Int32, column: Int32 }
@@ -93,16 +93,25 @@ namespace FlixParsec/Prim {
     /// This is exposed so client code can implement wrappers over `run` etc. without
     /// knowing about the internal error type `Error1`.
     ///
-    type alias TextParser1[ans] = GenParser[Result[ans, Error1], Unit, ans]
+    type alias Parser1[ans] = Parser[Result[ans, Error1], ans]
+
+    type alias GenParser1[u, ans] = GenParser[Result[ans, Error1], u, ans]
 
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def run(p: TextParser1[ans], input: String) : Result[ans, ParseError] & Impure =
+    pub def runParser(p: Parser1[ans], tabSize: Int32, input: String) : Result[ans, ParseError] & Impure =
+        runGenParser(p, (), tabSize, input)
+
+
+    ///
+    /// Run parser `p` on the string `input`.
+    ///
+    pub def runGenParser(p: GenParser1[u, ans], initState: u, tabSize: Int32, input: String) : Result[ans, ParseError] & Impure =
         use Chain.{toList, empty};
         use FlixParsec/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
-        let context = {input = input, tabSize = 4};
-        let state = {pos = 0, userState = ()};
+        let context = {input = input, tabSize = tabSize};
+        let state = {pos = 0, userState = initState};
         let fk = (posn, errs) -> Err({ messages = toList(errs), position = posn }) as & Impure;
         let sk = (a, _, _, _, _) -> Ok(a) as & Impure;
         let GenParser(p1) = p;
@@ -120,39 +129,49 @@ namespace FlixParsec/Prim {
         }
 
     ///
-    pub def runs(p: TextParser1[ans], input: String) : Result[ans, String] & Impure =
-        match run(p, input) {
+    pub def parseString(p: GenParser1[u, ans], initState: u, input: String) : Result[ans, String] & Impure =
+        match runGenParser(p, initState, 4, input) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFile(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, ParseError] & Impure =
+    pub def parsesString(p: Parser1[ans], input: String) : Result[ans, String] & Impure = parseString(p, (), input)
+
+    pub def parseFile(parser: GenParser1[u, ans], 
+                        initState: u, 
+                        tabSize: Int32, 
+                        path: System.FilePath, 
+                        cs: Text.Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
         let* exists = System/File.exists(path) |> Result.mapErr(generalError);
         if (exists) {
             let* src = System/File.readFile(path, cs) |> Result.mapErr(generalError);
-            run(parser, src)
+            runGenParser(parser, initState, tabSize, src)
         } else
             Err(fileNotFoundError(path))
 
 
-    pub def parsesFile(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
-        match parseFile(parser, path, cs) {
+    pub def parsesFile(parser: Parser1[ans], tabSize: Int32, path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
+        match parseFile(parser, (), tabSize, path, cs) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFileWithBOM(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, ParseError] & Impure =
+    pub def parseFileWithBOM(parser: GenParser1[u, ans], 
+                                initState: u, 
+                                tabSize: Int32, 
+                                path: System.FilePath, 
+                                cs: Text.Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
         let* exists = System/File.exists(path) |> Result.mapErr(generalError);
         if (exists) {
             let* src = System/File.readFileWithBOM(path, cs) |> Result.mapErr(generalError);
-            run(parser, src)
+            runGenParser(parser, initState, tabSize, src)
         } else
             Err(fileNotFoundError(path))
 
-    pub def parsesFileWithBOM(parser: TextParser1[ans], path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
-        match parseFileWithBOM(parser, path, cs) {
+    pub def parsesFileWithBOM(parser: Parser1[ans], tabSize: Int32, path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
+        match parseFileWithBOM(parser, (), tabSize, path, cs) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
