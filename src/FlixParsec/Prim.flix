@@ -82,7 +82,7 @@ namespace FlixParsec/Prim {
         , textAfter = ""
         }
 
-    def generalError[a: ToString](err: a): ParseError = 
+    def generalError[a](err: a): ParseError with ToString[a] = 
         { message = "${err}"
         , position = {lineNumber = 0, column = 0}
         , textBefore = ""
