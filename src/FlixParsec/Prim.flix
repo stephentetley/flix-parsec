@@ -160,18 +160,17 @@ namespace FlixParsec/Prim {
     pub def parseFileWithBOM(parser: GenParser1[u, ans], 
                                 initState: u, 
                                 tabSize: Int32, 
-                                path: System.FilePath, 
-                                cs: Text.Charset): Result[ans, ParseError] & Impure =
+                                path: System.FilePath): Result[ans, ParseError] & Impure =
         use Result.flatMap;
         let* exists = System/File.exists(path) |> Result.mapErr(generalError);
         if (exists) {
-            let* src = System/File.readFileWithBOM(path, cs) |> Result.mapErr(generalError);
+            let* src = System/File.readFileWithBOM(path) |> Result.mapErr(generalError);
             runGenParser(parser, initState, tabSize, src)
         } else
             Err(fileNotFoundError(path))
 
-    pub def parsesFileWithBOM(parser: Parser1[ans], tabSize: Int32, path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
-        match parseFileWithBOM(parser, (), tabSize, path, cs) {
+    pub def parsesFileWithBOM(parser: Parser1[ans], tabSize: Int32, path: System.FilePath): Result[ans, String] & Impure =
+        match parseFileWithBOM(parser, (), tabSize, path) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
