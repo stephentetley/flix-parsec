@@ -18,8 +18,8 @@
 namespace FlixParsec/Literal {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, flatMap, alt, map, swapError, liftResult};
-    use FlixParsec/Combinators.{choice, between};
+    use FlixParsec/Prim.{return, flatMap, map, swapError, liftResult};
+    use FlixParsec/Combinators.{alt, choice, between};
     use FlixParsec/Combinators.{*>};
     use FlixParsec/Char.{char, satisfy};
     use FlixParsec/Regex.{LookingAts};

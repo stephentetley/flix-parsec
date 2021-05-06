@@ -19,8 +19,8 @@
 namespace FlixParsec/Token1 {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{liftResult, seqLeft};
-    use FlixParsec/Combinators.{between, sepBy, sepBy1};
+    use FlixParsec/Prim.{flatMap, return, liftResult};
+    use FlixParsec/Combinators.{between, seqLeft, sepBy, sepBy1};
     use FlixParsec/Char.{string};
     use FlixParsec/Text.{whiteSpace, digits};
     use FlixParsec/Regex.{lookingAts};
@@ -57,7 +57,6 @@ namespace FlixParsec/Token1 {
 
 
     pub def int8(): GenParser[t1, u, Int8] = 
-        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int8.fromString(s))
@@ -65,7 +64,6 @@ namespace FlixParsec/Token1 {
         lexeme(body)
 
     pub def int16(): GenParser[t1, u, Int16] = 
-        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int16.fromString(s))
@@ -73,7 +71,6 @@ namespace FlixParsec/Token1 {
         lexeme(body)
     
     pub def int32(): GenParser[t1, u, Int32] = 
-        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int32.fromString(s))
@@ -81,7 +78,6 @@ namespace FlixParsec/Token1 {
         lexeme(body)
 
     pub def int64(): GenParser[t1, u, Int64] = 
-        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int64.fromString(s))
@@ -89,7 +85,6 @@ namespace FlixParsec/Token1 {
         lexeme(body)
 
     pub def bigInt(): GenParser[t1, u, BigInt] = 
-        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(BigInt.fromString(s))
@@ -97,7 +92,6 @@ namespace FlixParsec/Token1 {
         lexeme(body)
 
     pub def float64(): GenParser[t1, u, Float64] = 
-        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
             liftResult(Float64.fromString(s))
@@ -105,12 +99,10 @@ namespace FlixParsec/Token1 {
         lexeme(body)
 
     pub def float32(): GenParser[t1, u, Float32] = 
-        use FlixParsec/Prim.{flatMap};
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
             liftResult(Float32.fromString(s))
         };
         lexeme(body)
-        
-        
+               
 }

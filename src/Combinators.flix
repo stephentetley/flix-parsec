@@ -18,8 +18,7 @@
 namespace FlixParsec/Combinators {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, flatMap, fail, map, ap, alt, bind, 
-        ifThenElse, lookahead, seqLeft, seqRight};
+    use FlixParsec/Prim.{return, flatMap, fail, map, ap, bind, ifThenElse, lookahead};
 
     /// Alias for `seqRight`
     pub def *>(p1: GenParser[t1, u, a], p2: GenParser[t1, u, b]): GenParser[t1, u, b] = seqRight(p1, p2)
@@ -41,6 +40,20 @@ namespace FlixParsec/Combinators {
     // Haskell's ap <*>
     pub def <*>(mf: GenParser[t1, u, a -> b], p2: GenParser[t1, u, a]): GenParser[t1, u, b] =
         ap(mf, p2)
+
+    pub def alt(p: GenParser[t1, u, a], q: GenParser[t1, u, a]): GenParser[t1, u, a] =
+        ifThenElse(p, return, q)
+
+    pub def seqLeft(p: GenParser[t1, u, a], q: GenParser[t1, u, b]): GenParser[t1, u, a] =
+        let* a = p;
+        let* _ = q;
+        return(a)
+
+    pub def seqRight(p: GenParser[t1, u, a], q: GenParser[t1, u, b]): GenParser[t1, u, b] =
+        let* _ = p;
+        let* b = q;
+        return(b)
+
 
     pub def choice(ps: List[GenParser[t1, u, a]]): GenParser[t1, u, a] =
         match ps {
