@@ -16,4 +16,5 @@ def test02(): Unit & Impure =
     FlixParsec/Prim.parsesString(parser, "'\u0041'") |> println;        /// upper A
     FlixParsec/Prim.parsesString(parser, "'\u00CA'") |> println;        /// upper E^ circumflex
     FlixParsec/Prim.parsesString(parser, "'\u0077'") |> println;        /// lower w
+    FlixParsec/Prim.parsesString(parser, "'\t'") |> println;            /// tab
     ()

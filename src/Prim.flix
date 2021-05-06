@@ -254,18 +254,6 @@ namespace FlixParsec/Prim {
         GenParser((sk, fk, ctx, st) ->
             apply1(cond, x -> apply1(thenp(x), sk), _ -> apply1(elsep, sk, fk, ctx, st), ctx, st))
 
-    pub def choice(ps: List[GenParser[t1, u, a]]): GenParser[t1, u, a] =
-        use Chain.{singleton};
-        GenParser((sk, fk, ctx, st, errs) ->
-            match ps {
-                case Nil => fk(st.pos, singleton("choice"))
-                case p :: rs => {
-                    let fk1 = (_, _) -> apply1(choice(rs), sk, fk, ctx, st, errs);
-                    apply1(p, sk, fk1, ctx, st, errs)
-                }
-            }
-        )
-
 
     pub def liftOption(x: Option[a], errMsg: String): GenParser[t1, u, a] =  match x {
         case Some(a) => return(a)
@@ -319,20 +307,6 @@ namespace FlixParsec/Prim {
             sk(s1, fk, ctx, {pos = st.pos + len | st}, errs)
         )
 
-
-
-    /// pub def string(s: String): GenParser[t1, u, String] =
-    ///     use Chain.{singleton};
-    ///     GenParser((sk, fk, ctx, st, errs) ->
-    ///         let strlen = String.length(s);
-    ///         let s1 = String.slice(ctx.input, st.pos, st.pos + strlen);
-    ///         if (s1 == s)
-    ///             sk(s, fk, ctx, {pos = st.pos + strlen | st}, errs)
-    ///         else {
-    ///             let msg = "string - expecting '" + s + "', encountered '" + s1 + "'";
-    ///             fk(st.pos, singleton(msg))
-    ///         }
-    ///     )
 
     pub def take1(): GenParser[t1, u, Char] =
         use Chain.{singleton};

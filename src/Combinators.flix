@@ -42,6 +42,12 @@ namespace FlixParsec/Combinators {
     pub def <*>(mf: GenParser[t1, u, a -> b], p2: GenParser[t1, u, a]): GenParser[t1, u, b] =
         ap(mf, p2)
 
+    pub def choice(ps: List[GenParser[t1, u, a]]): GenParser[t1, u, a] =
+        match ps {
+            case p1 :: rs => ifThenElse(p1, return, choice(rs))
+            case Nil => fail("choice")
+        }
+
 
     pub def optional(p: GenParser[t1, u, a]): GenParser[t1, u, Option[a]] = 
         alt(map(Some,p), return(None))

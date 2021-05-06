@@ -19,7 +19,7 @@ namespace FlixParsec/Literal {
 
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{return, flatMap, alt, map, swapError, liftResult};
-    use FlixParsec/Combinators.{between};
+    use FlixParsec/Combinators.{choice, between};
     use FlixParsec/Combinators.{*>};
     use FlixParsec/Char.{char, satisfy};
     use FlixParsec/Regex.{LookingAts};
@@ -37,7 +37,9 @@ namespace FlixParsec/Literal {
         satisfy(c -> (c != '\'') and (c != '\\') and (c > '\u001A'))
 
     def escapeCode(): GenParser[t1, u, Char] = 
-        charUnicode()
+        choice(
+            charUnicode() :: charEsc() :: Nil
+        )
         /// charEsc <|> charNum <|> charAscii <|> charControl
 
     def charUnicode(): GenParser[t1, u, Char] = 
@@ -49,14 +51,22 @@ namespace FlixParsec/Literal {
     def number(): GenParser[t1, u, Int32] =  
         use FlixParsec/Combinators.{countWith};
         use FlixParsec/Char.{hexDigit};
-        let step = (ac, ch) -> match digitToInt(ch) {
+        let step = (ac, ch) -> match asciiDigitToInt(ch) {
             case Some(i) => ac * 16 + i
             case None => ac * 16
         };
         countWith(step, 0, 4, hexDigit())
         
 
-    def digitToInt(c: Char): Option[Int32] = 
+    def charEsc(): GenParser[t1, u, Char] = 
+        choice(
+                (char('t')  *> return('\u0009'))    /// tab
+            :: (char('r')   *> return('\u000D'))    /// carriage return
+            :: (char('n')   *> return('\u000A'))    /// line feed
+            :: Nil
+        )    
+
+    def asciiDigitToInt(c: Char): Option[Int32] = 
         match Char.toInt32(c) {
             case i if i >= 0x0030 and i <= 0x0039 => Some(i - 0x0030)        // '0'..'9'
             case i if i >= 0x0041 and i <= 0x0046 => Some(i - 0x0041)        // 'A'..'F'
