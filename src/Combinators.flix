@@ -73,175 +73,175 @@ namespace FlixParsec/Combinators {
         alt(seqRight(lookahead(p), return(true)), return(false))
 
 
-    pub def countWith(append: (a, ac) -> ac, acc: ac, n: Int32, p: GenParser[t1, u, a]): GenParser[t1, u, ac] = 
+    pub def countWith(combine: (ac, a) -> ac, acc: ac, n: Int32, p: GenParser[t1, u, a]): GenParser[t1, u, ac] = 
         if (n <= 0)
             return(acc)
         else {
             let* a = p;
-            countWith(append, append(a, acc), n-1, p)
+            countWith(combine, combine(acc, a), n-1, p)
         }
 
     pub def count(n: Int32, p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, countWith((x, xs) -> snoc(xs, x), empty(), n, p))
+        countWith(snoc, empty(), n, p) |> map(toList)
     
 
 
-    pub def manyWith(append: (a, ac) -> ac, acc: ac, p: GenParser[t1, u, a]): GenParser[t1, u, ac] = 
-        ifThenElse(p, a -> manyWith(append, append(a, acc), p), return(acc))
+    pub def manyWith(combine: (ac, a) -> ac, acc: ac, p: GenParser[t1, u, a]): GenParser[t1, u, ac] = 
+        ifThenElse(p, a -> manyWith(combine, combine(acc, a), p), return(acc))
 
 
     pub def many(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, manyWith((x, xs) -> snoc(xs, x), empty(), p))
+        manyWith(snoc, empty(), p) |> map(toList)
         
-    pub def many1With(append: (a, ac) -> ac, acc: ac, p: GenParser[t1, u, a]): GenParser[t1, u, ac] = 
-        bind(p, x -> manyWith(append, append(x, acc), p))
+    pub def many1With(combine: (ac, a) -> ac, acc: ac, p: GenParser[t1, u, a]): GenParser[t1, u, ac] = 
+        bind(p, x -> manyWith(combine, combine(acc, x), p))
         
     pub def many1(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, many1With((x, xs) -> snoc(xs, x), empty(), p))
+        many1With(snoc, empty(), p) |> map(toList)
 
 
     /// Count how many times parser `p` succeeds
     pub def ntimes(p: GenParser[t1, u, a]): GenParser[t1, u, Int32] = 
-        manyWith((_,ac) -> ac + 1, 0, p)
+        manyWith((ac, _) -> ac + 1, 0, p)
 
 
-    pub def manyTillWith(append: (a, ac) -> ac, 
+    pub def manyTillWith(combine: (ac, a) -> ac, 
                             acc: ac, 
                             p: GenParser[t1, u, a], 
                             endp: GenParser[t1, u, end]): GenParser[t1, u, ac] = 
-        ifThenElse(endp, _ -> return(acc), bind(p, a -> manyTillWith(append, append(a, acc), p, endp)))
+        ifThenElse(endp, _ -> return(acc), bind(p, a -> manyTillWith(combine, combine(acc, a), p, endp)))
 
     pub def manyTill(p: GenParser[t1, u, a], endp: GenParser[t1, u, end]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, manyTillWith((x, xs) -> snoc(xs, x), empty(), p, endp))
+        manyTillWith(snoc, empty(), p, endp) |> map(toList)
         
-    pub def many1TillWith(append: (a, ac) -> ac, 
+    pub def many1TillWith(combine: (ac, a) -> ac, 
                             acc: ac, 
                             p: GenParser[t1, u, a], 
                             endp: GenParser[t1, u, end]): GenParser[t1, u, ac] = 
-        bind(p, x -> manyTillWith(append, append(x, acc), p, endp))
+        bind(p, x -> manyTillWith(combine, combine(acc, x), p, endp))
         
     pub def many1Till(p: GenParser[t1, u, a], endp: GenParser[t1, u, end]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, many1TillWith((x, xs) -> snoc(xs, x), empty(), p, endp))
+        many1TillWith(snoc, empty(), p, endp) |> map(toList)
     
 
-    pub def sepByWith(append: (a, ac) -> ac, 
+    pub def sepByWith(combine: (ac, a) -> ac, 
                         acc: ac, 
                         p: GenParser[t1, u, a], 
                         sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        ifThenElse(p, x -> sepByWithHelper(append, append(x, acc), p, sep), return(acc))
+        ifThenElse(p, x -> sepByWithHelper(combine, combine(acc, x), p, sep), return(acc))
     
     // Initial p has been consumed
-    def sepByWithHelper(append: (a, ac) -> ac, 
+    def sepByWithHelper(combine: (ac, a) -> ac, 
                         acc: ac, 
                         p: GenParser[t1, u, a], 
                         sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        ifThenElse(seqRight(sep, p), x -> sepByWithHelper(append, append(x, acc), p, sep), return(acc))
+        ifThenElse(seqRight(sep, p), x -> sepByWithHelper(combine, combine(acc, x), p, sep), return(acc))
 
     pub def sepBy(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, sepByWith((x, xs) -> snoc(xs, x), empty(), p, sep))
+        sepByWith(snoc, empty(), p, sep) |> map(toList)
 
-    pub def sepBy1With(append: (a, ac) -> ac, 
+    pub def sepBy1With(combine: (ac, a) -> ac, 
                         acc: ac, 
                         p: GenParser[t1, u, a], 
                         sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        bind(p, x -> sepByWithHelper(append, append(x, acc), p, sep))
+        bind(p, x -> sepByWithHelper(combine, combine(acc, x), p, sep))
     
     pub def sepBy1(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, sepBy1With((x, xs) -> snoc(xs, x), empty(), p, sep))
+        sepBy1With(snoc, empty(), p, sep) |> map(toList)
 
-    pub def endByWith(append: (a, ac) -> ac, 
+    pub def endByWith(combine: (ac, a) -> ac, 
                         acc: ac, 
                         p: GenParser[t1, u, a], 
                         sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        manyWith(append, acc, seqLeft(p, sep))
+        manyWith(combine, acc, seqLeft(p, sep))
 
     pub def endBy(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, endByWith((x, xs) -> snoc(xs, x), empty(), p, sep))
+        endByWith(snoc, empty(), p, sep) |> map(toList)
 
-    pub def endBy1With(append: (a, ac) -> ac, 
+    pub def endBy1With(combine: (ac, a) -> ac, 
                         acc: ac, 
                         p: GenParser[t1, u, a], 
                         sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        bind(seqLeft(p, sep), x -> endByWith(append, append(x, acc), p, sep))
+        bind(seqLeft(p, sep), x -> endByWith(combine, combine(acc, x), p, sep))
 
     pub def endBy1(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, endBy1With((x, xs) -> snoc(xs, x), empty(), p, sep))
+        endBy1With(snoc, empty(), p, sep) |> map(toList)
 
     // seperated and optionally terminated with sep.
-    pub def sepEndByWith(append: (a, ac) -> ac, 
+    pub def sepEndByWith(combine: (ac, a) -> ac, 
                             acc: ac, 
                             p: GenParser[t1, u, a], 
                             sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        let* xs = sepByWith(append, acc, p, sep);
+        let* xs = sepByWith(combine, acc, p, sep);
         ifThenElse(sep, _ -> return(xs), return(xs))
 
     // seperated and optionally terminated with sep.
     pub def sepEndBy(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, sepEndByWith((x, xs) -> snoc(xs, x), empty(), p, sep))
+        map(toList, sepEndByWith(snoc, empty(), p, sep))
 
     // seperated and optionally terminated with sep.
-    pub def sepEndBy1With(append: (a, ac) -> ac, 
+    pub def sepEndBy1With(combine: (ac, a) -> ac, 
                             acc: ac, 
                             p: GenParser[t1, u, a], 
                             sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        let* xs = sepBy1With(append, acc, p, sep);
+        let* xs = sepBy1With(combine, acc, p, sep);
         ifThenElse(sep, _ -> return(xs), return(xs))
 
     // seperated and optionally terminated with sep.
     pub def sepEndBy1(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, sepEndBy1With((x, xs) -> snoc(xs, x), empty(), p, sep))
+        sepEndBy1With(snoc, empty(), p, sep) |> map(toList)
 
     /// Count how many times parser `p` succeeds
     pub def ntimesSepBy(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, Int32] = 
-        sepByWith((_, ac) -> ac + 1, 0, p, sep)
+        sepByWith((ac, _) -> ac + 1, 0, p, sep)
 
     /// Count how many times parser `p` succeeds
     pub def ntimesEndBy(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, Int32] = 
-        endByWith((_, ac) -> ac + 1, 0, p, sep)
+        endByWith((ac, _) -> ac + 1, 0, p, sep)
 
     /// Count how many times parser `p` succeeds
     pub def ntimesSepEndBy(p: GenParser[t1, u, a], sep: GenParser[t1, u, sep]): GenParser[t1, u, Int32] = 
-        sepEndByWith((_, ac) -> ac + 1, 0, p, sep)
+        sepEndByWith((ac, _) -> ac + 1, 0, p, sep)
 
     /// p1 must succeed, p2 parsers zero-or-more
-    pub def manyTill2With(append: (a, ac) -> ac, 
+    pub def manyTill2With(combine: (ac, a) -> ac, 
                             acc: ac, 
                             p1: GenParser[t1, u, a], 
                             p2: GenParser[t1, u, a], 
                             endp: GenParser[t1, u, end]): GenParser[t1, u, ac] = 
-        bind(p1, x -> manyTillWith(append, append(x,acc), p2, endp))
+        bind(p1, x -> manyTillWith(combine, combine(acc, x), p2, endp))
         
     /// p1 must succeed, p2 parsers zero-or-more
     pub def manyTill2(p1: GenParser[t1, u, a], 
                       p2: GenParser[t1, u, a], 
                       endp: GenParser[t1, u, end]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, manyTill2With((x, xs) -> snoc(xs, x), empty(), p1, p2, endp))
+        manyTill2With(snoc, empty(), p1, p2, endp) |> map(toList)
 
     /// p1 must succeed, p2 parsers one-or-more
-    pub def many1Till2With(append: (a, ac) -> ac, acc: ac, 
+    pub def many1Till2With(combine: (ac, a) -> ac, acc: ac, 
                             p1: GenParser[t1, u, a], 
                             p2: GenParser[t1, u, a], 
                             endp: GenParser[t1, u, end]): GenParser[t1, u, ac] = 
-        bind(p1, x -> many1TillWith(append, append(x,acc), p2, endp))
+        bind(p1, x -> many1TillWith(combine, combine(acc, x), p2, endp))
         
     /// p1 must succeed, p2 parsers one-or-more
     pub def many1Till2(p1: GenParser[t1, u, a], 
                         p2: GenParser[t1, u, a], 
                         endp: GenParser[t1, u, end]): GenParser[t1, u, List[a]] = 
         use Chain.{empty, snoc, toList};
-        map(toList, many1Till2With((x, xs) -> snoc(xs, x), empty(), p1, p2, endp))
+        many1Till2With(snoc, empty(), p1, p2, endp) |> map(toList)
 
 
 

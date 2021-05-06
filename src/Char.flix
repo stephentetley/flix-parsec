@@ -48,9 +48,26 @@ namespace FlixParsec/Char {
 
     pub def anyChar(): GenParser[t1, u, Char] = FlixParsec/Prim.take1()
 
+    pub def upper(): GenParser[t1, u, Char] = 
+        satisfy(Char.isUpperCase)
+
+    pub def lower(): GenParser[t1, u, Char] = 
+        satisfy(Char.isLowerCase)
+
+    pub def letter(): GenParser[t1, u, Char] = 
+        satisfy(Char.isLetter)
+
+    pub def alphaNum(): GenParser[t1, u, Char] = 
+        satisfy(c -> Char.isLetter(c) or Char.isAsciiDigit(c))
+
+    pub def digit(): GenParser[t1, u, Char] = 
+        satisfy(Char.isAsciiDigit)
 
     pub def octDigit(): GenParser[t1, u, Char] = 
-        oneOf('0' :: '1' :: '2' :: '3' :: '4' :: '5' :: '6' :: '7' :: Nil)
+        satisfy(Char.isOctDigit)
+
+    pub def hexDigit(): GenParser[t1, u, Char] = 
+        satisfy(Char.isHexDigit)
 
 
     pub def carriageReturn(): GenParser[t1, u, Char] = char('\u000D')
@@ -69,9 +86,5 @@ namespace FlixParsec/Char {
     /// \r is carriage return
     pub def space(): GenParser[t1, u, Char] = 
         satisfy(c -> c == ' ' or c == '\u0009' or c == '\u000A' or c == '\u000B' or c == '\u000C' or c == '\u000D')        
-
-    /// one or more
-    pub def spaces(): GenParser[t1, u, Unit] = skippingAts("\s*")
-
 
 }

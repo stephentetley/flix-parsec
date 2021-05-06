@@ -77,5 +77,4 @@ namespace FlixParsec/Regex {
         use FlixParsec/Prim.{bind, liftOption};
         bind(liftOption(compile(regex), "skippingAts"), skippingAt)
 
-
 }

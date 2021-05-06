@@ -13,6 +13,3 @@ files (e.g 1MB).
 FlixParsec depends on some code in `flix-sandbox` [1] particularly Text/Regex and Chain.
 
 [1] https://github.com/stephentetley/flix-sandbox 
-
-Chain is in the folder 'temp'.
-

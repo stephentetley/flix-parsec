@@ -79,18 +79,15 @@ namespace FlixParsec/Text {
             fail("anchorLine not matched")
 
 
-    pub def tabulation(): GenParser[t1, u, Unit] = ignore(char('\u0009'))
-
-    
-    pub def carriageReturn(): GenParser[t1, u, Unit] = ignore(char('\u000D'))
-
-    pub def lineFeed(): GenParser[t1, u, Unit] = ignore(char('\u000A'))
 
 
     /// zero or more
     pub def whiteSpace(): GenParser[t1, u, Unit] = skippingAts("\s*")
 
     
+    /// one or more
+    pub def spaces(): GenParser[t1, u, Unit] = skippingAts("\s*")
+
     /// one or more
     pub def whiteSpace1(): GenParser[t1, u, Unit] = skippingAts("\s+")
 
