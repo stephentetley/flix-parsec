@@ -18,7 +18,7 @@
 namespace FlixParsec/Combinators {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, fail, failure, map, ap, alt, bind, 
+    use FlixParsec/Prim.{return, flatMap, fail, map, ap, alt, bind, 
         ifThenElse, lookahead, seqLeft, seqRight};
 
     /// Alias for `seqRight`
@@ -56,19 +56,17 @@ namespace FlixParsec/Combinators {
 
 
     pub def between(openp: GenParser[t1, u, open], closep: GenParser[t1, u, close], p: GenParser[t1, u, a]): GenParser[t1, u, a] = 
-        use FlixParsec/Prim.{flatMap};
         let* _ = openp;
         let* a = p;
         let* _ = closep;
         return(a)
 
     pub def satisfies(p: GenParser[t1, u, a], test: a -> Bool): GenParser[t1, u, a] = 
-        use FlixParsec/Prim.{flatMap};
         let* a = p;
         if (test(a))
             return(a)
         else
-            failure("satisfies")
+            fail("satisfies")
             
     /// `p` is run with `lookahead`, no text is consumed
     pub def succeeds(p: GenParser[t1, u, a]): GenParser[t1, u, Bool] = 
@@ -76,7 +74,6 @@ namespace FlixParsec/Combinators {
 
 
     pub def countWith(append: (a, ac) -> ac, acc: ac, n: Int32, p: GenParser[t1, u, a]): GenParser[t1, u, ac] = 
-        use FlixParsec/Prim.{flatMap};
         if (n <= 0)
             return(acc)
         else {
@@ -184,7 +181,6 @@ namespace FlixParsec/Combinators {
                             acc: ac, 
                             p: GenParser[t1, u, a], 
                             sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        use FlixParsec/Prim.{flatMap};
         let* xs = sepByWith(append, acc, p, sep);
         ifThenElse(sep, _ -> return(xs), return(xs))
 
@@ -198,7 +194,6 @@ namespace FlixParsec/Combinators {
                             acc: ac, 
                             p: GenParser[t1, u, a], 
                             sep: GenParser[t1, u, sep]): GenParser[t1, u, ac] = 
-        use FlixParsec/Prim.{flatMap};
         let* xs = sepBy1With(append, acc, p, sep);
         ifThenElse(sep, _ -> return(xs), return(xs))
 
@@ -290,15 +285,13 @@ namespace FlixParsec/Combinators {
         alt(chainr1(p, op), return(x))
 
     pub def tuple2(p1: GenParser[t1, u, a], p2: GenParser[t1, u, b]): GenParser[t1, u, (a, b)] =
-        use FlixParsec/Prim.{flatMap};
         let* a = p1; 
         let* b = p2;
         return((a, b))
 
     pub def tuple3(p1: GenParser[t1, u, a], 
                     p2: GenParser[t1, u, b], 
-                    p3: GenParser[t1, u, c]): GenParser[t1, u, (a, b, c)] = 
-        use FlixParsec/Prim.{flatMap};
+                    p3: GenParser[t1, u, c]): GenParser[t1, u, (a, b, c)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -307,8 +300,7 @@ namespace FlixParsec/Combinators {
     pub def tuple4(p1: GenParser[t1, u, a], 
                     p2: GenParser[t1, u, b], 
                     p3: GenParser[t1, u, c], 
-                    p4: GenParser[t1, u, d]): GenParser[t1, u, (a, b, c, d)] = 
-        use FlixParsec/Prim.{flatMap};
+                    p4: GenParser[t1, u, d]): GenParser[t1, u, (a, b, c, d)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -320,8 +312,7 @@ namespace FlixParsec/Combinators {
                     p2: GenParser[t1, u, b], 
                     p3: GenParser[t1, u, c], 
                     p4: GenParser[t1, u, d], 
-                    p5: GenParser[t1, u, e]): GenParser[t1, u, (a, b, c, d, e)] = 
-        use FlixParsec/Prim.{flatMap};
+                    p5: GenParser[t1, u, e]): GenParser[t1, u, (a, b, c, d, e)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -335,8 +326,7 @@ namespace FlixParsec/Combinators {
                     p4: GenParser[t1, u, d], 
                     p5: GenParser[t1, u, e], 
                     p6: GenParser[t1, u, f]): 
-                    GenParser[t1, u, (a, b, c, d, e, f)] = 
-        use FlixParsec/Prim.{flatMap};
+                    GenParser[t1, u, (a, b, c, d, e, f)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -351,8 +341,7 @@ namespace FlixParsec/Combinators {
                     p4: GenParser[t1, u, d], 
                     p5: GenParser[t1, u, e], 
                     p6: GenParser[t1, u, f], 
-                    p7: GenParser[t1, u, g]): GenParser[t1, u, (a, b, c, d, e, f, g)] = 
-        use FlixParsec/Prim.{flatMap};
+                    p7: GenParser[t1, u, g]): GenParser[t1, u, (a, b, c, d, e, f, g)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -369,8 +358,7 @@ namespace FlixParsec/Combinators {
                     p5: GenParser[t1, u, e], 
                     p6: GenParser[t1, u, f], 
                     p7: GenParser[t1, u, g], 
-                    p8: GenParser[t1, u, h]): GenParser[t1, u, (a, b, c, d, e, f, g, h)] = 
-        use FlixParsec/Prim.{flatMap};
+                    p8: GenParser[t1, u, h]): GenParser[t1, u, (a, b, c, d, e, f, g, h)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -389,8 +377,7 @@ namespace FlixParsec/Combinators {
                     p6: GenParser[t1, u, f], 
                     p7: GenParser[t1, u, g], 
                     p8: GenParser[t1, u, h], 
-                    p9: GenParser[t1, u, i]): GenParser[t1, u, (a, b, c, d, e, f, g, h, i)] = 
-        use FlixParsec/Prim.{flatMap};
+                    p9: GenParser[t1, u, i]): GenParser[t1, u, (a, b, c, d, e, f, g, h, i)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -411,8 +398,7 @@ namespace FlixParsec/Combinators {
                     p7: GenParser[t1, u, g], 
                     p8: GenParser[t1, u, h], 
                     p9: GenParser[t1, u, i], 
-                    p10: GenParser[t1, u, j]): GenParser[t1, u, (a, b, c, d, e, f, g, h, i, j)] = 
-        use FlixParsec/Prim.{flatMap};
+                    p10: GenParser[t1, u, j]): GenParser[t1, u, (a, b, c, d, e, f, g, h, i, j)] =
         let* a = p1; 
         let* b = p2;
         let* c = p3;
@@ -424,6 +410,5 @@ namespace FlixParsec/Combinators {
         let* i = p9;
         let* j = p10;
         return((a, b, c, d, e, f, g, h, i, j))
-
 
 }

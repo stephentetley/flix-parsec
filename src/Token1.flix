@@ -19,10 +19,12 @@
 namespace FlixParsec/Token1 {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{string, liftResult, seqLeft};
+    use FlixParsec/Prim.{liftResult, seqLeft};
     use FlixParsec/Combinators.{between, sepBy, sepBy1};
-    use FlixParsec/Regex.{lookingAts};
+    use FlixParsec/Char.{string};
     use FlixParsec/Text.{whiteSpace, digits};
+    use FlixParsec/Regex.{lookingAts};
+    
 
     pub def lexeme(p: GenParser[t1, u, r]): GenParser[t1, u, r] = seqLeft(p, whiteSpace())
 
@@ -109,5 +111,6 @@ namespace FlixParsec/Token1 {
             liftResult(Float32.fromString(s))
         };
         lexeme(body)
+        
         
 }

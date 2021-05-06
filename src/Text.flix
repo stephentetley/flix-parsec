@@ -18,9 +18,11 @@
 namespace FlixParsec/Text {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, failure, map, lookahead, swapError, liftOption, char};
+    use FlixParsec/Prim.{return, flatMap, fail, map, lookahead, swapError, liftOption};
     use FlixParsec/Combinators.{ignore};
     use FlixParsec/Regex.{lookingAts, skippingAts};
+    use FlixParsec/Char.{char};
+    
 
     pub def makePattern(regex: String): GenParser[t1, u, Text/Regex.Pattern] = 
         liftOption(Text/Regex/Pattern.compile(regex),  "makePattern")
@@ -35,7 +37,7 @@ namespace FlixParsec/Text {
     /// Run parser `p` bounding the input to only the rest of the current line.
     /// If `p` succeeds continue parsing the whole input.
     pub def parseLine(p: GenParser[t1, u, a], consumeNewline: Bool): GenParser[t1, u, a] =
-        use FlixParsec/Prim.{flatMap, bounded};
+        use FlixParsec/Prim.{bounded};
         let regex = if (consumeNewline) ".*\R?" else ".*";
         let* restofline = lookahead(lookingAts(regex));
         let* ans = bounded(String.length(restofline), p);
@@ -60,28 +62,25 @@ namespace FlixParsec/Text {
 
 
     
-    pub def anchorLineMatches(regex: String): GenParser[t1, u, Unit] = 
-        use FlixParsec/Prim.flatMap;        
+    pub def anchorLineMatches(regex: String): GenParser[t1, u, Unit] =    
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
         if (Text/Regex.matches(rest1, patt)) 
             return()
         else
-            failure("anchorLineMatches not matched")
+            fail("anchorLineMatches not matched")
 
-    pub def anchorLine(regex: String): GenParser[t1, u, Unit] = 
-        use FlixParsec/Prim.flatMap;        
+    pub def anchorLine(regex: String): GenParser[t1, u, Unit] =        
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
         if (Text/Regex.contains(rest1, patt)) 
             return()
         else
-            failure("anchorLine not matched")
+            fail("anchorLine not matched")
 
 
     pub def tabulation(): GenParser[t1, u, Unit] = ignore(char('\u0009'))
 
-    pub def space(): GenParser[t1, u, Unit] = ignore(char('\u0020'))
     
     pub def carriageReturn(): GenParser[t1, u, Unit] = ignore(char('\u000D'))
 

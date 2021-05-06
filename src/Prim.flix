@@ -27,6 +27,10 @@ namespace FlixParsec {
 
     type alias SuccessK[t1, u, ans] = ans -> FailK[t1] -> ParseContext -> ParseState[u] -> Failures ~> t1
 
+    /// `u` is the type of user state
+    /// `ans` is the type of "immediate answer"
+    /// `t1` is the continuation answer type - if Flix had user visible existentials it would 
+    /// be hidden as an existential type.
     pub opaque type GenParser[t1, u, ans] = SuccessK[t1, u, ans] -> FailK[t1] -> ParseContext -> ParseState[u] -> Failures ~> t1
 
     type alias Parser[t1, ans] = GenParser[t1, Unit, ans]
@@ -177,9 +181,11 @@ namespace FlixParsec/Prim {
 
     pub def return(x: a): GenParser[t1, u, a] = GenParser(sk -> sk(x))
 
-    pub def failure(message: String) : GenParser[t1, u, ans] =
+    pub def throwError(message: String) : GenParser[t1, u, ans] =
         use Chain.{singleton};
         GenParser((_, fk, _, st, _) -> fk(st.pos, singleton(message)))
+
+    pub def fail(message: String) : GenParser[t1, u, ans] = throwError(message)
 
     ///
     /// `swapError` is quite subtle. Swapping the error continuation needs to be
@@ -263,12 +269,12 @@ namespace FlixParsec/Prim {
 
     pub def liftOption(x: Option[a], errMsg: String): GenParser[t1, u, a] =  match x {
         case Some(a) => return(a)
-        case None    => failure(errMsg)
+        case None    => fail(errMsg)
     }
 
     pub def liftResult(x: Result[a, e]): GenParser[t1, u, a] =  match x {
         case Ok(a) => return(a)
-        case Err(_) => failure("liftResult")
+        case Err(_) => fail("liftResult")
     }
 
     pub def liftAction(f: Unit -> a & ef): GenParser[t1, u, a] =
@@ -304,38 +310,31 @@ namespace FlixParsec/Prim {
                 fk(st.pos, singleton("eof - not at end"))
         ) 
 
-    pub def string(s: String): GenParser[t1, u, String] =
+    pub def take(len: Int32): GenParser[t1, u, String] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
-            let strlen = String.length(s);
-            let s1 = String.slice(ctx.input, st.pos, st.pos + strlen);
-            if (s1 == s)
-                sk(s, fk, ctx, {pos = st.pos + strlen | st}, errs)
-            else {
-                let msg = "string - expecting '" + s + "', encountered '" + s1 + "'";
-                fk(st.pos, singleton(msg))
-            }
+            let slen = String.length(ctx.input);
+            let end = if (st.pos + len > slen) slen else st.pos + len;
+            let s1 = String.slice(ctx.input, st.pos, end);
+            sk(s1, fk, ctx, {pos = st.pos + len | st}, errs)
         )
 
-    pub def char(ch: Char): GenParser[t1, u, Char] = 
-        use Chain.{singleton};
-        GenParser((sk, fk, ctx, st, errs) ->
-            let len = String.length(ctx.input);
-            if (st.pos < len) {
-                let c = String.charAt(st.pos, ctx.input);
-                if (c == ch)
-                    sk(c, fk, ctx, {pos = st.pos + 1 | st}, errs)
-                else  {
-                    let msg = "char - expecting '" + Char.toString(ch) + "', encountered '" + Char.toString(c) + "'";
-                    fk(st.pos, singleton(msg))
-                }
-            } else {
-                let msg = "char - unexpected eof";
-                fk(st.pos, singleton(msg))
-            }
-        )
 
-    pub def anyChar(): GenParser[t1, u, Char] =
+
+    /// pub def string(s: String): GenParser[t1, u, String] =
+    ///     use Chain.{singleton};
+    ///     GenParser((sk, fk, ctx, st, errs) ->
+    ///         let strlen = String.length(s);
+    ///         let s1 = String.slice(ctx.input, st.pos, st.pos + strlen);
+    ///         if (s1 == s)
+    ///             sk(s, fk, ctx, {pos = st.pos + strlen | st}, errs)
+    ///         else {
+    ///             let msg = "string - expecting '" + s + "', encountered '" + s1 + "'";
+    ///             fk(st.pos, singleton(msg))
+    ///         }
+    ///     )
+
+    pub def take1(): GenParser[t1, u, Char] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
