@@ -21,10 +21,12 @@ namespace FlixParsec/Combinators {
     use FlixParsec/Prim.{return, flatMap, fail, map, ap, bind, ifThenElse, lookahead};
 
     /// Alias for `seqRight`
-    pub def *>(p1: GenParser[t1, u, a], p2: GenParser[t1, u, b]): GenParser[t1, u, b] = seqRight(p1, p2)
+    pub def *>(p1: GenParser[t1, u, a], p2: GenParser[t1, u, b]): GenParser[t1, u, b] = 
+        seqRight(p1, p2)
 
     /// Alias for `seqLeft`
-    pub def <*(p1: GenParser[t1, u, a], p2: GenParser[t1, u, b]): GenParser[t1, u, a] = seqLeft(p1, p2)
+    pub def <*(p1: GenParser[t1, u, a], p2: GenParser[t1, u, b]): GenParser[t1, u, a] = 
+        seqLeft(p1, p2)
 
     pub def <!>(p1: GenParser[t1, u, a], p2: GenParser[t1, u, a]): GenParser[t1, u, a] =
         alt(p1, p2)
@@ -60,7 +62,6 @@ namespace FlixParsec/Combinators {
             case p1 :: rs => ifThenElse(p1, return, choice(rs))
             case Nil => fail("choice")
         }
-
 
     pub def optional(p: GenParser[t1, u, a]): GenParser[t1, u, Option[a]] = 
         alt(map(Some,p), return(None))

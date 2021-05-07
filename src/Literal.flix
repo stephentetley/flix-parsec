@@ -19,10 +19,29 @@ namespace FlixParsec/Literal {
 
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{return, flatMap, map, swapError, liftResult};
-    use FlixParsec/Combinators.{alt, choice, between};
+    use FlixParsec/Combinators.{alt, choice, between, manyWith};
     use FlixParsec/Combinators.{*>};
     use FlixParsec/Char.{char, satisfy};
     use FlixParsec/Regex.{LookingAts};
+
+    pub def stringLiteral(): GenParser[t1, u, String] = 
+        let step = (ac, x) -> match x { 
+            case Some(c) => "${ac}${c}"
+            case None => ac
+        };
+        between( char('\u0022'),  char('\u0022'), manyWith(step, "", stringChar())) 
+
+
+
+    def stringChar(): GenParser[t1, u, Option[Char]] = 
+        alt(stringLetter() |> map(Some), stringEscape())
+
+    /// Greater than "SUB"...
+    def stringLetter(): GenParser[t1, u, Char] = 
+        satisfy(c -> (c != '\u0022') and (c != '\\') and (c > '\u001A'))
+
+    def stringEscape(): GenParser[t1, u, Option[Char]] =
+        char('\\') *> (escapeCode() |> map(Some))
 
     pub def charLiteral(): GenParser[t1, u, Char] = 
         between( char('\''),  char('\''), chararacterChar())

@@ -227,17 +227,6 @@ namespace FlixParsec/Prim {
 
     pub def flatMap(k: a -> GenParser[t1, u, b], ma: GenParser[t1, u, a]):  GenParser[t1, u, b] = bind(ma, k)
 
-    /// pub def alt(p: GenParser[t1, u, a], q: GenParser[t1, u, a]): GenParser[t1, u, a] =
-    ///     use Chain.{append};
-    ///     GenParser((sk, fk, ctx, st, errs) ->
-    ///         let pfk = (_, perrs) -> {
-    ///             let qfk = (_, qerrs) -> fk(st.pos, append(perrs, qerrs));
-    ///             apply1(q, sk, qfk, ctx, st, perrs)
-    ///         };
-    ///         apply1(p, sk, pfk, ctx, st, errs)
-    ///     )
-
-
 
     pub def ifThenElse(cond: GenParser[t1, u, a], 
                         thenp: a -> GenParser[t1, u, b], 

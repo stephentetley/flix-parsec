@@ -2,6 +2,7 @@
 def main(_args: Array[String]) : Int32 & Impure = 
     test01();
     test02();
+    test03();
     0
 
 def test01(): Unit & Impure =     
@@ -17,4 +18,10 @@ def test02(): Unit & Impure =
     FlixParsec/Prim.parsesString(parser, "'\u00CA'") |> println;        /// upper E^ circumflex
     FlixParsec/Prim.parsesString(parser, "'\u0077'") |> println;        /// lower w
     FlixParsec/Prim.parsesString(parser, "'\t'") |> println;            /// tab
+    ()
+
+def test03(): Unit & Impure =     
+    let dquote = '\u0022';
+    let parser = FlixParsec/Literal.stringLiteral();
+    FlixParsec/Prim.parsesString(parser, "${dquote}abc${dquote}") |> println;
     ()
