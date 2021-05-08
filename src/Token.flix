@@ -19,10 +19,11 @@
 namespace FlixParsec/Token {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, return};
-    use FlixParsec/Combinators.{alt, ignore, seqRight, skipMany1, skipMany, between, sepBy, sepBy1};
+    use FlixParsec/Prim.{flatMap, return, fail};
+    use FlixParsec/Combinators.{alt, ignore, seqRight, skipMany1, skipMany, between, 
+        sepBy, sepBy1, notFollowedBy, manyWith};
     use FlixParsec/Combinators.{*>};
-    use FlixParsec/Char.{string, oneOf, noneOf, satisfy};
+    use FlixParsec/Char.{string, char, oneOf, noneOf, satisfy};
     
 
     type alias LanguageDef[ka1, st] = 
@@ -124,6 +125,7 @@ namespace FlixParsec/Token {
         let* _  = whiteSpace(langDef);
         return(a)
 
+    /// White space
 
     pub def whiteSpace(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
         let noLine = String.isEmpty(langDef.commentLine);
@@ -176,6 +178,95 @@ namespace FlixParsec/Token {
             case More => inCommentSingle(langDef)
         }
 
+    /// Reserved
+
+    pub def reserved(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] = 
+        lexeme(langDef, reservedHelper(langDef, name)) 
+
+    def reservedHelper(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
+        let* _  = caseString(langDef, name);
+        let* _  = notFollowedBy(langDef.identLetter);
+        return()
+
+    def caseString(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
+        if (langDef.caseSensitive) 
+            ignore(string(name))
+        else 
+            walk(String.toList(name))
+
+    def walk(cs: List[Char]): GenParser[ka1, st, Unit] =
+        match cs { 
+            case c :: rs => { 
+                let* _ = caseChar(c);
+                walk(rs)
+            }
+            case Nil => return()
+        }           
     
+    def caseChar(c: Char): GenParser[ka1, st, Char] = 
+        if (Char.isLetter(c)) 
+            alt(char(Char.toUpperCase(c)), char(Char.toLowerCase(c)))
+        else
+            char(c)
+
+    /// Identifier
+
+    pub def identifier(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+        lexeme(langDef, identifierHelper(langDef))
+
+    def identifierHelper(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+        let* name = ident(langDef);
+        if (isReservedName(langDef, name))
+            fail("reserved word: ${name}")
+        else 
+            return(name) 
+
+
+    def ident(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+        let* c1 = langDef.identStart;
+        let* s  = manyWith((ac, x) -> "${ac}${x}", "${c1}", langDef.identLetter);
+        return(s)
+
+    def isReservedName(langDef: LanguageDef[ka1, st], name: String): Bool = 
+        if (langDef.caseSensitive)
+            List.exists(x -> x == name, langDef.reservedNames)
+        else
+            List.exists(x -> equalsCI(x, name), langDef.reservedNames)
+
+    def equalsCI(s1: String, s2: String): Bool = equalsCIHelper(s1, s2) as & Pure 
+
+    def equalsCIHelper(s1: String, s2: String): Bool & Impure = 
+        use Text/Collator.CollatorStrength.{Primary};
+        let collator = Text/Collator.getInstance();
+        Text/Collator.setStrength!(collator, Primary);
+        Text/Collator.equals(collator, s1, s2)
+
+    /// Reserved-op
+    pub def reservedOp(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] = 
+        lexeme(langDef, reservedOpHelper(langDef, name)) 
+
+    def reservedOpHelper(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
+        let* _  = string(name);
+        let* _  = notFollowedBy(langDef.opLetter);
+        return()
+
+    /// Operator
+    pub def operator(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+        lexeme(langDef, operatorHelper(langDef))
+
+    def operatorHelper(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+        let* name = oper(langDef);
+        if (isReservedOp(langDef, name))
+            fail("reserved word: ${name}")
+        else 
+            return(name) 
+
+    def oper(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+        let* c1 = langDef.opStart;
+        let* s  = manyWith((ac, x) -> "${ac}${x}", "${c1}", langDef.opLetter);
+        return(s)
+
+    def isReservedOp(langDef: LanguageDef[ka1, st], name: String): Bool = 
+        List.exists(x -> x == name, langDef.reservedOpNames)
 
 }

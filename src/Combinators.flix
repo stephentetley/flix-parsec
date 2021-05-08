@@ -58,6 +58,12 @@ namespace FlixParsec/Combinators {
         return(b)
 
 
+    pub def notFollowedBy(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] =
+        ifThenElse(p, _ -> fail("notFollowedBy"), return()) 
+        
+
+
+
     pub def choice(ps: List[GenParser[ka1, st, a]]): GenParser[ka1, st, a] =
         match ps {
             case p1 :: rs => ifThenElse(p1, return, choice(rs))
