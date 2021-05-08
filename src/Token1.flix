@@ -26,79 +26,79 @@ namespace FlixParsec/Token1 {
     use FlixParsec/Regex.{lookingAts};
     
 
-    pub def lexeme(p: GenParser[t1, u, r]): GenParser[t1, u, r] = seqLeft(p, whiteSpace())
+    pub def lexeme(p: GenParser[t1, st, r]): GenParser[t1, st, r] = seqLeft(p, whiteSpace())
 
-    pub def symbol(s: String): GenParser[t1, u, String] = lexeme(string(s))
+    pub def symbol(s: String): GenParser[t1, st, String] = lexeme(string(s))
 
-    pub def parens(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("("), symbol(")"), p)
+    pub def parens(p: GenParser[t1, st, a]): GenParser[t1, st, a] = between(symbol("("), symbol(")"), p)
 
-    pub def braces(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("{"), symbol("}"), p)
+    pub def braces(p: GenParser[t1, st, a]): GenParser[t1, st, a] = between(symbol("{"), symbol("}"), p)
 
-    pub def angles(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("<"), symbol(">"), p)
+    pub def angles(p: GenParser[t1, st, a]): GenParser[t1, st, a] = between(symbol("<"), symbol(">"), p)
 
-    pub def brackets(p: GenParser[t1, u, a]): GenParser[t1, u, a] = between(symbol("["), symbol("]"), p)
+    pub def brackets(p: GenParser[t1, st, a]): GenParser[t1, st, a] = between(symbol("["), symbol("]"), p)
 
-    pub def semi(): GenParser[t1, u, String] = symbol(";")
+    pub def semi(): GenParser[t1, st, String] = symbol(";")
 
-    pub def comma(): GenParser[t1, u, String] = symbol(",")
+    pub def comma(): GenParser[t1, st, String] = symbol(",")
 
-    pub def colon(): GenParser[t1, u, String] = symbol(":")
+    pub def colon(): GenParser[t1, st, String] = symbol(":")
 
-    pub def dot(): GenParser[t1, u, String] = symbol(".")
+    pub def dot(): GenParser[t1, st, String] = symbol(".")
 
-    pub def semiSep(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy(p, semi())
+    pub def semiSep(p: GenParser[t1, st, a]): GenParser[t1, st, List[a]] = sepBy(p, semi())
 
-    pub def semiSep1(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy1(p, semi())
+    pub def semiSep1(p: GenParser[t1, st, a]): GenParser[t1, st, List[a]] = sepBy1(p, semi())
 
-    pub def commaSep(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy(p, comma())
+    pub def commaSep(p: GenParser[t1, st, a]): GenParser[t1, st, List[a]] = sepBy(p, comma())
 
-    pub def commaSep1(p: GenParser[t1, u, a]): GenParser[t1, u, List[a]] = sepBy1(p, comma())
+    pub def commaSep1(p: GenParser[t1, st, a]): GenParser[t1, st, List[a]] = sepBy1(p, comma())
 
 
 
-    pub def int8(): GenParser[t1, u, Int8] = 
+    pub def int8(): GenParser[t1, st, Int8] = 
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int8.fromString(s))
         };
         lexeme(body)
 
-    pub def int16(): GenParser[t1, u, Int16] = 
+    pub def int16(): GenParser[t1, st, Int16] = 
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int16.fromString(s))
         };
         lexeme(body)
     
-    pub def int32(): GenParser[t1, u, Int32] = 
+    pub def int32(): GenParser[t1, st, Int32] = 
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int32.fromString(s))
         };
         lexeme(body)
 
-    pub def int64(): GenParser[t1, u, Int64] = 
+    pub def int64(): GenParser[t1, st, Int64] = 
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(Int64.fromString(s))
         };
         lexeme(body)
 
-    pub def bigInt(): GenParser[t1, u, BigInt] = 
+    pub def bigInt(): GenParser[t1, st, BigInt] = 
         let body = { 
             let* s = lookingAts("-?\d+");
             liftResult(BigInt.fromString(s))
         };
         lexeme(body)
 
-    pub def float64(): GenParser[t1, u, Float64] = 
+    pub def float64(): GenParser[t1, st, Float64] = 
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
             liftResult(Float64.fromString(s))
         };
         lexeme(body)
 
-    pub def float32(): GenParser[t1, u, Float32] = 
+    pub def float32(): GenParser[t1, st, Float32] = 
         let body = { 
             let* s = lookingAts("-?\d+\.\d+");
             liftResult(Float32.fromString(s))

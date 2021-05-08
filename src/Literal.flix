@@ -24,7 +24,7 @@ namespace FlixParsec/Literal {
     use FlixParsec/Char.{char, satisfy};
     use FlixParsec/Regex.{LookingAts};
 
-    pub def stringLiteral(): GenParser[t1, u, String] = 
+    pub def stringLiteral(): GenParser[ka1, st, String] = 
         let step = (ac, x) -> match x { 
             case Some(c) => "${ac}${c}"
             case None => ac
@@ -33,41 +33,41 @@ namespace FlixParsec/Literal {
 
 
 
-    def stringChar(): GenParser[t1, u, Option[Char]] = 
+    def stringChar(): GenParser[ka1, st, Option[Char]] = 
         alt(stringLetter() |> map(Some), stringEscape())
 
     /// Greater than "SUB"...
-    def stringLetter(): GenParser[t1, u, Char] = 
+    def stringLetter(): GenParser[ka1, st, Char] = 
         satisfy(c -> (c != '\u0022') and (c != '\\') and (c > '\u001A'))
 
-    def stringEscape(): GenParser[t1, u, Option[Char]] =
+    def stringEscape(): GenParser[ka1, st, Option[Char]] =
         char('\\') *> (escapeCode() |> map(Some))
 
-    pub def charLiteral(): GenParser[t1, u, Char] = 
+    pub def charLiteral(): GenParser[ka1, st, Char] = 
         between( char('\''),  char('\''), chararacterChar())
 
-    def chararacterChar(): GenParser[t1, u, Char] = alt(charLetter(), charEscape())
+    def chararacterChar(): GenParser[ka1, st, Char] = alt(charLetter(), charEscape())
 
-    def charEscape(): GenParser[t1, u, Char] =
+    def charEscape(): GenParser[ka1, st, Char] =
         char('\\') *> escapeCode()
 
     /// Greater than "SUB"...
-    def charLetter(): GenParser[t1, u, Char] = 
+    def charLetter(): GenParser[ka1, st, Char] = 
         satisfy(c -> (c != '\'') and (c != '\\') and (c > '\u001A'))
 
-    def escapeCode(): GenParser[t1, u, Char] = 
+    def escapeCode(): GenParser[ka1, st, Char] = 
         choice(
             charUnicode() :: charEsc() :: Nil
         )
         /// charEsc <|> charNum <|> charAscii <|> charControl
 
-    def charUnicode(): GenParser[t1, u, Char] = 
+    def charUnicode(): GenParser[ka1, st, Char] = 
         let* _      = alt(char('u'), char('U'));
         let* num    = number() |> map(Char.fromInt32);
         return(num) 
 
 
-    def number(): GenParser[t1, u, Int32] =  
+    def number(): GenParser[ka1, st, Int32] =  
         use FlixParsec/Combinators.{countWith};
         use FlixParsec/Char.{hexDigit};
         let step = (ac, ch) -> match asciiDigitToInt(ch) {
@@ -77,7 +77,7 @@ namespace FlixParsec/Literal {
         countWith(step, 0, 4, hexDigit())
         
 
-    def charEsc(): GenParser[t1, u, Char] = 
+    def charEsc(): GenParser[ka1, st, Char] = 
         choice(
                 (char('t')  *> return('\u0009'))    /// tab
             :: (char('r')   *> return('\u000D'))    /// carriage return

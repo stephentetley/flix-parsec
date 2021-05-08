@@ -19,24 +19,25 @@ namespace FlixParsec {
 
     type alias ParseContext = {input: String, tabSize: Int32}
 
-    type alias ParseState[u] = {pos: Int32, userState: u}
+    type alias ParseState[st] = {pos: Int32, userState: st}
 
     type alias Failures = Chain[String]
 
-    type alias FailK[t1] = Int32 -> Failures ~> t1
+    type alias FailK[ka1] = Int32 -> Failures ~> ka1
 
-    type alias SuccessK[t1, u, ans] = ans -> FailK[t1] -> ParseContext -> ParseState[u] -> Failures ~> t1
+    type alias SuccessK[ka1, st, ans] = ans -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures ~> ka1
 
-    /// `u` is the type of user state
+    /// `st` is the type of user state
     /// `ans` is the type of "immediate answer"
-    /// `t1` is the continuation answer type - if Flix had user visible existentials it would 
-    /// be hidden as an existential type.
-    pub opaque type GenParser[t1, u, ans] = SuccessK[t1, u, ans] -> FailK[t1] -> ParseContext -> ParseState[u] -> Failures ~> t1
+    /// `ka1` is the continuation answer type - if Flix had user visible existentials it would 
+    /// be hidden as an existential type. Generally it will always be represented with a type variable
+    /// except in "run" functions.
+    pub opaque type GenParser[ka1, st, ans] = SuccessK[ka1, st, ans] -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures ~> ka1
 
-    type alias Parser[t1, ans] = GenParser[t1, Unit, ans]
+    type alias Parser[ka1, ans] = GenParser[ka1, Unit, ans]
 
     /// instance Functor[TextParser[r]] {
-    ///     def map(f: a -> b & ef, x: GenParser[t1, u, a]): GenParser[t1, u, b] & ef = map(f, x)
+    ///     def map(f: a -> b & ef, x: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef = map(f, x)
     /// }
 
 }
@@ -99,7 +100,7 @@ namespace FlixParsec/Prim {
     ///
     type alias Parser1[ans] = Parser[Result[ans, Error1], ans]
 
-    type alias GenParser1[u, ans] = GenParser[Result[ans, Error1], u, ans]
+    type alias GenParser1[st, ans] = GenParser[Result[ans, Error1], st, ans]
 
     ///
     /// Run parser `p` on the string `input`.
@@ -111,7 +112,7 @@ namespace FlixParsec/Prim {
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def runGenParser(p: GenParser1[u, ans], initState: u, tabSize: Int32, input: String) : Result[ans, ParseError] & Impure =
+    pub def runGenParser(p: GenParser1[st, ans], initState: st, tabSize: Int32, input: String) : Result[ans, ParseError] & Impure =
         use Chain.{toList, empty};
         use FlixParsec/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
         let context = {input = input, tabSize = tabSize};
@@ -133,7 +134,7 @@ namespace FlixParsec/Prim {
         }
 
     ///
-    pub def parseString(p: GenParser1[u, ans], initState: u, input: String) : Result[ans, String] & Impure =
+    pub def parseString(p: GenParser1[st, ans], initState: st, input: String) : Result[ans, String] & Impure =
         match runGenParser(p, initState, 4, input) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
@@ -141,8 +142,8 @@ namespace FlixParsec/Prim {
 
     pub def parsesString(p: Parser1[ans], input: String) : Result[ans, String] & Impure = parseString(p, (), input)
 
-    pub def parseFile(parser: GenParser1[u, ans], 
-                        initState: u, 
+    pub def parseFile(parser: GenParser1[st, ans], 
+                        initState: st, 
                         tabSize: Int32, 
                         path: System.FilePath, 
                         cs: Text.Charset): Result[ans, ParseError] & Impure =
@@ -161,8 +162,8 @@ namespace FlixParsec/Prim {
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFileWithBOM(parser: GenParser1[u, ans], 
-                                initState: u, 
+    pub def parseFileWithBOM(parser: GenParser1[st, ans], 
+                                initState: st, 
                                 tabSize: Int32, 
                                 path: System.FilePath): Result[ans, ParseError] & Impure =
         use Result.flatMap;
@@ -179,20 +180,20 @@ namespace FlixParsec/Prim {
             case Err(e) => Err(showPosition(e.position) + ": " + e.message)
         }
 
-    pub def return(x: a): GenParser[t1, u, a] = GenParser(sk -> sk(x))
+    pub def return(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
 
-    pub def throwError(message: String) : GenParser[t1, u, ans] =
+    pub def throwError(message: String) : GenParser[ka1, st, ans] =
         use Chain.{singleton};
         GenParser((_, fk, _, st, _) -> fk(st.pos, singleton(message)))
 
-    pub def fail(message: String) : GenParser[t1, u, ans] = throwError(message)
+    pub def fail(message: String) : GenParser[ka1, st, ans] = throwError(message)
 
     ///
     /// `swapError` is quite subtle. Swapping the error continuation needs to be
     /// a "local" operation which is undone (restored) afterwards (c.f. local in the Reader
     /// monad). It must not be a "stateful" operation with unlimited extent.
     ///
-    pub def swapError(p: GenParser[t1, u, ans], message: String) : GenParser[t1, u, ans] =
+    pub def swapError(p: GenParser[ka1, st, ans], message: String) : GenParser[ka1, st, ans] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let fk1 = (pos, _) -> fk(pos, singleton(message));
@@ -200,58 +201,58 @@ namespace FlixParsec/Prim {
             apply1(p, sk1, fk1, ctx, st, errs)
         )
 
-    def apply1 (p: GenParser[t1, u, ans], 
-                sk: SuccessK[t1, u, ans], 
-                fk: FailK[t1], 
+    def apply1 (p: GenParser[ka1, st, ans], 
+                sk: SuccessK[ka1, st, ans], 
+                fk: FailK[ka1], 
                 ctx: ParseContext, 
-                st: ParseState[u], 
-                errs: Failures): t1 & Impure =
+                st: ParseState[st], 
+                errs: Failures): ka1 & Impure =
         let GenParser(pf) = p;
         pf(sk, fk, ctx, st, errs)
 
-    pub def map(f: a -> b & ef, p: GenParser[t1, u, a]): GenParser[t1, u, b] =
+    pub def map(f: a -> b & ef, p: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
         GenParser((sk, fk, ctx, pos, errs) ->
             let sk1 = (x, fk1, _, pos1, errs1) -> sk(f(x) as & Impure, fk1, ctx, pos1, errs1);
             apply1(p, sk1, fk, ctx, pos, errs)
         )
 
-    pub def ap(mf: GenParser[t1, u, a -> b & ef], ma: GenParser[t1, u, a]): GenParser[t1, u, b] =
+    pub def ap(mf: GenParser[ka1, st, a -> b & ef], ma: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
         let* f = mf;
         let* a = ma;
         liftAction(_ -> f(a) as & Impure)
 
-    pub def bind(ma: GenParser[t1, u, a], k: a -> GenParser[t1, u, b]):  GenParser[t1, u, b] =
+    pub def bind(ma: GenParser[ka1, st, a], k: a -> GenParser[ka1, st, b]):  GenParser[ka1, st, b] =
         GenParser(sk ->
             apply1(ma, x -> apply1(k(x), sk))
         )
 
-    pub def flatMap(k: a -> GenParser[t1, u, b], ma: GenParser[t1, u, a]):  GenParser[t1, u, b] = bind(ma, k)
+    pub def flatMap(k: a -> GenParser[ka1, st, b], ma: GenParser[ka1, st, a]):  GenParser[ka1, st, b] = bind(ma, k)
 
 
-    pub def ifThenElse(cond: GenParser[t1, u, a], 
-                        thenp: a -> GenParser[t1, u, b], 
-                        elsep: GenParser[t1, u, b]): GenParser[t1, u, b] = 
+    pub def ifThenElse(cond: GenParser[ka1, st, a], 
+                        thenp: a -> GenParser[ka1, st, b], 
+                        elsep: GenParser[ka1, st, b]): GenParser[ka1, st, b] = 
         GenParser((sk, fk, ctx, st) ->
             apply1(cond, x -> apply1(thenp(x), sk), _ -> apply1(elsep, sk, fk, ctx, st), ctx, st))
 
 
-    pub def liftOption(x: Option[a], errMsg: String): GenParser[t1, u, a] =  match x {
+    pub def liftOption(x: Option[a], errMsg: String): GenParser[ka1, st, a] =  match x {
         case Some(a) => return(a)
         case None    => fail(errMsg)
     }
 
-    pub def liftResult(x: Result[a, e]): GenParser[t1, u, a] =  match x {
+    pub def liftResult(x: Result[a, e]): GenParser[ka1, st, a] =  match x {
         case Ok(a) => return(a)
         case Err(_) => fail("liftResult")
     }
 
-    pub def liftAction(f: Unit -> a & ef): GenParser[t1, u, a] =
+    pub def liftAction(f: Unit -> a & ef): GenParser[ka1, st, a] =
         GenParser((sk, fk, ctx, st, errs) ->
             let a = f() as & Impure;
             sk(a, fk, ctx, st, errs)
         )
 
-    pub def liftActionResult(f: Unit -> Result[a, e] & ef): GenParser[t1, u, a] =
+    pub def liftActionResult(f: Unit -> Result[a, e] & ef): GenParser[ka1, st, a] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let ans = f() as & Impure;
@@ -261,14 +262,14 @@ namespace FlixParsec/Prim {
             }
         )
 
-    pub def getPosition(): GenParser[t1, u, Position] =  
+    pub def getPosition(): GenParser[ka1, st, Position] =  
         GenParser((sk, fk, ctx, st) ->
             let (x,y) = FlixParsec/Internal/ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
             sk({ lineNumber = x, column = y }, fk, ctx, st)
         )
 
 
-    pub def endOfInput() : GenParser[t1, u, Unit] =
+    pub def endOfInput() : GenParser[ka1, st, Unit] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
@@ -278,7 +279,7 @@ namespace FlixParsec/Prim {
                 fk(st.pos, singleton("eof - not at end"))
         ) 
 
-    pub def take(len: Int32): GenParser[t1, u, String] =
+    pub def take(len: Int32): GenParser[ka1, st, String] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let slen = String.length(ctx.input);
@@ -288,7 +289,7 @@ namespace FlixParsec/Prim {
         )
 
 
-    pub def take1(): GenParser[t1, u, Char] =
+    pub def take1(): GenParser[ka1, st, Char] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
@@ -303,7 +304,7 @@ namespace FlixParsec/Prim {
 
 
     // Truncates if eof...
-    pub def horizon(n: Int32): GenParser[t1, u, String] = 
+    pub def horizon(n: Int32): GenParser[ka1, st, String] = 
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             if (n < 0) {
@@ -320,7 +321,7 @@ namespace FlixParsec/Prim {
     /// lookahead - run the parser but don't consume input on success
     /// On fail, fail.
     ///
-    pub def lookahead(p: GenParser[t1, u, a]): GenParser[t1, u, a] =
+    pub def lookahead(p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
         GenParser((sk, fk, ctx, st) ->
             let sk1 = (ans, fk1, _, _) -> sk(ans, fk1, ctx, st);
             apply1(p, sk1, fk, ctx, st)
@@ -329,7 +330,7 @@ namespace FlixParsec/Prim {
     ///
     /// Run parser `p` within a bounded length
     ///
-    pub def bounded(n: Int32, p: GenParser[t1, u, a]): GenParser[t1, u, a] =
+    pub def bounded(n: Int32, p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
         use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
