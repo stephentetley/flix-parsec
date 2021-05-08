@@ -268,6 +268,24 @@ namespace FlixParsec/Prim {
             sk({ lineNumber = x, column = y }, fk, ctx, st)
         )
 
+    pub def getState(): GenParser[ka1, st, st] =  
+        GenParser((sk, fk, ctx, st) ->            
+            sk(st.userState, fk, ctx, st)
+        )
+
+    pub def setState(state: st): GenParser[ka1, st, Unit] =  
+        GenParser((sk, fk, ctx, st) ->
+            let st1 = { userState = state | st};
+            sk((), fk, ctx, st1)
+        )
+
+
+    pub def updateState(modify: st -> st): GenParser[ka1, st, Unit] =  
+        GenParser((sk, fk, ctx, st) ->
+            let st1 = { userState = modify(st.userState) | st};
+            sk((), fk, ctx, st1)
+        )  
+
 
     pub def endOfInput() : GenParser[ka1, st, Unit] =
         use Chain.{singleton};
