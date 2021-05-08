@@ -43,6 +43,7 @@ namespace FlixParsec/Combinators {
     pub def <*>(mf: GenParser[ka1, st, a -> b], p2: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
         ap(mf, p2)
 
+    /// `alt` rolls back the parser state (including the position) if `p` fails.
     pub def alt(p: GenParser[ka1, st, a], q: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
         ifThenElse(p, return, q)
 
