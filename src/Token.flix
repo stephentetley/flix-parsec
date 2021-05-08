@@ -20,7 +20,7 @@ namespace FlixParsec/Token {
 
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{flatMap, return};
-    use FlixParsec/Combinators.{alt, ignore, seqRight, skipMany1, skipMany, between};
+    use FlixParsec/Combinators.{alt, ignore, seqRight, skipMany1, skipMany, between, sepBy, sepBy1};
     use FlixParsec/Combinators.{*>};
     use FlixParsec/Char.{string, oneOf, noneOf, satisfy};
     
@@ -47,6 +47,46 @@ namespace FlixParsec/Token {
 
     pub def parens(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
         between(symbol(langDef, "("), symbol(langDef, ")"), p)
+
+    pub def braces(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+        between(symbol(langDef, "{"), symbol(langDef, "}"), p)
+
+    pub def brackets(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+        between(symbol(langDef, "<"), symbol(langDef, ">"), p)
+
+    pub def squares(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+        between(symbol(langDef, "["), symbol(langDef, "]"), p)
+
+    pub def semi(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+        symbol(langDef, ";")
+
+    pub def comma(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+        symbol(langDef, ",")
+
+    pub def colon(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+        symbol(langDef, ":")
+
+    pub def dot(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+        symbol(langDef, ".")
+
+    pub def semiSep(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+        sepBy(p, semi(langDef))
+    
+    pub def commaSep(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+        sepBy(p, comma(langDef))
+
+    pub def semiSep1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+        sepBy1(p, semi(langDef))
+    
+    pub def commaSep1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+        sepBy1(p, comma(langDef))
+
+    pub def charLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Char] =  
+        lexeme(langDef, FlixParsec/Literal.charLiteral())
+
+    pub def stringLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+        lexeme(langDef, FlixParsec/Literal.stringLiteral())
+
 
     pub def symbol(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, String] = 
         lexeme(langDef, string(name))
