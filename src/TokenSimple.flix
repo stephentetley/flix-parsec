@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+/// A version of Token that is not parameterized by LanguageDef.
+/// At the lexical level there is no notion of comments, `lexeme` and all 
+/// combinators derived with it see whitespace as the the usual space characters: 
+/// space, tab, carriage return and line feed.
 
-
-namespace FlixParsec/Token1 {
+namespace FlixParsec/TokenSimple {
 
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{flatMap, return, liftResult};
@@ -48,61 +51,48 @@ namespace FlixParsec/Token1 {
 
     pub def semiSep(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = sepBy(p, semi())
 
-    pub def semiSep1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = sepBy1(p, semi())
-
     pub def commaSep(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = sepBy(p, comma())
+
+    pub def semiSep1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = sepBy1(p, semi())
 
     pub def commaSep1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = sepBy1(p, comma())
 
 
+    pub def charLiteral(): GenParser[ka1, st, Char] =  
+        lexeme(FlixParsec/Literal.charLiteral())
+
+    pub def stringLiteral(): GenParser[ka1, st, String] =  
+        lexeme(FlixParsec/Literal.stringLiteral())
+
+
 
     pub def int8(): GenParser[ka1, st, Int8] = 
-        let body = { 
-            let* s = lookingAts("-?\d+");
-            liftResult(Int8.fromString(s))
-        };
-        lexeme(body)
+        lexeme(FlixParsec/Literal.int8())
 
     pub def int16(): GenParser[ka1, st, Int16] = 
-        let body = { 
-            let* s = lookingAts("-?\d+");
-            liftResult(Int16.fromString(s))
-        };
-        lexeme(body)
+        lexeme(FlixParsec/Literal.int16())
     
     pub def int32(): GenParser[ka1, st, Int32] = 
-        let body = { 
-            let* s = lookingAts("-?\d+");
-            liftResult(Int32.fromString(s))
-        };
-        lexeme(body)
+        lexeme(FlixParsec/Literal.int32())
+    
 
     pub def int64(): GenParser[ka1, st, Int64] = 
-        let body = { 
-            let* s = lookingAts("-?\d+");
-            liftResult(Int64.fromString(s))
-        };
-        lexeme(body)
+        lexeme(FlixParsec/Literal.int64())
 
     pub def bigInt(): GenParser[ka1, st, BigInt] = 
-        let body = { 
-            let* s = lookingAts("-?\d+");
-            liftResult(BigInt.fromString(s))
-        };
-        lexeme(body)
-
-    pub def float64(): GenParser[ka1, st, Float64] = 
-        let body = { 
-            let* s = lookingAts("-?\d+\.\d+");
-            liftResult(Float64.fromString(s))
-        };
-        lexeme(body)
+        lexeme(FlixParsec/Literal.bigInt())
 
     pub def float32(): GenParser[ka1, st, Float32] = 
-        let body = { 
-            let* s = lookingAts("-?\d+\.\d+");
-            liftResult(Float32.fromString(s))
-        };
-        lexeme(body)
-               
+        lexeme(FlixParsec/Literal.float32())
+
+    pub def float64(): GenParser[ka1, st, Float64] = 
+        lexeme(FlixParsec/Literal.float64())
+
+
+    pub def hexInt32(): GenParser[ka1, st, Int32] = 
+        lexeme(FlixParsec/Literal.hexInt32())
+
+    pub def octInt32(): GenParser[ka1, st, Int32] = 
+        lexeme(FlixParsec/Literal.octInt32())
+
 }

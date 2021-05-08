@@ -88,6 +88,34 @@ namespace FlixParsec/Token {
         lexeme(langDef, FlixParsec/Literal.stringLiteral())
 
 
+
+    pub def int8(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int8] = 
+        lexeme(langDef, FlixParsec/Literal.int8())
+
+    pub def int16(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int16] = 
+        lexeme(langDef, FlixParsec/Literal.int16())
+    
+    pub def int32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
+        lexeme(langDef, FlixParsec/Literal.int32())
+    
+    pub def int64(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int64] = 
+        lexeme(langDef, FlixParsec/Literal.int64())
+
+    pub def bigInt(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, BigInt] = 
+        lexeme(langDef, FlixParsec/Literal.bigInt())
+
+    pub def float32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Float32] = 
+        lexeme(langDef, FlixParsec/Literal.float32())
+
+    pub def float64(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Float64] = 
+        lexeme(langDef, FlixParsec/Literal.float64())
+
+    pub def hexInt32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
+        lexeme(langDef, FlixParsec/Literal.hexInt32())
+
+    pub def octInt32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
+        lexeme(langDef, FlixParsec/Literal.octInt32())
+
     pub def symbol(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, String] = 
         lexeme(langDef, string(name))
 

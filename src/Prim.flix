@@ -241,9 +241,9 @@ namespace FlixParsec/Prim {
         case None    => fail(errMsg)
     }
 
-    pub def liftResult(x: Result[a, e]): GenParser[ka1, st, a] =  match x {
+    pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): GenParser[ka1, st, a] =  match x {
         case Ok(a) => return(a)
-        case Err(_) => fail("liftResult")
+        case Err(e) => fail(makeErrMsg(e))
     }
 
     pub def liftAction(f: Unit -> a & ef): GenParser[ka1, st, a] =
