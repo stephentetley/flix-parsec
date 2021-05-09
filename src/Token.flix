@@ -52,12 +52,19 @@ namespace FlixParsec/Token {
     pub def braces(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
         between(symbol(langDef, "{"), symbol(langDef, "}"), p)
 
-    pub def brackets(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+    pub def angles(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
         between(symbol(langDef, "<"), symbol(langDef, ">"), p)
 
-    pub def squares(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+    pub def brackets(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
         between(symbol(langDef, "["), symbol(langDef, "]"), p)
 
+    pub def squotes(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+        between(symbol(langDef, "'"), symbol(langDef, "'"), p)
+
+    pub def dquotes(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] = 
+        let dquote = Char.toString('\u0022');
+        between(symbol(langDef, dquote), symbol(langDef, dquote), p)
+        
     pub def semi(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
         symbol(langDef, ";")
 

@@ -41,6 +41,13 @@ namespace FlixParsec/TokenSimple {
 
     pub def brackets(p: GenParser[ka1, st, a]): GenParser[ka1, st, a] = between(symbol("["), symbol("]"), p)
 
+    pub def squotes(p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+        between(symbol("'"), symbol("'"), p)
+
+    pub def dquotes(p: GenParser[ka1, st, a]): GenParser[ka1, st, a] = 
+        let dquote = Char.toString('\u0022');
+        between(symbol(dquote), symbol(dquote), p)
+
     pub def semi(): GenParser[ka1, st, String] = symbol(";")
 
     pub def comma(): GenParser[ka1, st, String] = symbol(",")

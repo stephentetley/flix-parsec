@@ -41,10 +41,18 @@ namespace FlixParsec/Combinators {
     pub def &>(p1: GenParser[ka1, st, a], x: b): GenParser[ka1, st, b] =
         p1 *> return(x)
 
+    /// Flipped <&>
+    pub def <&&>(p2: GenParser[ka1, st, a], f: a -> b): GenParser[ka1, st, b] =
+        map(f, p2)
+
 
     // Haskell's ap <*>
     pub def <*>(mf: GenParser[ka1, st, a -> b], p2: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
         ap(mf, p2)
+
+    /// Flipped <*>
+    pub def <**>(p2: GenParser[ka1, st, a], mf: GenParser[ka1, st, a -> b]): GenParser[ka1, st, b] =
+        ap(mf, p2)        
 
     /// `alt` rolls back the parser state (including the position) if `p` fails.
     pub def alt(p: GenParser[ka1, st, a], q: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
