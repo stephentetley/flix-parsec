@@ -23,7 +23,7 @@ namespace FlixParsec/TokenSimple {
 
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{flatMap, return, liftResult};
-    use FlixParsec/Combinators.{between, seqLeft, sepBy, sepBy1};
+    use FlixParsec/Combinators.{between, seqLeft, sepBy, sepBy1, sepByWith};
     use FlixParsec/Char.{string};
     use FlixParsec/Text.{whiteSpace, digits};
     use FlixParsec/Regex.{lookingAts};
@@ -83,6 +83,17 @@ namespace FlixParsec/TokenSimple {
     pub def semiBrackets(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = brackets(semiSep(p))
     
     pub def semiBrackets1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = brackets(semiSep1(p))
+
+    /// TODO - need rest of family of functions implementing...
+    pub def commaSepWith(combine: (ac, a) -> ac,
+                        acc: ac,
+                        p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
+        sepByWith(combine, acc, p, comma())
+
+    pub def commaBracesWith(combine: (ac, a) -> ac,
+                            acc: ac,
+                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
+        braces(commaSepWith(combine, acc, p))
 
     pub def charLiteral(): GenParser[ka1, st, Char] =  
         lexeme(FlixParsec/Literal.charLiteral())
