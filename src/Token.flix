@@ -21,7 +21,7 @@ namespace FlixParsec/Token {
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{flatMap, return, fail};
     use FlixParsec/Combinators.{alt, ignore, seqRight, skipMany1, skipMany, between, 
-        sepBy, sepBy1, notFollowedBy, manyWith, sepByWith};
+        sepBy, sepBy1, notFollowedBy, manyWith, sepByWith, sepBy1With};
     use FlixParsec/Combinators.{*>};
     use FlixParsec/Char.{string, char, oneOf, noneOf, satisfy};
     
@@ -127,11 +127,23 @@ namespace FlixParsec/Token {
                         p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
         sepByWith(combine, acc, p, comma(langDef))
 
+    pub def commaSep1With(langDef: LanguageDef[ka1, st], 
+                        combine: (ac, a) -> ac,
+                        acc: ac,
+                        p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
+        sepBy1With(combine, acc, p, comma(langDef))
+
     pub def commaBracesWith(langDef: LanguageDef[ka1, st], 
                             combine: (ac, a) -> ac,
                             acc: ac,
-                            p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
+                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
         braces(langDef, commaSepWith(langDef, combine, acc, p))
+
+    pub def commaBraces1With(langDef: LanguageDef[ka1, st], 
+                            combine: (ac, a) -> ac,
+                            acc: ac,
+                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
+        braces(langDef, commaSep1With(langDef, combine, acc, p))
 
 
     pub def charLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Char] =  

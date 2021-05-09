@@ -23,7 +23,7 @@ namespace FlixParsec/TokenSimple {
 
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{flatMap, return, liftResult};
-    use FlixParsec/Combinators.{between, seqLeft, sepBy, sepBy1, sepByWith};
+    use FlixParsec/Combinators.{between, seqLeft, sepBy, sepBy1, sepByWith, sepBy1With};
     use FlixParsec/Char.{string};
     use FlixParsec/Text.{whiteSpace, digits};
     use FlixParsec/Regex.{lookingAts};
@@ -94,6 +94,16 @@ namespace FlixParsec/TokenSimple {
                             acc: ac,
                             p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
         braces(commaSepWith(combine, acc, p))
+
+    pub def commaSep1With(combine: (ac, a) -> ac,
+                        acc: ac,
+                        p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
+        sepBy1With(combine, acc, p, comma())
+
+    pub def commaBrace1sWith(combine: (ac, a) -> ac,
+                            acc: ac,
+                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
+        braces(commaSep1With(combine, acc, p))
 
     pub def charLiteral(): GenParser[ka1, st, Char] =  
         lexeme(FlixParsec/Literal.charLiteral())
