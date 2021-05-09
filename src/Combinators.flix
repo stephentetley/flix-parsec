@@ -35,8 +35,11 @@ namespace FlixParsec/Combinators {
     pub def <&>(f: a -> b, p2: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
         map(f, p2)
 
-    pub def <&(x: b, p2: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
-        p2 *> return(x)
+    pub def <&(x: b, p1: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
+        p1 *> return(x)
+
+    pub def &>(p1: GenParser[ka1, st, a], x: b): GenParser[ka1, st, b] =
+        p1 *> return(x)
 
 
     // Haskell's ap <*>
