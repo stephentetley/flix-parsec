@@ -90,62 +90,6 @@ namespace FlixParsec/Token {
         sepBy1(p, comma(langDef))
 
 
-    pub def tupled(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        parens(langDef, commaSep(langDef, p))
-
-    pub def tupled1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        parens(langDef, commaSep1(langDef, p))
-
-    pub def commaBraces(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        braces(langDef, commaSep(langDef, p))
-    
-    pub def commaBraces1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        braces(langDef, commaSep1(langDef, p))
-
-    pub def commaBrackets(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        brackets(langDef, commaSep(langDef, p))
-    
-    pub def commaBrackets1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        brackets(langDef, commaSep1(langDef, p))
-
-    pub def semiBraces(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        braces(langDef, semiSep(langDef, p))
-    
-    pub def semiBraces1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        braces(langDef, semiSep1(langDef, p))
-
-    pub def semiBrackets(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
-        brackets(langDef, semiSep(langDef, p))
-    
-    pub def semiBrackets1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =
-        brackets(langDef, semiSep1(langDef, p))
-
-    /// TODO - need rest of family of functions implementing...
-    pub def commaSepWith(langDef: LanguageDef[ka1, st], 
-                        combine: (ac, a) -> ac,
-                        acc: ac,
-                        p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
-        sepByWith(combine, acc, p, comma(langDef))
-
-    pub def commaSep1With(langDef: LanguageDef[ka1, st], 
-                        combine: (ac, a) -> ac,
-                        acc: ac,
-                        p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
-        sepBy1With(combine, acc, p, comma(langDef))
-
-    pub def commaBracesWith(langDef: LanguageDef[ka1, st], 
-                            combine: (ac, a) -> ac,
-                            acc: ac,
-                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
-        braces(langDef, commaSepWith(langDef, combine, acc, p))
-
-    pub def commaBraces1With(langDef: LanguageDef[ka1, st], 
-                            combine: (ac, a) -> ac,
-                            acc: ac,
-                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
-        braces(langDef, commaSep1With(langDef, combine, acc, p))
-
-
     pub def charLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Char] =  
         lexeme(langDef, FlixParsec/Literal.charLiteral())
 

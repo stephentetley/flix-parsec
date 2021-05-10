@@ -64,46 +64,11 @@ namespace FlixParsec/TokenSimple {
 
     pub def commaSep1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = sepBy1(p, comma())
 
-    pub def tupled(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = parens(commaSep(p))
+    /// TODO - fill out the with versions, but don't include `tupled` etc
+    /// as they lead to hiding left recursion.
+    pub def commaSepWith(combine: (ac, a) -> ac, ac: ac, p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
+        sepByWith(combine, ac, p, comma())
 
-    pub def tupled1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = parens(commaSep1(p))
-
-    pub def commaBraces(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = braces(commaSep(p))
-    
-    pub def commaBraces1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = braces(commaSep1(p))
-
-    pub def commaBrackets(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = brackets(commaSep(p))
-    
-    pub def commaBrackets1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = brackets(commaSep1(p))
-
-    pub def semiBraces(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = braces(semiSep(p))
-    
-    pub def semiBraces1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = braces(semiSep1(p))
-
-    pub def semiBrackets(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = brackets(semiSep(p))
-    
-    pub def semiBrackets1(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = brackets(semiSep1(p))
-
-    /// TODO - need rest of family of functions implementing...
-    pub def commaSepWith(combine: (ac, a) -> ac,
-                        acc: ac,
-                        p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
-        sepByWith(combine, acc, p, comma())
-
-    pub def commaBracesWith(combine: (ac, a) -> ac,
-                            acc: ac,
-                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
-        braces(commaSepWith(combine, acc, p))
-
-    pub def commaSep1With(combine: (ac, a) -> ac,
-                        acc: ac,
-                        p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] =  
-        sepBy1With(combine, acc, p, comma())
-
-    pub def commaBrace1sWith(combine: (ac, a) -> ac,
-                            acc: ac,
-                            p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
-        braces(commaSep1With(combine, acc, p))
 
     pub def charLiteral(): GenParser[ka1, st, Char] =  
         lexeme(FlixParsec/Literal.charLiteral())
