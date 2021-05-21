@@ -47,36 +47,36 @@ namespace FlixParsec/Prim {
     use FlixParsec.{GenParser, Parser, ParseContext, ParseState, Failures, SuccessK, FailK};
     use FlixParsec.GenParser.{GenParser};
 
-    type alias Position = { lineNumber: Int32, column: Int32 }
+    type alias SourcePosition = { lineNumber: Int32, column: Int32 }
 
-    type alias Error1 = { messages: List[String], position: Int32 }
+    type alias InternalError = { messages: Chain[String], position: Int32 }
 
     type alias ParseError = 
         { message: String
-        , position: Position
+        , position: SourcePosition
         , textBefore: String
         , textAfter: String
         }
 
-    pub def showPosition(pos: Position): String = 
-        "Line=" + Int32.toString(pos.lineNumber) + ", Col=" + Int32.toString(pos.column)
+    pub def showSourcePosition(pos: SourcePosition): String = 
+        "Line=${pos.lineNumber}, Col=${pos.column}"
 
-    pub def samePosition(pos1: Position, pos2: Position): Bool =
+    pub def samePosition(pos1: SourcePosition, pos2: SourcePosition): Bool =
         pos1.lineNumber == pos2.lineNumber and pos1.column == pos2.column
 
     pub def showParseError(err: ParseError): String = 
-        String.unlines(err.message :: showPosition(err.position) 
+        String.unlines(err.message :: showSourcePosition(err.position) 
                             :: "Seen:" :: "-----" :: err.textBefore 
                             :: "Pending:" :: "--------" :: err.textAfter :: Nil)
 
-    def showErrorsList(stk: List[String]): String = match stk {
+    def showErrorsChain(stk: Chain[String]): String = match Chain.toList(stk) {
         case Nil => "*error*"
         case x :: rs => x + errorMessageHelper(rs)
     }
 
     def errorMessageHelper(rest: List[String]): String = match rest {
         case Nil => ""
-        case x :: Nil => "[" + x + "]"
+        case x :: Nil => "[${x}]"
         case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
     }
 
@@ -96,11 +96,11 @@ namespace FlixParsec/Prim {
 
     ///
     /// This is exposed so client code can implement wrappers over `run` etc. without
-    /// knowing about the internal error type `Error1`.
+    /// knowing about the internal error type `InternalError`.
     ///
-    type alias Parser1[ans] = Parser[Result[ans, Error1], ans]
+    type alias Parser1[ans] = Parser[Result[ans, InternalError], ans]
 
-    type alias GenParser1[st, ans] = GenParser[Result[ans, Error1], st, ans]
+    type alias GenParser1[st, ans] = GenParser[Result[ans, InternalError], st, ans]
 
     ///
     /// Run parser `p` on the string `input`.
@@ -113,34 +113,34 @@ namespace FlixParsec/Prim {
     /// Run parser `p` on the string `input`.
     ///
     pub def runGenParser(p: GenParser1[st, ans], initState: st, tabSize: Int32, input: String) : Result[ans, ParseError] & Impure =
-        use Chain.{toList, empty};
         use FlixParsec/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
         let context = {input = input, tabSize = tabSize};
         let state = {pos = 0, userState = initState};
-        let fk = (posn, errs) -> Err({ messages = toList(errs), position = posn }) as & Impure;
+        let fk = (posn, errs) -> Err({messages = errs, position = posn}) as & Impure;
         let sk = (a, _, _, _, _) -> Ok(a) as & Impure;
         let GenParser(p1) = p;
-        match p1(sk, fk, context, state, empty()) {
+        match p1(sk, fk, context, state, Chain.empty()) {
             case Ok(a) => Ok(a)
             case Err(e1) => {
-                let (l,c) = textPos(context.tabSize, e1.position, input);
+                let (l, c) = textPos(context.tabSize, e1.position, input);
                 let posn = { lineNumber = l, column = c };
                 let (before, after) = getTextBeforeAndAfter(e1.position, input);
-                Err({ message = showErrorsList(e1.messages)
+                Err({ message = showErrorsChain(e1.messages)
                     , position = posn
                     , textBefore = before
                     , textAfter = after })
             }
         }
 
-    ///
-    pub def parseString(p: GenParser1[st, ans], initState: st, input: String) : Result[ans, String] & Impure =
+    /// parseString is Impure because the parser might have lifted impure actions (e.g. debugging / tracing)
+    pub def parseString(p: GenParser1[st, ans], initState: st, input: String): Result[ans, String] & Impure =
         match runGenParser(p, initState, 4, input) {
             case Ok(a) => Ok(a)
-            case Err(e) => Err(showPosition(e.position) + ": " + e.message)
+            case Err(e) => Err(showSourcePosition(e.position) + ": " + e.message)
         }
 
-    pub def parsesString(p: Parser1[ans], input: String) : Result[ans, String] & Impure = parseString(p, (), input)
+    /// 
+    pub def parsesString(p: Parser1[ans], input: String): Result[ans, String] & Impure = parseString(p, (), input)
 
     pub def parseFile(parser: GenParser1[st, ans], 
                         initState: st, 
@@ -159,7 +159,7 @@ namespace FlixParsec/Prim {
     pub def parsesFile(parser: Parser1[ans], tabSize: Int32, path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
         match parseFile(parser, (), tabSize, path, cs) {
             case Ok(a) => Ok(a)
-            case Err(e) => Err(showPosition(e.position) + ": " + e.message)
+            case Err(e) => Err(showSourcePosition(e.position) + ": " + e.message)
         }
 
     pub def parseFileWithBOM(parser: GenParser1[st, ans], 
@@ -177,7 +177,7 @@ namespace FlixParsec/Prim {
     pub def parsesFileWithBOM(parser: Parser1[ans], tabSize: Int32, path: System.FilePath): Result[ans, String] & Impure =
         match parseFileWithBOM(parser, (), tabSize, path) {
             case Ok(a) => Ok(a)
-            case Err(e) => Err(showPosition(e.position) + ": " + e.message)
+            case Err(e) => Err(showSourcePosition(e.position) + ": " + e.message)
         }
 
     pub def return(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
@@ -262,7 +262,7 @@ namespace FlixParsec/Prim {
             }
         )
 
-    pub def getPosition(): GenParser[ka1, st, Position] =  
+    pub def getPosition(): GenParser[ka1, st, SourcePosition] =  
         GenParser((sk, fk, ctx, st) ->
             let (x,y) = FlixParsec/Internal/ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
             sk({ lineNumber = x, column = y }, fk, ctx, st)
