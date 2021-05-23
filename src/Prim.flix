@@ -47,6 +47,8 @@ namespace FlixParsec/Prim {
     use FlixParsec.{GenParser, Parser, ParseContext, ParseState, Failures, SuccessK, FailK};
     use FlixParsec.GenParser.{GenParser};
 
+    /// Note `SourcePosition` is derived when there is a parse error. 
+    /// During parsing, the parse state tracks just an index into the input string.
     type alias SourcePosition = { lineNumber: Int32, column: Int32 }
 
     type alias InternalError = { messages: Chain[String], position: Int32 }

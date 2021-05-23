@@ -54,6 +54,20 @@ namespace FlixParsec/Combinators {
     pub def <**>(p2: GenParser[ka1, st, a], mf: GenParser[ka1, st, a -> b]): GenParser[ka1, st, b] =
         ap(mf, p2)        
 
+
+    pub def >>=(p: GenParser[ka1, st, a], k: a -> GenParser[ka1, st, b]): GenParser[ka1, st, b] =
+        bind(p, k)
+
+
+    pub def =<<(k: a -> GenParser[ka1, st, b], p: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
+        bind(p, k)
+
+    pub def >=>(f1: a -> GenParser[ka1, st, b], f2: b -> GenParser[ka1, st, c], x: a): GenParser[ka1, st, c] =
+        kleisliLeft(f1, f2, x)
+
+    pub def <=<(f1: b -> GenParser[ka1, st, c], f2: a -> GenParser[ka1, st, b], x: a): GenParser[ka1, st, c] = 
+        kleisliRight(f1, f2, x)
+
     /// `alt` rolls back the parser state (including the position) if `p` fails.
     pub def alt(p: GenParser[ka1, st, a], q: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
         ifThenElse(p, return, q)
@@ -67,6 +81,15 @@ namespace FlixParsec/Combinators {
         let* _ = p;
         let* b = q;
         return(b)
+
+
+    pub def kleisliLeft(f1: a -> GenParser[ka1, st, b], f2: b -> GenParser[ka1, st, c], x: a): GenParser[ka1, st, c] =
+        let* b  = f1(x);
+        let* c  = f2(b);
+        return(c)
+
+    pub def kleisliRight(f1: b -> GenParser[ka1, st, c], f2: a -> GenParser[ka1, st, b], x: a): GenParser[ka1, st, c] =
+        kleisliLeft(f2, f1, x)
 
 
     pub def notFollowedBy(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] =
