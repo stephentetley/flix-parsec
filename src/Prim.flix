@@ -150,9 +150,9 @@ namespace FlixParsec/Prim {
                         path: System.FilePath, 
                         cs: Text.Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
-        let* exists = System/File.exists(path) |> Result.mapErr(generalError);
+        let* exists = System/IO.fileExists(path) |> Result.mapErr(generalError);
         if (exists) {
-            let* src = System/File.readFile(path, cs) |> Result.mapErr(generalError);
+            let* src = System/IO.readFile(cs, path) |> Result.mapErr(generalError);
             runGenParser(parser, initState, tabSize, src)
         } else
             Err(fileNotFoundError(path))
@@ -169,9 +169,9 @@ namespace FlixParsec/Prim {
                                 tabSize: Int32, 
                                 path: System.FilePath): Result[ans, ParseError] & Impure =
         use Result.flatMap;
-        let* exists = System/File.exists(path) |> Result.mapErr(generalError);
+        let* exists = System/IO.fileExists(path) |> Result.mapErr(generalError);
         if (exists) {
-            let* src = System/File.readFileWithBOM(path) |> Result.mapErr(generalError);
+            let* src = System/File/BOM.readFileWithBOM(path) |> Result.mapErr(generalError);
             runGenParser(parser, initState, tabSize, src)
         } else
             Err(fileNotFoundError(path))
