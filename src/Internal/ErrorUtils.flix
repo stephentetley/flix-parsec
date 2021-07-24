@@ -61,8 +61,8 @@ namespace FlixParsec/Internal/ErrorUtils {
 
     def getTextBeforeAndAfterHelper(pos: Int32, s: String): (String, String) & Impure = 
         let (before, after) = String.splitAt(pos, s);
-        let beforeArr = String.split(before, "\R{1}");
-        let afterArr = String.split(after, "\R{1}");
+        let beforeArr = String.split(before, "\\R{1}");
+        let afterArr = String.split(after, "\\R{1}");
         let after1 = { 
             if (Array.length(afterArr) > 3) 
                 String.unlines(Array.toList(Array.slice(afterArr, 0, 2)))
