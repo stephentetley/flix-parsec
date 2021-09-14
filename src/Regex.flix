@@ -34,7 +34,7 @@ namespace FlixParsec/Regex {
 
 
     /// Version of `lookingAt` with a MatchEvaluator
-    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] =
+    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] & Impure =
         use Chain.{singleton};
         use Text/Regex.{evalBoundedStartsWith};
         use Text/Regex/MatchEvaluator.{tuple2, getLength};
@@ -61,20 +61,20 @@ namespace FlixParsec/Regex {
     /// Parsing fails if regex does not compile.
     pub def lookingAts(regex: String): GenParser[ka1, st, String] = 
         use Text/Regex/Pattern.{compile};
-        use FlixParsec/Prim.{bind, liftOption};
-        bind(liftOption(compile(regex), "lookingAts"), lookingAt)
+        use FlixParsec/Prim.{bind, liftResult};
+        bind(liftResult(compile(regex), _ -> "lookingAts"), lookingAt)
 
     /// Parsing fails if regex does not compile.
     pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/Regex/Pattern.{compile};
-        use FlixParsec/Prim.{bind, liftOption};
-        bind(liftOption(compile(regex), "evalLookingAts"), patt -> evalLookingAt(patt, eval))
+        use FlixParsec/Prim.{bind, liftResult};
+        bind(liftResult(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval) as & Pure) /// TODO remove cast
 
 
     /// Parsing fails if regex does not compile.
     pub def skippingAts(regex: String): GenParser[ka1, st, Unit] = 
         use Text/Regex/Pattern.{compile};
-        use FlixParsec/Prim.{bind, liftOption};
-        bind(liftOption(compile(regex), "skippingAts"), skippingAt)
+        use FlixParsec/Prim.{bind, liftResult};
+        bind(liftResult(compile(regex), _ -> "skippingAts"), skippingAt)
 
 }
