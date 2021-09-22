@@ -25,7 +25,7 @@ namespace FlixParsec/Regex {
         use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = boundedStartsWith(ctx.input, patt, st.pos, String.length(ctx.input)) as & Pure;
+            let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
             match ans { 
                 case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None(_) => fk(st.pos, singleton("lookingAt failed"))
@@ -40,7 +40,7 @@ namespace FlixParsec/Regex {
         use Text/Regex/MatchEvaluator.{tuple2, getLength};
         let eval2 = tuple2(getLength(), eval);
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = evalBoundedStartsWith(ctx.input, patt, st.pos, String.length(ctx.input), eval2) as & Pure;
+            let ans = evalBoundedStartsWith(st.pos, String.length(ctx.input), patt, eval2, ctx.input) as & Pure;
             match ans {
                 case Ok(len, x) => sk(x, fk, ctx, {pos = st.pos + len | st}, errs)
                 case Err(_) => fk(st.pos, singleton("evalLookingAt failed"))
@@ -51,7 +51,7 @@ namespace FlixParsec/Regex {
         use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = boundedStartsWith(ctx.input, patt, st.pos, String.length(ctx.input)) as & Pure;
+            let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
             match ans { 
                 case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None => fk(st.pos, singleton("skippingAt failed"))
