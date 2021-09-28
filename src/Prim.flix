@@ -17,9 +17,9 @@
 
 namespace FlixParsec {
 
-    type alias ParseContext = {input: String, tabSize: Int32}
+    type alias ParseContext = {input :: String, tabSize :: Int32}
 
-    type alias ParseState[st] = {pos: Int32, userState: st}
+    type alias ParseState[st] = {pos :: Int32, userState :: st}
 
     type alias Failures = Chain[String]
 
@@ -49,15 +49,15 @@ namespace FlixParsec/Prim {
 
     /// Note `SourcePosition` is derived when there is a parse error. 
     /// During parsing, the parse state tracks just an index into the input string.
-    type alias SourcePosition = { lineNumber: Int32, column: Int32 }
+    type alias SourcePosition = { lineNumber :: Int32, column :: Int32 }
 
-    type alias InternalError = { messages: Chain[String], position: Int32 }
+    type alias InternalError = { messages :: Chain[String], position :: Int32 }
 
     type alias ParseError = 
-        { message: String
-        , position: SourcePosition
-        , textBefore: String
-        , textAfter: String
+        { message :: String
+        , position :: SourcePosition
+        , textBefore :: String
+        , textAfter :: String
         }
 
     pub def showSourcePosition(pos: SourcePosition): String = 
