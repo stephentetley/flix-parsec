@@ -34,7 +34,7 @@ namespace FlixParsec {
     /// except in "run" functions.
     pub opaque type GenParser[ka1, st, ans] = SuccessK[ka1, st, ans] -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures ~> ka1
 
-    type alias Parser[ka1, ans] = GenParser[ka1, Unit, ans]
+    pub type alias Parser[ka1, ans] = GenParser[ka1, Unit, ans]
 
     /// instance Functor[TextParser[r]] {
     ///     def map(f: a -> b & ef, x: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef = map(f, x)
@@ -49,11 +49,11 @@ namespace FlixParsec/Prim {
 
     /// Note `SourcePosition` is derived when there is a parse error. 
     /// During parsing, the parse state tracks just an index into the input string.
-    type alias SourcePosition = { lineNumber :: Int32, column :: Int32 }
+    pub type alias SourcePosition = { lineNumber :: Int32, column :: Int32 }
 
-    type alias InternalError = { messages :: Chain[String], position :: Int32 }
+    pub type alias InternalError = { messages :: Chain[String], position :: Int32 }
 
-    type alias ParseError = 
+    pub type alias ParseError = 
         { message :: String
         , position :: SourcePosition
         , textBefore :: String

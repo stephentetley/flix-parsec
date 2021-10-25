@@ -26,7 +26,7 @@ namespace FlixParsec/Token {
     use FlixParsec/Char.{string, char, oneOf, noneOf, satisfy};
     
 
-    type alias LanguageDef[ka1, st] = 
+    pub type alias LanguageDef[ka1, st] = 
         { commentStart :: String
         , commentEnd :: String
         , commentLine :: String
