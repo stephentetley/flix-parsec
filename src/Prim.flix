@@ -304,7 +304,7 @@ namespace FlixParsec/Prim {
         GenParser((sk, fk, ctx, st, errs) ->
             let slen = String.length(ctx.input);
             let end = if (st.pos + len > slen) slen else st.pos + len;
-            let s1 = String.slice(ctx.input, st.pos, end);
+            let s1 = String.slice(st.pos, end, ctx.input);
             sk(s1, fk, ctx, {pos = st.pos + len | st}, errs)
         )
 
@@ -331,7 +331,7 @@ namespace FlixParsec/Prim {
                 let msg = "horizon - invalid size";
                 fk(st.pos, singleton(msg))
             } else {
-                let str = String.slice(ctx.input, st.pos, st.pos + n);
+                let str = String.slice(st.pos, st.pos + n, ctx.input);
                 sk(str, fk, ctx, {pos = st.pos + String.length(str) | st}, errs)
             } 
         )
@@ -355,7 +355,7 @@ namespace FlixParsec/Prim {
         GenParser((sk, fk, ctx, st, errs) ->
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
-            let str1 = String.slice(ctx.input, st.pos, st.pos + n);
+            let str1 = String.slice(st.pos, st.pos + n, ctx.input);
             let fk1 = (_, _) -> fk(st.pos, singleton("bounded"));
             let sk1 = (ans, _, _, st1) -> sk(ans, fk, ctx, {pos = st.pos + String.length(str1) | st1});
             apply1(p, sk1, fk1, {input = str1 | ctx}, {pos = 0 | st}, errs)
