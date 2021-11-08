@@ -10,7 +10,7 @@ The parsing monad is written in __2-CPS__ (CPS with success and failure
 continuations), this appears to make it fast enough to parse medium sized 
 files (e.g 1MB).
 
-FlixParsec depends on the Chain module in some code in `flix-sandbox` (hopefully 
+FlixParsec depends on the Chain module in `flix-sandbox` (hopefully 
 soon to be included in Flix's stdlib) and the Regex package `flix-regex`.
 
 The optional module `FlixParsec/Extras` depends on further code from `flix-sandbox` 
