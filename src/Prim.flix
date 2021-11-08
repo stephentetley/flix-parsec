@@ -82,14 +82,14 @@ namespace FlixParsec/Prim {
         case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
     }
 
-    def fileNotFoundError(path: System.FilePath): ParseError = 
+    pub def fileNotFoundError(path: System.FilePath): ParseError = 
         { message = "File not found: ${path}"
         , position = {lineNumber = 0, column = 0}
         , textBefore = ""
         , textAfter = ""
         }
 
-    def generalError(err: a): ParseError with ToString[a] = 
+    pub def generalError(err: a): ParseError with ToString[a] = 
         { message = "${err}"
         , position = {lineNumber = 0, column = 0}
         , textBefore = ""
@@ -100,9 +100,9 @@ namespace FlixParsec/Prim {
     /// This is exposed so client code can implement wrappers over `run` etc. without
     /// knowing about the internal error type `InternalError`.
     ///
-    type alias Parser1[ans] = Parser[Result[ans, InternalError], ans]
+    pub type alias Parser1[ans] = Parser[Result[ans, InternalError], ans]
 
-    type alias GenParser1[st, ans] = GenParser[Result[ans, InternalError], st, ans]
+    pub type alias GenParser1[st, ans] = GenParser[Result[ans, InternalError], st, ans]
 
     ///
     /// Run parser `p` on the string `input`.
@@ -144,49 +144,11 @@ namespace FlixParsec/Prim {
     /// 
     pub def parsesString(p: Parser1[ans], input: String): Result[ans, String] & Impure = parseString(p, (), input)
 
-    pub def parseFile(parser: GenParser1[st, ans], 
-                        initState: st, 
-                        tabSize: Int32, 
-                        path: System.FilePath, 
-                        cs: Text.Charset): Result[ans, ParseError] & Impure =
-        use Result.flatMap;
-        let* exists = System/IO.fileExists(path) |> Result.mapErr(generalError);
-        if (exists) {
-            let* src = System/IO.readFile(cs, path) |> Result.mapErr(generalError);
-            runGenParser(parser, initState, tabSize, src)
-        } else
-            Err(fileNotFoundError(path))
-
-
-    pub def parsesFile(parser: Parser1[ans], tabSize: Int32, path: System.FilePath, cs: Text.Charset): Result[ans, String] & Impure =
-        match parseFile(parser, (), tabSize, path, cs) {
-            case Ok(a) => Ok(a)
-            case Err(e) => Err(showSourcePosition(e.position) + ": " + e.message)
-        }
-
-    pub def parseFileWithBOM(parser: GenParser1[st, ans], 
-                                initState: st, 
-                                tabSize: Int32, 
-                                path: System.FilePath): Result[ans, ParseError] & Impure =
-        use Result.flatMap;
-        let* exists = System/IO.fileExists(path) |> Result.mapErr(generalError);
-        if (exists) {
-            let* src = System/File/BOM.readFileWithBOM(path) |> Result.mapErr(generalError);
-            runGenParser(parser, initState, tabSize, src)
-        } else
-            Err(fileNotFoundError(path))
-
-    pub def parsesFileWithBOM(parser: Parser1[ans], tabSize: Int32, path: System.FilePath): Result[ans, String] & Impure =
-        match parseFileWithBOM(parser, (), tabSize, path) {
-            case Ok(a) => Ok(a)
-            case Err(e) => Err(showSourcePosition(e.position) + ": " + e.message)
-        }
 
     pub def return(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
 
     pub def throwError(message: String) : GenParser[ka1, st, ans] =
-        use Chain.{singleton};
-        GenParser((_, fk, _, st, _) -> fk(st.pos, singleton(message)))
+        GenParser((_, fk, _, st, _) -> fk(st.pos, Chain.point(message)))
 
     pub def fail(message: String) : GenParser[ka1, st, ans] = throwError(message)
 
@@ -196,9 +158,8 @@ namespace FlixParsec/Prim {
     /// monad). It must not be a "stateful" operation with unlimited extent.
     ///
     pub def swapError(p: GenParser[ka1, st, ans], message: String) : GenParser[ka1, st, ans] =
-        use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
-            let fk1 = (pos, _) -> fk(pos, singleton(message));
+            let fk1 = (pos, _) -> fk(pos, Chain.point(message));
             let sk1 = (x, _, _, st1, _) -> sk(x, fk, ctx, st1, errs);
             apply1(p, sk1, fk1, ctx, st, errs)
         )
@@ -255,12 +216,11 @@ namespace FlixParsec/Prim {
         )
 
     pub def liftActionResult(f: Unit -> Result[a, e] & ef): GenParser[ka1, st, a] =
-        use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let ans = f() as & Impure;
             match ans {
                 case Ok(a) => sk(a, fk, ctx, st, errs)
-                case Err(_) => fk(st.pos, singleton("listActionResult"))
+                case Err(_) => fk(st.pos, Chain.point("listActionResult"))
             }
         )
 
@@ -290,17 +250,15 @@ namespace FlixParsec/Prim {
 
 
     pub def endOfInput() : GenParser[ka1, st, Unit] =
-        use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
             if (st.pos >= len)
                 sk((), fk, ctx, st, errs)
             else
-                fk(st.pos, singleton("eof - not at end"))
+                fk(st.pos, Chain.point("eof - not at end"))
         ) 
 
     pub def take(len: Int32): GenParser[ka1, st, String] =
-        use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let slen = String.length(ctx.input);
             let end = if (st.pos + len > slen) slen else st.pos + len;
@@ -310,7 +268,6 @@ namespace FlixParsec/Prim {
 
 
     pub def take1(): GenParser[ka1, st, Char] =
-        use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             let len = String.length(ctx.input);
             if (st.pos < len) {
@@ -318,18 +275,17 @@ namespace FlixParsec/Prim {
                 sk(c, fk, ctx, {pos = st.pos + 1 | st}, errs)
             } else {
                 let msg = "anyChar - eof";
-                fk(st.pos, singleton(msg))
+                fk(st.pos, Chain.point(msg))
             }
         )
 
 
     // Truncates if eof...
     pub def horizon(n: Int32): GenParser[ka1, st, String] = 
-        use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             if (n < 0) {
                 let msg = "horizon - invalid size";
-                fk(st.pos, singleton(msg))
+                fk(st.pos, Chain.point(msg))
             } else {
                 let str = String.slice(st.pos, st.pos + n, ctx.input);
                 sk(str, fk, ctx, {pos = st.pos + String.length(str) | st}, errs)
@@ -351,12 +307,11 @@ namespace FlixParsec/Prim {
     /// Run parser `p` within a bounded length
     ///
     pub def bounded(n: Int32, p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
-        use Chain.{singleton};
         GenParser((sk, fk, ctx, st, errs) ->
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
             let str1 = String.slice(st.pos, st.pos + n, ctx.input);
-            let fk1 = (_, _) -> fk(st.pos, singleton("bounded"));
+            let fk1 = (_, _) -> fk(st.pos, Chain.point("bounded"));
             let sk1 = (ans, _, _, st1) -> sk(ans, fk, ctx, {pos = st.pos + String.length(str1) | st1});
             apply1(p, sk1, fk1, {input = str1 | ctx}, {pos = 0 | st}, errs)
         )

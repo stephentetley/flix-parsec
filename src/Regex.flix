@@ -22,20 +22,18 @@ namespace FlixParsec/Regex {
     use FlixParsec.GenParser.{GenParser};
 
     pub def lookingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, String] =
-        use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
             let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
             match ans { 
                 case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
-                case None(_) => fk(st.pos, singleton("lookingAt failed"))
+                case None(_) => fk(st.pos, Chain.point("lookingAt failed"))
             }
         )
 
 
     /// Version of `lookingAt` with a MatchEvaluator
     pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] & Impure =
-        use Chain.{singleton};
         use Text/Regex.{evalBoundedStartsWith};
         use Text/Regex/MatchEvaluator.{tuple2, getLength};
         let eval2 = tuple2(getLength(), eval);
@@ -43,18 +41,17 @@ namespace FlixParsec/Regex {
             let ans = evalBoundedStartsWith(st.pos, String.length(ctx.input), patt, eval2, ctx.input) as & Pure;
             match ans {
                 case Ok(len, x) => sk(x, fk, ctx, {pos = st.pos + len | st}, errs)
-                case Err(_) => fk(st.pos, singleton("evalLookingAt failed"))
+                case Err(_) => fk(st.pos, Chain.point("evalLookingAt failed"))
             }
         )
 
     pub def skippingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, Unit] = 
-        use Chain.{singleton};
         use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
             let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
             match ans { 
                 case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
-                case None => fk(st.pos, singleton("skippingAt failed"))
+                case None => fk(st.pos, Chain.point("skippingAt failed"))
             }
         )
 
