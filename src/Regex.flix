@@ -27,7 +27,7 @@ namespace FlixParsec/Regex {
             let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
             match ans { 
                 case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
-                case None(_) => fk(st.pos, Chain.point("lookingAt failed"))
+                case None(_) => fk(st.pos, Chain.singleton("lookingAt failed"))
             }
         )
 
@@ -41,7 +41,7 @@ namespace FlixParsec/Regex {
             let ans = evalBoundedStartsWith(st.pos, String.length(ctx.input), patt, eval2, ctx.input) as & Pure;
             match ans {
                 case Ok(len, x) => sk(x, fk, ctx, {pos = st.pos + len | st}, errs)
-                case Err(_) => fk(st.pos, Chain.point("evalLookingAt failed"))
+                case Err(_) => fk(st.pos, Chain.singleton("evalLookingAt failed"))
             }
         )
 
@@ -51,7 +51,7 @@ namespace FlixParsec/Regex {
             let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
             match ans { 
                 case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
-                case None => fk(st.pos, Chain.point("skippingAt failed"))
+                case None => fk(st.pos, Chain.singleton("skippingAt failed"))
             }
         )
 

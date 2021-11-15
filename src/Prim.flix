@@ -148,7 +148,7 @@ namespace FlixParsec/Prim {
     pub def return(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
 
     pub def throwError(message: String) : GenParser[ka1, st, ans] =
-        GenParser((_, fk, _, st, _) -> fk(st.pos, Chain.point(message)))
+        GenParser((_, fk, _, st, _) -> fk(st.pos, Chain.singleton(message)))
 
     pub def fail(message: String) : GenParser[ka1, st, ans] = throwError(message)
 
@@ -159,7 +159,7 @@ namespace FlixParsec/Prim {
     ///
     pub def swapError(p: GenParser[ka1, st, ans], message: String) : GenParser[ka1, st, ans] =
         GenParser((sk, fk, ctx, st, errs) ->
-            let fk1 = (pos, _) -> fk(pos, Chain.point(message));
+            let fk1 = (pos, _) -> fk(pos, Chain.singleton(message));
             let sk1 = (x, _, _, st1, _) -> sk(x, fk, ctx, st1, errs);
             apply1(p, sk1, fk1, ctx, st, errs)
         )
@@ -220,7 +220,7 @@ namespace FlixParsec/Prim {
             let ans = f() as & Impure;
             match ans {
                 case Ok(a) => sk(a, fk, ctx, st, errs)
-                case Err(_) => fk(st.pos, Chain.point("listActionResult"))
+                case Err(_) => fk(st.pos, Chain.singleton("listActionResult"))
             }
         )
 
@@ -255,7 +255,7 @@ namespace FlixParsec/Prim {
             if (st.pos >= len)
                 sk((), fk, ctx, st, errs)
             else
-                fk(st.pos, Chain.point("eof - not at end"))
+                fk(st.pos, Chain.singleton("eof - not at end"))
         ) 
 
     pub def take(len: Int32): GenParser[ka1, st, String] =
@@ -275,7 +275,7 @@ namespace FlixParsec/Prim {
                 sk(c, fk, ctx, {pos = st.pos + 1 | st}, errs)
             } else {
                 let msg = "anyChar - eof";
-                fk(st.pos, Chain.point(msg))
+                fk(st.pos, Chain.singleton(msg))
             }
         )
 
@@ -285,7 +285,7 @@ namespace FlixParsec/Prim {
         GenParser((sk, fk, ctx, st, errs) ->
             if (n < 0) {
                 let msg = "horizon - invalid size";
-                fk(st.pos, Chain.point(msg))
+                fk(st.pos, Chain.singleton(msg))
             } else {
                 let str = String.slice(st.pos, st.pos + n, ctx.input);
                 sk(str, fk, ctx, {pos = st.pos + String.length(str) | st}, errs)
@@ -311,7 +311,7 @@ namespace FlixParsec/Prim {
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
             let str1 = String.slice(st.pos, st.pos + n, ctx.input);
-            let fk1 = (_, _) -> fk(st.pos, Chain.point("bounded"));
+            let fk1 = (_, _) -> fk(st.pos, Chain.singleton("bounded"));
             let sk1 = (ans, _, _, st1) -> sk(ans, fk, ctx, {pos = st.pos + String.length(str1) | st1});
             apply1(p, sk1, fk1, {input = str1 | ctx}, {pos = 0 | st}, errs)
         )
