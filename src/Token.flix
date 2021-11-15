@@ -239,15 +239,9 @@ namespace FlixParsec/Token {
         if (langDef.caseSensitive)
             List.exists(x -> x == name, langDef.reservedNames)
         else
-            List.exists(x -> equalsCI(x, name), langDef.reservedNames)
+            List.exists(x -> FlixParsec/Internal/SimpleCollator.caseInsenstiveEquals(x, name), langDef.reservedNames)
 
-    def equalsCI(s1: String, s2: String): Bool = equalsCIHelper(s1, s2) as & Pure 
 
-    def equalsCIHelper(s1: String, s2: String): Bool & Impure = 
-        use Text/Collator.CollatorStrength.{Primary};
-        let collator = Text/Collator.getInstance();
-        Text/Collator.setStrength!(collator, Primary);
-        Text/Collator.equals(collator, s1, s2)
 
     /// Reserved-op
     pub def reservedOp(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] = 
