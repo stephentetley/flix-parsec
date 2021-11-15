@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-
+/// Note
+/// This a substitute for the Text/Collator module in `flix-sandbox` that 
+/// has a larger API and allows the collator to be customized
 
 namespace FlixParsec/Internal/SimpleCollator {
 
-    
-    pub def caseInsenstiveEquals(s1: String, s2: String): Bool = equalsCIHelper(s1, s2) as & Pure 
+    /// Compare with the default collator (this will be locale specific).
+    pub def caseInsenstiveEquals(s1: String, s2: String): Bool = caseInsenstiveEqualsHelper(s1, s2) as & Pure 
 
-    def caseInsenstiveEquals(s1: String, s2: String): Bool & Impure = 
+    def caseInsenstiveEqualsHelper(s1: String, s2: String): Bool & Impure = 
         import java.text.Collator:getInstance();
         import java.text.Collator.equals(String, String);
         let collator = getInstance();
