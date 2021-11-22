@@ -29,5 +29,4 @@ namespace FlixParsec/Internal/SimpleCollator {
         let collator = getInstance();
         equals(collator, s1, s2)
 
-
 }
