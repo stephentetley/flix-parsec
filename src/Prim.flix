@@ -36,9 +36,24 @@ namespace FlixParsec {
 
     pub type alias Parser[ka1, ans] = GenParser[ka1, Unit, ans]
 
-    /// instance Functor[TextParser[r]] {
-    ///     def map(f: a -> b & ef, x: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef = map(f, x)
-    /// }
+    instance Functor[GenParser[ka, st]] {
+        pub def map(f: a -> b & ef, x: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef = 
+            FlixParsec/Prim.map(f, x)
+    }
+
+    instance Applicative[GenParser[ka, st]] {
+        pub def point(x: a): GenParser[ka, st, a] = 
+            FlixParsec/Prim.point(x)
+
+        pub def ap(f: GenParser[ka, st, a -> b & ef], x: GenParser[ka, st, a]): GenParser[ka, st, b] & ef = 
+            FlixParsec/Prim.ap(f, x)
+    }
+
+
+    instance Monad[GenParser[ka, st]] {
+        pub def flatMap(f: a -> GenParser[ka, st, b] & ef, o: GenParser[ka, st, a]): GenParser[ka, st, b] & ef = 
+            FlixParsec/Prim.flatMap(f, o)
+    }
 
 }
 
@@ -144,8 +159,9 @@ namespace FlixParsec/Prim {
     /// 
     pub def parsesString(p: Parser1[ans], input: String): Result[ans, String] & Impure = parseString(p, (), input)
 
+    pub def point(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
 
-    pub def return(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
+    pub def return(x: a): GenParser[ka1, st, a] = point(x)
 
     pub def throwError(message: String) : GenParser[ka1, st, ans] =
         GenParser((_, fk, _, st, _) -> fk(st.pos, Chain.singleton(message)))
@@ -173,23 +189,22 @@ namespace FlixParsec/Prim {
         let GenParser(pf) = p;
         pf(sk, fk, ctx, st, errs)
 
-    pub def map(f: a -> b & ef, p: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
+    pub def map(f: a -> b & ef, p: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef =
         GenParser((sk, fk, ctx, pos, errs) ->
             let sk1 = (x, fk1, _, pos1, errs1) -> sk(f(x) as & Impure, fk1, ctx, pos1, errs1);
             apply1(p, sk1, fk, ctx, pos, errs)
-        )
+        ) as & ef
 
-    pub def ap(mf: GenParser[ka1, st, a -> b & ef], ma: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
-        let* f = mf;
-        let* a = ma;
-        liftAction(_ -> f(a) as & Impure)
+    pub def ap(mf: GenParser[ka1, st, a -> b & ef], ma: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef =
+        (let* f = mf; let* a = ma; liftAction(_ -> f(a) as & Impure)) as & ef
 
-    pub def bind(ma: GenParser[ka1, st, a], k: a -> GenParser[ka1, st, b]):  GenParser[ka1, st, b] =
+    pub def bind(ma: GenParser[ka1, st, a], k: a -> GenParser[ka1, st, b] & ef):  GenParser[ka1, st, b] & ef =
         GenParser(sk ->
-            apply1(ma, x -> apply1(k(x), sk))
-        )
+            apply1(ma, x -> apply1(k(x) as & Pure, sk))
+        ) as & ef
 
-    pub def flatMap(k: a -> GenParser[ka1, st, b], ma: GenParser[ka1, st, a]):  GenParser[ka1, st, b] = bind(ma, k)
+    pub def flatMap(k: a -> GenParser[ka1, st, b] & ef, ma: GenParser[ka1, st, a]):  GenParser[ka1, st, b] & ef = 
+        bind(ma, k)
 
 
     pub def ifThenElse(cond: GenParser[ka1, st, a], 
