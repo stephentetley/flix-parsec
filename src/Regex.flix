@@ -24,7 +24,7 @@ namespace FlixParsec/Regex {
     pub def lookingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, String] =
         use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
+            let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input);
             match ans { 
                 case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None(_) => fk(st.pos, Chain.singleton("lookingAt failed"))
@@ -33,12 +33,12 @@ namespace FlixParsec/Regex {
 
 
     /// Version of `lookingAt` with a MatchEvaluator
-    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] & Impure =
+    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/Regex.{evalBoundedStartsWith};
         use Text/Regex/MatchEvaluator.{tuple2, getLength};
         let eval2 = tuple2(getLength(), eval);
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = evalBoundedStartsWith(st.pos, String.length(ctx.input), patt, eval2, ctx.input) as & Pure;
+            let ans = evalBoundedStartsWith(st.pos, String.length(ctx.input), patt, eval2, ctx.input);
             match ans {
                 case Ok(len, x) => sk(x, fk, ctx, {pos = st.pos + len | st}, errs)
                 case Err(_) => fk(st.pos, Chain.singleton("evalLookingAt failed"))
@@ -48,7 +48,7 @@ namespace FlixParsec/Regex {
     pub def skippingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, Unit] = 
         use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input) as & Pure;
+            let ans = boundedStartsWith(st.pos, String.length(ctx.input), patt, ctx.input);
             match ans { 
                 case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None => fk(st.pos, Chain.singleton("skippingAt failed"))
