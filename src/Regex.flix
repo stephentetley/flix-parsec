@@ -65,7 +65,7 @@ namespace FlixParsec/Regex {
     pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/Regex/Pattern.{compile};
         use FlixParsec/Prim.{bind, liftResult};
-        bind(liftResult(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval) as & Pure) /// TODO remove cast
+        bind(liftResult(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval))
 
 
     /// Parsing fails if regex does not compile.
