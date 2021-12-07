@@ -24,7 +24,7 @@ namespace FlixParsec/Internal/SimpleCollator {
     pub def caseInsenstiveEquals(s1: String, s2: String): Bool = caseInsenstiveEqualsHelper(s1, s2) as & Pure 
 
     def caseInsenstiveEqualsHelper(s1: String, s2: String): Bool & Impure = 
-        import java.text.Collator:getInstance();
+        import static java.text.Collator.getInstance();
         import java.text.Collator.equals(String, String);
         let collator = getInstance();
         equals(collator, s1, s2)
