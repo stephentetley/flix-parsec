@@ -47,18 +47,18 @@ pub def showOptionFiles(xs: List[Option[DirListingLine]]): Unit & Impure =
     };
     match xs {
         case Nil => ()
-        case Some(x) :: rs => { Console.printLine(getName(x)); showOptionFiles(rs) }
+        case Some(x) :: rs => { println(getName(x)); showOptionFiles(rs) }
         case None :: rs => showOptionFiles(rs)
     }
 
 @test
 def parseFile01(): Unit & Impure = 
     let path = "e:\coding\flix\text-parser\testdata\dir.txt";
-    let write1 = Console.printLine << DirListing.toString;
+    let write1 = println << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
+        case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
-            case Nil => Console.printLine("empty results")
+            case Nil => println("empty results")
             case _ => List.foreach(write1, xs)
         }
     } 
@@ -142,11 +142,11 @@ def dirListingLine02(): Result[List[DirListingLine], System.Error] & Impure =
 @test
 def parseFile02(): Unit & Impure = 
     let path = "e:\coding\flix\text-parser\testdata\long_names_dir.txt";
-    let write1 = Console.printLine << DirListing.toString;
+    let write1 = println << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
+        case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
-            case Nil => Console.printLine("empty results")
+            case Nil => println("empty results")
             case _ => List.foreach(write1, xs)
         }
     }   
@@ -155,11 +155,11 @@ def parseFile02(): Unit & Impure =
 @test
 def temp01(): Unit & Impure = 
     let path = "e:\coding\flix\text-parser\testdata\flix_dir.txt";
-    let write1 = Console.printLine << DirListing.toString;
+    let write1 = println << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
+        case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
-            case Nil => Console.printLine("empty results")
+            case Nil => println("empty results")
             case _ => List.foreach(write1, xs)
         }
     } 
@@ -167,11 +167,11 @@ def temp01(): Unit & Impure =
 @test
 def temp02(): Unit & Impure = 
     let path = "G:\work\Projects\edm2\prep-for-edms_feb2020\cso_sps_dir.txt";
-    let write1 = Console.printLine << DirListing.toString;
+    let write1 = println << DirListing.toString;
     match DirListing.parseDirListing(path) {
-        case Err(e) => Console.printLine(TextParser/Error.showParserError(e))
+        case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
-            case Nil => Console.printLine("empty results")
+            case Nil => println("empty results")
             case _ => List.foreach(write1, xs)
         }
     } 

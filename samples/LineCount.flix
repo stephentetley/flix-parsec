@@ -32,8 +32,8 @@ namespace LineCount {
     pub def runLineCounter(header: String, counter: String -> Int32 & e, s: String): Unit & Impure =         
         let (nt, a) = timeOperation(_ -> counter(s)) as & Impure;
         let msg = "Time: ${ Int64.toString(nt) }, lines: ${Int32.toString(a)}";
-        Console.printLine(header);
-        Console.printLine(msg)
+        println(header);
+        println(msg)
 
 
     pub def lineCount01(s : String): Int32 = 
@@ -51,7 +51,7 @@ namespace LineCount {
 
     pub def lineCount02(s: String): Int32 & Impure = 
         match runs(lc02(), s) {
-            case Err(e) => { Console.printLine(System/Error.toString(e)); -1 }
+            case Err(e) => { println(System/Error.toString(e)); -1 }
             case Ok(c) => c
         }
 
@@ -66,7 +66,7 @@ namespace LineCount {
 
     pub def lineCount03(s: String): Int32 & Impure = 
         match runs(lc03(), s) {
-            case Err(e) => { Console.printLine(System/Error.toString(e)); -1 }
+            case Err(e) => { println(System/Error.toString(e)); -1 }
             case Ok(c) => c
         }
 

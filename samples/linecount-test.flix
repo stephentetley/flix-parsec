@@ -4,7 +4,7 @@ use LineCount.{runLineCounter};
 def runlineCount01(path: String): Unit & Impure = 
     let path1 = System/FilePath.new(path);
     match System/File.readFile(path1, Text/Charset.utf_16le()) { 
-        case Err(e) => Console.printLine(System/Error.toString(e))
+        case Err(e) => println(System/Error.toString(e))
         case Ok(s) => {
             runLineCounter("lineCount01", LineCount.lineCount01, s)
         }
@@ -14,7 +14,7 @@ def runlineCount01(path: String): Unit & Impure =
 def runlineCount03(path: String): Unit & Impure = 
     let path1 = System/FilePath.new(path);
     match System/File.readFile(path1, Text/Charset.utf_16le()) { 
-        case Err(e) => Console.printLine(System/Error.toString(e))
+        case Err(e) => println(System/Error.toString(e))
         case Ok(s) => {
             runLineCounter("lineCount03", LineCount.lineCount03, s)
         }
@@ -25,7 +25,7 @@ def runlineCount03(path: String): Unit & Impure =
 def runTests(path: String): Unit & Impure = 
     let path1 = System/FilePath.new(path);
     match System/File.readFile(path1, Text/Charset.utf_16le()) { 
-        case Err(e) => Console.printLine(System/Error.toString(e))
+        case Err(e) => println(System/Error.toString(e))
         case Ok(s) => {
             runLineCounter("lineCount01", LineCount.lineCount01, s);
             runLineCounter("lineCount02", LineCount.lineCount02, s);

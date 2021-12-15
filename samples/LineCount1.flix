@@ -28,8 +28,8 @@ namespace LineCount1 {
     pub def runLineCounter(header: String, counter: String -> Int32 & e, s: String): Unit & Impure =         
         let (nt, a) = timeOperation(_ -> counter(s)) as & Impure;
         let msg = "Time: ${ Int64.toString(nt) }, lines: ${Int32.toString(a)}";
-        Console.printLine(header);
-        Console.printLine(msg)
+        println(header);
+        println(msg)
 
     pub def lineCount01(s : String): Int32 = 
         lineCount01Helper(s, String.length(s), 1, 0)
@@ -48,7 +48,7 @@ namespace LineCount1 {
     pub def runLineCount1(path: String): Unit & Impure = 
         let path1 = System/FilePath.new(path);
         match System/File.readFile(path1, Text/Charset.utf_16le()) { 
-            case Err(e) => Console.printLine(System/Error.toString(e))
+            case Err(e) => println(System/Error.toString(e))
             case Ok(s) => runLineCounter("lineCount01", lineCount01, s)
         }
         
