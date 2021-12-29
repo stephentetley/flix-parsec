@@ -161,8 +161,6 @@ namespace FlixParsec/Prim {
 
     pub def point(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
 
-    pub def return(x: a): GenParser[ka1, st, a] = point(x)
-
     pub def throwError(message: String) : GenParser[ka1, st, ans] =
         GenParser((_, fk, _, st, _) -> fk(st.pos, Chain.singleton(message)))
 
@@ -215,12 +213,12 @@ namespace FlixParsec/Prim {
 
 
     pub def liftOption(x: Option[a], errMsg: String): GenParser[ka1, st, a] =  match x {
-        case Some(a) => return(a)
+        case Some(a) => point(a)
         case None    => fail(errMsg)
     }
 
     pub def liftResult(x: Result[a, e], makeErrMsg: e -> String): GenParser[ka1, st, a] =  match x {
-        case Ok(a) => return(a)
+        case Ok(a) => point(a)
         case Err(e) => fail(makeErrMsg(e))
     }
 

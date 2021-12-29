@@ -17,10 +17,12 @@
 
 namespace FlixParsec/Literal {
 
+    use Functor.{map};
+    use Applicative.{point, *>};
+
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, flatMap, map, swapError, liftResult};
+    use FlixParsec/Prim.{flatMap, swapError, liftResult};
     use FlixParsec/Combinators.{alt, choice, between, manyWith};
-    use FlixParsec/Combinators.{*>};
     use FlixParsec/Char.{char, string, satisfy};
     use FlixParsec/Regex.{lookingAts};
 
@@ -64,7 +66,7 @@ namespace FlixParsec/Literal {
     def charUnicode(): GenParser[ka1, st, Char] = 
         let* _      = alt(char('u'), char('U'));
         let* num    = hexNumber() |> map(Char.fromInt32);
-        return(num) 
+        point(num) 
 
 
     def hexNumber(): GenParser[ka1, st, Int32] =  
@@ -79,9 +81,9 @@ namespace FlixParsec/Literal {
 
     def charEsc(): GenParser[ka1, st, Char] = 
         choice(
-                (char('t')  *> return('\u0009'))    /// tab
-            :: (char('r')   *> return('\u000D'))    /// carriage return
-            :: (char('n')   *> return('\u000A'))    /// line feed
+                (char('t')  *> point('\u0009'))    /// tab
+            :: (char('r')   *> point('\u000D'))    /// carriage return
+            :: (char('n')   *> point('\u000A'))    /// line feed
             :: Nil
         )    
 

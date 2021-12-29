@@ -18,11 +18,13 @@
 
 namespace FlixParsec/Token {
 
+    use Functor.{ignore};
+    use Applicative.{point, *>};
+
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, return, fail};
-    use FlixParsec/Combinators.{alt, ignore, seqRight, skipMany1, skipMany, between, 
+    use FlixParsec/Prim.{flatMap, fail};
+    use FlixParsec/Combinators.{alt, skipMany1, skipMany, between, 
         sepBy, sepBy1, notFollowedBy, manyWith, sepByWith, sepBy1With};
-    use FlixParsec/Combinators.{*>};
     use FlixParsec/Char.{string, char, oneOf, noneOf, satisfy};
     
 
@@ -131,7 +133,7 @@ namespace FlixParsec/Token {
     pub def lexeme(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] = 
         let* a  = p;
         let* _  = whiteSpace(langDef);
-        return(a)
+        point(a)
 
     /// White space
 
@@ -165,24 +167,24 @@ namespace FlixParsec/Token {
 
     def inCommentMulti(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
         let startEnd = List.distinct(String.toList(langDef.commentEnd) ::: String.toList(langDef.commentStart));
-        let endP = string(langDef.commentEnd)   *> return(Done);
-        let p1 = multilineComment(langDef)      *> return(More);
-        let p2 = skipMany1(noneOf(startEnd))    *> return(More);
-        let p3 = oneOf(startEnd)                *> return(More);
+        let endP = string(langDef.commentEnd)   *> point(Done);
+        let p1 = multilineComment(langDef)      *> point(More);
+        let p2 = skipMany1(noneOf(startEnd))    *> point(More);
+        let p3 = oneOf(startEnd)                *> point(More);
         let* ans = endP `alt` (p1 `alt` (p2 `alt` p3));
         match ans { 
-            case Done => return()
+            case Done => point()
             case More => inCommentSingle(langDef)
         }
 
     def inCommentSingle(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
         let startEnd = List.distinct(String.toList(langDef.commentEnd) ::: String.toList(langDef.commentStart));
-        let endP = string(langDef.commentEnd) *> return(Done);
-        let p1 = skipMany1(noneOf(startEnd)) *> return(More);
-        let p2 = oneOf(startEnd) *> return(More);
+        let endP = string(langDef.commentEnd) *> point(Done);
+        let p1 = skipMany1(noneOf(startEnd)) *> point(More);
+        let p2 = oneOf(startEnd) *> point(More);
         let* ans = endP `alt` p1 `alt` p2;
         match ans { 
-            case Done => return()
+            case Done => point()
             case More => inCommentSingle(langDef)
         }
 
@@ -194,7 +196,7 @@ namespace FlixParsec/Token {
     def reservedHelper(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
         let* _  = caseString(langDef, name);
         let* _  = notFollowedBy(langDef.identLetter);
-        return()
+        point()
 
     def caseString(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
         if (langDef.caseSensitive) 
@@ -208,7 +210,7 @@ namespace FlixParsec/Token {
                 let* _ = caseChar(c);
                 walk(rs)
             }
-            case Nil => return()
+            case Nil => point()
         }           
     
     def caseChar(c: Char): GenParser[ka1, st, Char] = 
@@ -227,13 +229,13 @@ namespace FlixParsec/Token {
         if (isReservedName(langDef, name))
             fail("reserved word: ${name}")
         else 
-            return(name) 
+            point(name) 
 
 
     def ident(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
         let* c1 = langDef.identStart;
         let* s  = manyWith((ac, x) -> "${ac}${x}", "${c1}", langDef.identLetter);
-        return(s)
+        point(s)
 
     def isReservedName(langDef: LanguageDef[ka1, st], name: String): Bool = 
         if (langDef.caseSensitive)
@@ -250,7 +252,7 @@ namespace FlixParsec/Token {
     def reservedOpHelper(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
         let* _  = string(name);
         let* _  = notFollowedBy(langDef.opLetter);
-        return()
+        point()
 
     /// Operator
     pub def operator(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
@@ -261,12 +263,12 @@ namespace FlixParsec/Token {
         if (isReservedOp(langDef, name))
             fail("reserved word: ${name}")
         else 
-            return(name) 
+            point(name) 
 
     def oper(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
         let* c1 = langDef.opStart;
         let* s  = manyWith((ac, x) -> "${ac}${x}", "${c1}", langDef.opLetter);
-        return(s)
+        point(s)
 
     def isReservedOp(langDef: LanguageDef[ka1, st], name: String): Bool = 
         List.exists(x -> x == name, langDef.reservedOpNames)

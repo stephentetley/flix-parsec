@@ -21,15 +21,17 @@
 
 namespace FlixParsec/TokenSimple {
 
+    use Applicative.{point, <*};
+
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, return, liftResult};
-    use FlixParsec/Combinators.{between, seqLeft, sepBy, sepBy1, sepByWith, sepBy1With};
+    use FlixParsec/Prim.{flatMap, liftResult};
+    use FlixParsec/Combinators.{between, sepBy, sepBy1, sepByWith, sepBy1With};
     use FlixParsec/Char.{string};
     use FlixParsec/Text.{whiteSpace, digits};
     use FlixParsec/Regex.{lookingAts};
     
 
-    pub def lexeme(p: GenParser[ka1, st, r]): GenParser[ka1, st, r] = seqLeft(p, whiteSpace())
+    pub def lexeme(p: GenParser[ka1, st, r]): GenParser[ka1, st, r] = p <* whiteSpace()
 
     pub def symbol(s: String): GenParser[ka1, st, String] = lexeme(string(s))
 

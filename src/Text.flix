@@ -17,9 +17,11 @@
 
 namespace FlixParsec/Text {
 
+    use Functor.{<$>};
+    use Applicative.{point};
+
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, flatMap, fail, map, lookahead, swapError, liftResult};
-    use FlixParsec/Combinators.{ignore};
+    use FlixParsec/Prim.{flatMap, fail, lookahead, swapError, liftResult};    
     use FlixParsec/Regex.{lookingAts, skippingAts};
     use FlixParsec/Char.{char};
     
@@ -41,7 +43,7 @@ namespace FlixParsec/Text {
         let regex = if (consumeNewline) ".*\\R?" else ".*";
         let* restofline = lookahead(lookingAts(regex));
         let* ans = bounded(String.length(restofline), p);
-        return(ans)
+        point(ans)
 
     /// Parse the rest of the line.
     pub def restOfLine(consumeNewline: Bool): GenParser[ka1, st, String] = 
@@ -54,7 +56,7 @@ namespace FlixParsec/Text {
 
     /// Does not consume input.
     pub def restOfLineLength(): GenParser[ka1, st, Int32] = 
-        map(String.length, peekRestOfLine())
+        String.length <$> peekRestOfLine()
 
     /// Skip the rest of the line including the terminating newline if present.
     pub def skipLine(): GenParser[ka1, st, Unit] =
@@ -66,7 +68,7 @@ namespace FlixParsec/Text {
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
         if (Text/Regex.matches(rest1, patt)) 
-            return()
+            point()
         else
             fail("anchorLineMatches not matched")
 
@@ -74,7 +76,7 @@ namespace FlixParsec/Text {
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
         if (Text/Regex.contains(rest1, patt)) 
-            return()
+            point()
         else
             fail("anchorLine not matched")
 
@@ -115,7 +117,7 @@ namespace FlixParsec/Text {
 
         
     pub def content(n: Int32): GenParser[ka1, st, String] =
-        map(String.trim, FlixParsec/Prim.horizon(n))
+        String.trim <$> FlixParsec/Prim.horizon(n)
 
     /// One or more ASCII digits [0-9].
     pub def digits(): GenParser[ka1, st, String] = lookingAts("\\d+")

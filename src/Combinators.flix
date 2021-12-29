@@ -17,126 +17,64 @@
 
 namespace FlixParsec/Combinators {
 
+    use Functor.{map};
+    use Applicative.{point, <*, *>};
+
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, flatMap, fail, map, ap, bind, ifThenElse, lookahead};
+    use FlixParsec/Prim.{flatMap, fail, bind, ifThenElse, lookahead};
 
-    /// Alias for `seqRight`
-    pub def *>(p1: GenParser[ka1, st, a], p2: GenParser[ka1, st, b]): GenParser[ka1, st, b] = 
-        seqRight(p1, p2)
-
-    /// Alias for `seqLeft`
-    pub def <*(p1: GenParser[ka1, st, a], p2: GenParser[ka1, st, b]): GenParser[ka1, st, a] = 
-        seqLeft(p1, p2)
-
+    
     pub def <!>(p1: GenParser[ka1, st, a], p2: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
         alt(p1, p2)
 
-    // Haskell's <$>
-    pub def <&>(f: a -> b, p2: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
-        map(f, p2)
-
-    pub def <&(x: b, p1: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
-        p1 *> return(x)
-
-    pub def &>(p1: GenParser[ka1, st, a], x: b): GenParser[ka1, st, b] =
-        p1 *> return(x)
-
-    /// Flipped <&>
-    pub def <&&>(p2: GenParser[ka1, st, a], f: a -> b): GenParser[ka1, st, b] =
-        map(f, p2)
-
-
-    // Haskell's ap <*>
-    pub def <*>(mf: GenParser[ka1, st, a -> b], p2: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
-        ap(mf, p2)
-
-    /// Flipped <*>
-    pub def <**>(p2: GenParser[ka1, st, a], mf: GenParser[ka1, st, a -> b]): GenParser[ka1, st, b] =
-        ap(mf, p2)        
-
-
-    pub def >>=(p: GenParser[ka1, st, a], k: a -> GenParser[ka1, st, b]): GenParser[ka1, st, b] =
-        bind(p, k)
-
-
-    pub def =<<(k: a -> GenParser[ka1, st, b], p: GenParser[ka1, st, a]): GenParser[ka1, st, b] =
-        bind(p, k)
-
-    pub def >=>(f1: a -> GenParser[ka1, st, b], f2: b -> GenParser[ka1, st, c], x: a): GenParser[ka1, st, c] =
-        kleisliLeft(f1, f2, x)
-
-    pub def <=<(f1: b -> GenParser[ka1, st, c], f2: a -> GenParser[ka1, st, b], x: a): GenParser[ka1, st, c] = 
-        kleisliRight(f1, f2, x)
+    
 
     /// `alt` rolls back the parser state (including the position) if `p` fails.
     pub def alt(p: GenParser[ka1, st, a], q: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
-        ifThenElse(p, return, q)
-
-    pub def seqLeft(p: GenParser[ka1, st, a], q: GenParser[ka1, st, b]): GenParser[ka1, st, a] =
-        let* a = p;
-        let* _ = q;
-        return(a)
-
-    pub def seqRight(p: GenParser[ka1, st, a], q: GenParser[ka1, st, b]): GenParser[ka1, st, b] =
-        let* _ = p;
-        let* b = q;
-        return(b)
-
-
-    pub def kleisliLeft(f1: a -> GenParser[ka1, st, b], f2: b -> GenParser[ka1, st, c], x: a): GenParser[ka1, st, c] =
-        let* b  = f1(x);
-        let* c  = f2(b);
-        return(c)
-
-    pub def kleisliRight(f1: b -> GenParser[ka1, st, c], f2: a -> GenParser[ka1, st, b], x: a): GenParser[ka1, st, c] =
-        kleisliLeft(f2, f1, x)
+        ifThenElse(p, point, q)
 
 
     pub def notFollowedBy(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] =
-        ifThenElse(p, _ -> fail("notFollowedBy"), return()) 
+        ifThenElse(p, _ -> fail("notFollowedBy"), point()) 
         
 
 
 
     pub def choice(ps: List[GenParser[ka1, st, a]]): GenParser[ka1, st, a] =
         match ps {
-            case p1 :: rs => ifThenElse(p1, return, choice(rs))
+            case p1 :: rs => ifThenElse(p1, point, choice(rs))
             case Nil => fail("choice")
         }
 
     pub def optional(p: GenParser[ka1, st, a]): GenParser[ka1, st, Option[a]] = 
-        alt(map(Some,p), return(None))
+        alt(map(Some,p), point(None))
 
     pub def optionalWithDefault(p: GenParser[ka1, st, a], d: a): GenParser[ka1, st, a] = 
-        alt(p, return(d))
+        alt(p, point(d))
 
-
-
-    pub def ignore(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] =
-        map(constant(), p)
 
 
     pub def between(openp: GenParser[ka1, st, open], closep: GenParser[ka1, st, close], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] = 
         let* _ = openp;
         let* a = p;
         let* _ = closep;
-        return(a)
+        point(a)
 
     pub def satisfies(p: GenParser[ka1, st, a], test: a -> Bool): GenParser[ka1, st, a] = 
         let* a = p;
         if (test(a))
-            return(a)
+            point(a)
         else
             fail("satisfies")
             
     /// `p` is run with `lookahead`, no text is consumed
     pub def succeeds(p: GenParser[ka1, st, a]): GenParser[ka1, st, Bool] = 
-        alt(seqRight(lookahead(p), return(true)), return(false))
+        alt(lookahead(p) *> point(true), point(false))
 
 
     pub def countWith(combine: (ac, a) -> ac, acc: ac, n: Int32, p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
         if (n <= 0)
-            return(acc)
+            point(acc)
         else {
             let* a = p;
             countWith(combine, combine(acc, a), n-1, p)
@@ -149,7 +87,7 @@ namespace FlixParsec/Combinators {
 
 
     pub def manyWith(combine: (ac, a) -> ac, acc: ac, p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
-        ifThenElse(p, a -> manyWith(combine, combine(acc, a), p), return(acc))
+        ifThenElse(p, a -> manyWith(combine, combine(acc, a), p), point(acc))
 
 
     pub def many(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
@@ -173,7 +111,7 @@ namespace FlixParsec/Combinators {
                             acc: ac, 
                             p: GenParser[ka1, st, a], 
                             endp: GenParser[ka1, st, end]): GenParser[ka1, st, ac] = 
-        ifThenElse(endp, _ -> return(acc), bind(p, a -> manyTillWith(combine, combine(acc, a), p, endp)))
+        ifThenElse(endp, _ -> point(acc), bind(p, a -> manyTillWith(combine, combine(acc, a), p, endp)))
 
     pub def manyTill(p: GenParser[ka1, st, a], endp: GenParser[ka1, st, end]): GenParser[ka1, st, List[a]] = 
         use Chain.{empty, snoc, toList};
@@ -194,14 +132,14 @@ namespace FlixParsec/Combinators {
                         acc: ac, 
                         p: GenParser[ka1, st, a], 
                         sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
-        ifThenElse(p, x -> sepByWithHelper(combine, combine(acc, x), p, sep), return(acc))
+        ifThenElse(p, x -> sepByWithHelper(combine, combine(acc, x), p, sep), point(acc))
     
     // Initial p has been consumed
     def sepByWithHelper(combine: (ac, a) -> ac, 
                         acc: ac, 
                         p: GenParser[ka1, st, a], 
                         sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
-        ifThenElse(seqRight(sep, p), x -> sepByWithHelper(combine, combine(acc, x), p, sep), return(acc))
+        ifThenElse((sep *> p), x -> sepByWithHelper(combine, combine(acc, x), p, sep), point(acc))
 
     pub def sepBy(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
         use Chain.{empty, snoc, toList};
@@ -221,7 +159,7 @@ namespace FlixParsec/Combinators {
                         acc: ac, 
                         p: GenParser[ka1, st, a], 
                         sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
-        manyWith(combine, acc, seqLeft(p, sep))
+        manyWith(combine, acc, (p <* sep))
 
     pub def endBy(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
         use Chain.{empty, snoc, toList};
@@ -231,7 +169,7 @@ namespace FlixParsec/Combinators {
                         acc: ac, 
                         p: GenParser[ka1, st, a], 
                         sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
-        bind(seqLeft(p, sep), x -> endByWith(combine, combine(acc, x), p, sep))
+        bind((p <* sep), x -> endByWith(combine, combine(acc, x), p, sep))
 
     pub def endBy1(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
         use Chain.{empty, snoc, toList};
@@ -243,7 +181,7 @@ namespace FlixParsec/Combinators {
                             p: GenParser[ka1, st, a], 
                             sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
         let* xs = sepByWith(combine, acc, p, sep);
-        ifThenElse(sep, _ -> return(xs), return(xs))
+        ifThenElse(sep, _ -> point(xs), point(xs))
 
     // seperated and optionally terminated with sep.
     pub def sepEndBy(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
@@ -256,7 +194,7 @@ namespace FlixParsec/Combinators {
                             p: GenParser[ka1, st, a], 
                             sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
         let* xs = sepBy1With(combine, acc, p, sep);
-        ifThenElse(sep, _ -> return(xs), return(xs))
+        ifThenElse(sep, _ -> point(xs), point(xs))
 
     // seperated and optionally terminated with sep.
     pub def sepEndBy1(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
@@ -307,48 +245,52 @@ namespace FlixParsec/Combinators {
 
 
     pub def skipMany(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] = 
-        ifThenElse(p, _ -> skipMany(p), return())
+        ifThenElse(p, _ -> skipMany(p), point())
 
     pub def skipMany1(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] = 
         bind(p, _ -> skipMany(p))
 
 
     pub def skipManyTill(p: GenParser[ka1, st, a], endp: GenParser[ka1, st, end]): GenParser[ka1, st, Unit] = 
-        ifThenElse(endp, _ -> return(), bind(p, _ -> skipManyTill(p, endp)))
+        ifThenElse(endp, _ -> point(), bind(p, _ -> skipManyTill(p, endp)))
 
     pub def skipMany1Till(p: GenParser[ka1, st, a], endp: GenParser[ka1, st, end]): GenParser[ka1, st, Unit] = 
         bind(p, _ -> skipManyTill(p, endp))
 
+    /// Chain parsers
 
     pub def chainl1(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a]): GenParser[ka1, st, a] = 
         bind(p, v1 -> chainl1Helper(p, op, v1))
         
     def chainl1Helper(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a], x: a): GenParser[ka1, st, a] = 
         alt(bind(op, f -> bind(p, v1 -> chainl1Helper(p, op, f(x, v1)))), 
-            return(x))
+            point(x))
 
     pub def chainl(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a], x: a): GenParser[ka1, st, a] = 
-        alt(chainl1(p,op), return(x))
+        alt(chainl1(p,op), point(x))
 
 
     def chainr1Helper(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a], x: a): GenParser[ka1, st, a] = 
-        alt(chainr1Step(p, op, x), return(x))
+        alt(chainr1Step(p, op, x), point(x))
 
     def chainr1Step(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a], x: a): GenParser[ka1, st, a] = 
         bind(op, f -> 
             bind(bind(p, v1 -> chainr1Helper(p, op, v1)), y -> 
-                bind(chainr1Helper(p,op, f(x,y)), ans -> return(ans))))
+                bind(chainr1Helper(p,op, f(x,y)), ans -> point(ans))))
 
     pub def chainr1(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a]): GenParser[ka1, st, a] = 
         bind(p, v1 -> chainr1Helper(p, op, v1))
 
     pub def chainr(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a], x: a): GenParser[ka1, st, a] = 
-        alt(chainr1(p, op), return(x))
+        alt(chainr1(p, op), point(x))
+
+
+    /// Tupling
 
     pub def tuple2(p1: GenParser[ka1, st, a], p2: GenParser[ka1, st, b]): GenParser[ka1, st, (a, b)] =
         let* a = p1; 
         let* b = p2;
-        return((a, b))
+        point((a, b))
 
     pub def tuple3(p1: GenParser[ka1, st, a], 
                     p2: GenParser[ka1, st, b], 
@@ -356,7 +298,7 @@ namespace FlixParsec/Combinators {
         let* a = p1; 
         let* b = p2;
         let* c = p3;
-        return((a, b, c))
+        point((a, b, c))
 
     pub def tuple4(p1: GenParser[ka1, st, a], 
                     p2: GenParser[ka1, st, b], 
@@ -366,7 +308,7 @@ namespace FlixParsec/Combinators {
         let* b = p2;
         let* c = p3;
         let* d = p4;
-        return((a, b, c, d))
+        point((a, b, c, d))
 
 
     pub def tuple5(p1: GenParser[ka1, st, a], 
@@ -379,7 +321,7 @@ namespace FlixParsec/Combinators {
         let* c = p3;
         let* d = p4;
         let* e = p5;
-        return((a, b, c, d, e))
+        point((a, b, c, d, e))
 
     pub def tuple6(p1: GenParser[ka1, st, a], 
                     p2: GenParser[ka1, st, b], 
@@ -394,7 +336,7 @@ namespace FlixParsec/Combinators {
         let* d = p4;
         let* e = p5;
         let* f = p6;
-        return((a, b, c, d, e, f))
+        point((a, b, c, d, e, f))
 
     pub def tuple7(p1: GenParser[ka1, st, a], 
                     p2: GenParser[ka1, st, b], 
@@ -410,7 +352,7 @@ namespace FlixParsec/Combinators {
         let* e = p5;
         let* f = p6;
         let* g = p7;
-        return((a, b, c, d, e, f, g))
+        point((a, b, c, d, e, f, g))
 
     pub def tuple8(p1: GenParser[ka1, st, a], 
                     p2: GenParser[ka1, st, b], 
@@ -428,7 +370,7 @@ namespace FlixParsec/Combinators {
         let* f = p6;
         let* g = p7;
         let* h = p8;
-        return((a, b, c, d, e, f, g, h))
+        point((a, b, c, d, e, f, g, h))
 
     pub def tuple9(p1: GenParser[ka1, st, a], 
                     p2: GenParser[ka1, st, b], 
@@ -448,7 +390,7 @@ namespace FlixParsec/Combinators {
         let* g = p7;
         let* h = p8;
         let* i = p9;
-        return((a, b, c, d, e, f, g, h, i))
+        point((a, b, c, d, e, f, g, h, i))
 
     pub def tuple10(p1: GenParser[ka1, st, a], 
                     p2: GenParser[ka1, st, b], 
@@ -470,6 +412,6 @@ namespace FlixParsec/Combinators {
         let* h = p8;
         let* i = p9;
         let* j = p10;
-        return((a, b, c, d, e, f, g, h, i, j))
+        point((a, b, c, d, e, f, g, h, i, j))
 
 }

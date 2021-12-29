@@ -17,8 +17,10 @@
 
 namespace FlixParsec/Char {
 
+    use Applicative.{point};
+
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{return, flatMap, fail, map, lookahead, swapError, liftOption};
+    use FlixParsec/Prim.{flatMap, fail, lookahead, swapError, liftOption};
     use FlixParsec/Combinators.{ignore};
     use FlixParsec/Regex.{lookingAts, skippingAts};
 
@@ -26,7 +28,7 @@ namespace FlixParsec/Char {
     pub def satisfy(test: Char -> Bool): GenParser[ka1, st, Char] = 
         let* a = anyChar();
         if (test(a))
-            return(a)
+            point(a)
         else
             fail("satisfy")
 
@@ -42,7 +44,7 @@ namespace FlixParsec/Char {
     pub def string(s: String): GenParser[ka1, st, String] =
         let* s1 = FlixParsec/Prim.take(String.length(s));
         if (s1 == s)
-            return(s)
+            point(s)
         else
             fail("string")
 
