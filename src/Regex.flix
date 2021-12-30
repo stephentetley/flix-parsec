@@ -35,8 +35,8 @@ namespace FlixParsec/Regex {
     /// Version of `lookingAt` with a MatchEvaluator
     pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/Regex.{evalBoundedStartsWith};
-        use Text/Regex/MatchEvaluator.{tuple2, getLength};
-        let eval2 = tuple2(getLength(), eval);
+        use Text/Regex/MatchEvaluator.{getLength};
+        let eval2 = Applicative.product(getLength(), eval);
         GenParser((sk, fk, ctx, st, errs) ->
             let ans = evalBoundedStartsWith({start = st.pos, end = String.length(ctx.input)}, patt, eval2, ctx.input);
             match ans {
