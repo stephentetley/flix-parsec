@@ -67,7 +67,7 @@ namespace FlixParsec/Text {
     pub def anchorLineMatches(regex: String): GenParser[ka1, st, Unit] =    
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
-        if (Text/Regex.matches(patt, rest1)) 
+        if (Text/Regex.isMatch(patt, rest1)) 
             point()
         else
             fail("anchorLineMatches not matched")
@@ -75,7 +75,7 @@ namespace FlixParsec/Text {
     pub def anchorLine(regex: String): GenParser[ka1, st, Unit] =        
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
-        if (Text/Regex.contains(patt, rest1)) 
+        if (Text/Regex.isSubmatch(patt, rest1)) 
             point()
         else
             fail("anchorLine not matched")

@@ -22,9 +22,8 @@ namespace FlixParsec/Regex {
     use FlixParsec.GenParser.{GenParser};
 
     pub def lookingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, String] =
-        use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = boundedStartsWith({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
+            let ans = Text/Regex.boundedPrefix({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
             match ans { 
                 case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None(_) => fk(st.pos, Chain.singleton("lookingAt failed"))
@@ -46,9 +45,8 @@ namespace FlixParsec/Regex {
         )
 
     pub def skippingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, Unit] = 
-        use Text/Regex.{boundedStartsWith};
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = boundedStartsWith({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
+            let ans = Text/Regex.boundedPrefix({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
             match ans { 
                 case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None => fk(st.pos, Chain.singleton("skippingAt failed"))
