@@ -18,6 +18,7 @@
 
 namespace TestTextParser {
 
+/*
 def whenErr(x: Result[a, e], test: e -> Bool & ef): Bool & ef = match x {
     case Ok(_) => false
     case Err(e) => test(e)
@@ -224,4 +225,5 @@ def parseLine02(): Bool & Impure =
     let input = String.unlines("abc" :: "def" :: Nil);
     run(p1, input).whenOk(x -> x == "abc")
 
+*/
 }

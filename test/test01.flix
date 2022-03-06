@@ -1,17 +1,13 @@
 
-def main(_args: Array[String]) : Int32 & Impure = 
-    test01();
-    test02();
-    test03();
-    test04();
-    test05();
-    0
+namespace Test01 {
 
+@test
 def test01(): Unit & Impure =     
     let parser = FlixParsec/Combinators.many(FlixParsec/Char.anyChar());
     FlixParsec/Prim.parsesString(parser, "ABC") |> println;
     ()
 
+@test
 def test02(): Unit & Impure =     
     let parser = FlixParsec/Literal.charLiteral();
     FlixParsec/Prim.parsesString(parser, "'+'") |> println;
@@ -22,23 +18,25 @@ def test02(): Unit & Impure =
     FlixParsec/Prim.parsesString(parser, "'\t'") |> println;            /// tab
     ()
 
+@test
 def test03(): Unit & Impure =     
     let dquote = '\u0022';
     let parser = FlixParsec/Literal.stringLiteral();
     FlixParsec/Prim.parsesString(parser, "${dquote}abc${dquote}") |> println;
     ()
 
-/// Do we need "try"...
+@test
 def test04(): Unit & Impure =
-    use FlixParsec/Prim.{flatMap, return};
+    use FlixParsec/Prim.{flatMap, point};
     use FlixParsec/Combinators.{alt};
     use FlixParsec/Char.{char};
-    let p1 = { let* _ = char('a'); let* _ = char('b'); let* _ = char('a'); return("aba")};
-    let p2 = { let* _ = char('a'); let* _ = char('b'); let* _ = char('c'); return("abc")};
+    let p1 = { let* _ = char('a'); let* _ = char('b'); let* _ = char('a'); point("aba")};
+    let p2 = { let* _ = char('a'); let* _ = char('b'); let* _ = char('c'); point("abc")};
     let parser = alt(p1, p2);
     FlixParsec/Prim.parsesString(parser, "abc") |> println;
     ()
 
+@test
 def test05(): Unit & Impure =     
     let langDef = FlixParsec/Language.emptyDef();
     let parens = FlixParsec/Token.parens(langDef);
@@ -46,3 +44,5 @@ def test05(): Unit & Impure =
     let parser = parens(symbol("Hello"));
     FlixParsec/Prim.parsesString(parser, "(Hello)") |> println;
     ()
+
+}

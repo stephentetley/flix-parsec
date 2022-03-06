@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-
+/*
 
 namespace TestText {
 
@@ -70,3 +70,5 @@ def restOfLineLength03(): Bool & Impure =
     run(restOfLineLength(), input).whenOk(ans -> ans == 3)
 
 }
+
+*/

@@ -24,10 +24,11 @@ namespace TestCombinators {
 
 @test
 def many01(): Bool & Impure =
-    use TextParser.{runs, char, endOfInput};
-    use TextParser/Combinators.{many};
-    runs(many(char('a')), "") |> Result.isOk
-
+    use FlixParsec/Prim.{parsesString, endOfInput};
+    use FlixParsec/Char.{char};
+    use FlixParsec/Combinators.{many};
+    parsesString(many(char('a')), "") |> Result.isOk
+/*
 @test
 def many02(): Bool & Impure =
     use TextParser.{runs, char, endOfInput};
@@ -84,5 +85,5 @@ def many1Till03(): Bool & Impure =
     use TextParser/Combinators.{many1Till};
     runs(many1Till(char('a'), endOfInput()), "aa") |> Result.isOk
 
-
+*/
 }
