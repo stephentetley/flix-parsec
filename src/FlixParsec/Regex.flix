@@ -18,6 +18,8 @@
 
 namespace FlixParsec/Regex {
 
+    use Text/RegexEval.MatchEvaluator;
+
     use FlixParsec.{GenParser};
     use FlixParsec.GenParser.{GenParser};
 
@@ -32,12 +34,12 @@ namespace FlixParsec/Regex {
 
 
     /// Version of `lookingAt` with a MatchEvaluator
-    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] =
-        use Text/Regex.{evalBoundedStartsWith};
-        use Text/Regex/MatchEvaluator.{getLength};
+    pub def evalLookingAt(patt: Text/Regex.Pattern, eval: MatchEvaluator[a]): GenParser[ka1, st, a] =
+        use Text/RegexEval/Regex.{boundedPrefix};
+        use Text/RegexEval/MatchEvaluator.{getLength};
         let eval2 = Applicative.product(getLength(), eval);
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = evalBoundedStartsWith({start = st.pos, end = String.length(ctx.input)}, patt, eval2, ctx.input);
+            let ans = boundedPrefix({start = st.pos, end = String.length(ctx.input)}, patt, eval2, ctx.input);
             match ans {
                 case Ok(len, x) => sk(x, fk, ctx, {pos = st.pos + len | st}, errs)
                 case Err(_) => fk(st.pos, Chain.singleton("evalLookingAt failed"))
@@ -60,7 +62,7 @@ namespace FlixParsec/Regex {
         bind(liftResult(compile(regex), _ -> "lookingAts"), lookingAt)
 
     /// Parsing fails if regex does not compile.
-    pub def evalLookingAts(regex: String, eval: Text/Regex.MatchEvaluator[a]): GenParser[ka1, st, a] =
+    pub def evalLookingAts(regex: String, eval: MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/Regex/Pattern.{compile};
         use FlixParsec/Prim.{bind, liftResult};
         bind(liftResult(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval))
