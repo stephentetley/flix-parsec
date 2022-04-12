@@ -97,7 +97,7 @@ namespace FlixParsec/Prim {
         case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
     }
 
-    pub def fileNotFoundError(path: System.FilePath): ParseError = 
+    pub def fileNotFoundError(path: String): ParseError = 
         { message = "File not found: ${path}"
         , position = {lineNumber = 0, column = 0}
         , textBefore = ""
