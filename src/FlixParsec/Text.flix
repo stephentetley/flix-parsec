@@ -21,16 +21,16 @@ namespace FlixParsec/Text {
     use Applicative.{point};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, fail, lookahead, swapError, liftResult};    
+    use FlixParsec/Prim.{flatMap, fail, lookahead, swapError, liftResult1};    
     use FlixParsec/Regex.{lookingAts, skippingAts};
     use FlixParsec/Char.{char};
     
 
     pub def makePattern(regex: String): GenParser[ka1, st, Text/Regex.Pattern] = 
-        liftResult(Text/Regex/Pattern.compile(regex), _ -> "makePattern")
+        liftResult1(Text/Regex/Pattern.compile(regex), _ -> "makePattern")
 
     pub def makePatternWithFlags(regex: String, flags: List[Text/Regex/Pattern.Flag]): GenParser[ka1, st, Text/Regex.Pattern] = 
-        liftResult(Text/Regex/Pattern.compileWithFlags(regex, flags), _ -> "makePatternWithFlags")
+        liftResult1(Text/Regex/Pattern.compileWithFlags(regex, flags), _ -> "makePatternWithFlags")
 
     // Parse a newline recognized by the regular expression "\R".
     pub def newline(): GenParser[ka1, st, Unit] = skippingAts("\\R")

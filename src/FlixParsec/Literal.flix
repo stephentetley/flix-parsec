@@ -21,7 +21,7 @@ namespace FlixParsec/Literal {
     use Applicative.{point, *>};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, swapError, liftResult};
+    use FlixParsec/Prim.{flatMap, swapError, liftResult1};
     use FlixParsec/Combinators.{alt, choice, between, manyWith};
     use FlixParsec/Char.{char, string, satisfy};
     use FlixParsec/Regex.{lookingAts};
@@ -98,34 +98,34 @@ namespace FlixParsec/Literal {
 
     pub def int8(): GenParser[ka1, st, Int8] = 
         let* a = lookingAts("-?\\d+");
-        liftResult(Int8.fromString(a), constant("int8"))
+        liftResult1(Int8.fromString(a), constant("int8"))
         
     pub def int16(): GenParser[ka1, st, Int16] = 
         let* s = lookingAts("-?\\d+");
-        liftResult(Int16.fromString(s), constant("int16"))
+        liftResult1(Int16.fromString(s), constant("int16"))
     
     pub def int32(): GenParser[ka1, st, Int32] = 
         let* s = lookingAts("-?\\d+");
-        liftResult(Int32.fromString(s), constant("int32"))
+        liftResult1(Int32.fromString(s), constant("int32"))
 
     pub def int64(): GenParser[ka1, st, Int64] = 
         let* s = lookingAts("-?\\d+");
-        liftResult(Int64.fromString(s), constant("int64"))
+        liftResult1(Int64.fromString(s), constant("int64"))
 
 
     pub def bigInt(): GenParser[ka1, st, BigInt] = 
         let* s = lookingAts("-?\\d+");
-        liftResult(BigInt.fromString(s), constant("bigInt"))
+        liftResult1(BigInt.fromString(s), constant("bigInt"))
 
     /// TODO - handle exponent notation...
     pub def float32(): GenParser[ka1, st, Float32] = 
         let* s = lookingAts("-?\\d+\\.\\d+");
-        liftResult(Float32.fromString(s), constant("float32"))
+        liftResult1(Float32.fromString(s), constant("float32"))
 
     /// TODO - handle exponent notation...
     pub def float64(): GenParser[ka1, st, Float64] = 
         let* s = lookingAts("-?\\d+\\.\\d+");
-        liftResult(Float64.fromString(s), constant("float64"))
+        liftResult1(Float64.fromString(s), constant("float64"))
         
     pub def hexInt32(): GenParser[ka1, st, Int32] = 
         alt(string("0X"), string("0x")) *> hexInt32Base()

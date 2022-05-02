@@ -58,20 +58,20 @@ namespace FlixParsec/Regex {
     /// Parsing fails if regex does not compile.
     pub def lookingAts(regex: String): GenParser[ka1, st, String] = 
         use Text/Regex/Pattern.{compile};
-        use FlixParsec/Prim.{bind, liftResult};
-        bind(liftResult(compile(regex), _ -> "lookingAts"), lookingAt)
+        use FlixParsec/Prim.{bind, liftResult1};
+        bind(liftResult1(compile(regex), _ -> "lookingAts"), lookingAt)
 
     /// Parsing fails if regex does not compile.
     pub def evalLookingAts(regex: String, eval: MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/Regex/Pattern.{compile};
-        use FlixParsec/Prim.{bind, liftResult};
-        bind(liftResult(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval))
+        use FlixParsec/Prim.{bind, liftResult1};
+        bind(liftResult1(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval))
 
 
     /// Parsing fails if regex does not compile.
     pub def skippingAts(regex: String): GenParser[ka1, st, Unit] = 
         use Text/Regex/Pattern.{compile};
-        use FlixParsec/Prim.{bind, liftResult};
-        bind(liftResult(compile(regex), _ -> "skippingAts"), skippingAt)
+        use FlixParsec/Prim.{bind, liftResult1};
+        bind(liftResult1(compile(regex), _ -> "skippingAts"), skippingAt)
 
 }
