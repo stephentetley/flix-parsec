@@ -25,14 +25,14 @@ namespace FlixParsec/Regex {
 
     pub def lookingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, String] =
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = Text/Regex.boundedPrefix({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
+            let ans = Text/Regex.boundedMatchPrefixContent({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
             match ans { 
                 case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None(_) => fk(st.pos, Chain.singleton("lookingAt failed"))
             }
         )
 
-
+/*
     /// Version of `lookingAt` with a MatchEvaluator
     pub def evalLookingAt(patt: Text/Regex.Pattern, eval: MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/RegexEval/Regex.{boundedPrefix};
@@ -45,10 +45,10 @@ namespace FlixParsec/Regex {
                 case Err(_) => fk(st.pos, Chain.singleton("evalLookingAt failed"))
             }
         )
-
+*/
     pub def skippingAt(patt: Text/Regex.Pattern): GenParser[ka1, st, Unit] = 
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = Text/Regex.boundedPrefix({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
+            let ans = Text/Regex.boundedMatchPrefixContent({start = st.pos, end = String.length(ctx.input)}, patt, ctx.input);
             match ans { 
                 case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
                 case None => fk(st.pos, Chain.singleton("skippingAt failed"))
@@ -61,12 +61,13 @@ namespace FlixParsec/Regex {
         use FlixParsec/Prim.{bind, liftResult1};
         bind(liftResult1(compile(regex), _ -> "lookingAts"), lookingAt)
 
+/*
     /// Parsing fails if regex does not compile.
     pub def evalLookingAts(regex: String, eval: MatchEvaluator[a]): GenParser[ka1, st, a] =
         use Text/Regex/Pattern.{compile};
         use FlixParsec/Prim.{bind, liftResult1};
         bind(liftResult1(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval))
-
+*/
 
     /// Parsing fails if regex does not compile.
     pub def skippingAts(regex: String): GenParser[ka1, st, Unit] = 
