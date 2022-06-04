@@ -32,7 +32,8 @@ namespace FlixParsec {
     /// `ka1` is the continuation answer type - if Flix had user visible existentials it would 
     /// be hidden as an existential type. Generally it will always be represented with a type variable
     /// except in "run" functions.
-    pub opaque type GenParser[ka1, st, ans] = SuccessK[ka1, st, ans] -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1 & Impure
+    ///
+    pub enum GenParser[ka1, st, ans](SuccessK[ka1, st, ans] -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1 & Impure)
 
     pub type alias Parser[ka1, ans] = GenParser[ka1, Unit, ans]
 
