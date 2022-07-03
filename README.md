@@ -10,11 +10,14 @@ The parsing monad is written in __2-CPS__ (CPS with success and failure
 continuations), this appears to make it fast enough to comfortably parse 
 "medium sized" files (e.g 1MB).
 
-FlixParsec depends on the Regex package `flix-regex`.
 
-The optional module `FlixParsec/Extras` depends on code from `flix-sandbox` 
-for file handling and dealing with BOMs (byte order marks).
+Dependencies: 
 
-[1] https://github.com/stephentetley/flix-regex
+https://github.com/stephentetley/flix-regex
+https://github.com/stephentetley/flix-sandbox
+https://github.com/stephentetley/charset-locale
+https://github.com/stephentetley/collection-interop
 
-[2] https://github.com/stephentetley/flix-sandbox 
+Apache Commons IO
+
+Compatible *.pkg and *.jar files are included in the folder `lib`.

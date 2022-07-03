@@ -95,6 +95,7 @@ namespace FlixParsec/Literal {
             case _ => None
         }
 
+    def constant(x: a, _: b): a = x
 
     pub def int8(): GenParser[ka1, st, Int8] = 
         let* a = lookingAts("-?\\d+");

@@ -24,7 +24,7 @@ namespace FlixParsec/Extras {
                         initState: st, 
                         tabSize: Int32, 
                         path: FlixSandbox/System.FilePath, 
-                        cs: FlixSandbox/Text.Charset): Result[ans, ParseError] & Impure =
+                        cs: Text.Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
         let* exists = FlixSandbox/System/IO.fileExists(path) |> Result.mapErr(FlixParsec/Prim.generalError);
         if (exists) {
@@ -34,7 +34,10 @@ namespace FlixParsec/Extras {
             Err(FlixParsec/Prim.fileNotFoundError(ToString.toString(path)))
 
 
-    pub def parsesFile(parser: Parser1[ans], tabSize: Int32, path: FlixSandbox/System.FilePath, cs: FlixSandbox/Text.Charset): Result[ans, String] & Impure =
+    pub def parsesFile(parser: Parser1[ans],
+                        tabSize: Int32, 
+                        path: FlixSandbox/System.FilePath, 
+                        cs: Text.Charset): Result[ans, String] & Impure =
         match parseFile(parser, (), tabSize, path, cs) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(FlixParsec/Prim.showSourcePosition(e.position) + ": " + e.message)
