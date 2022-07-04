@@ -23,7 +23,7 @@ namespace FlixParsec/Trace {
 
     /// TODO - multilines...
     
-    pub def trace(message: String, p: GenParser[ka, st, a]): GenParser[ka, st, a] = 
+    pub def trace(message: String, p: GenParser[ka, st, a]): GenParser[ka, st, a] & Impure = 
         use FlixParsec/Prim.{flatMap, getPosition, showSourcePosition, liftAction};
         let* pos1 = getPosition();
         let* ans = p;
@@ -32,7 +32,7 @@ namespace FlixParsec/Trace {
         let* _ =  liftAction(_ -> println(msg));
         point(ans)
 
-    pub def tell(message: String): GenParser[ka, st, Unit] = 
+    pub def tell(message: String): GenParser[ka, st, Unit] & Impure  = 
         use FlixParsec/Prim.{flatMap, getPosition, showSourcePosition, liftAction};
         let* pos1 = getPosition();
         let msg = "// ${message}. Position <<${showSourcePosition(pos1)}>>";

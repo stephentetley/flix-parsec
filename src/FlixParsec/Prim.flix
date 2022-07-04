@@ -23,9 +23,9 @@ namespace FlixParsec {
 
     type alias Failures = Chain[String]
 
-    type alias FailK[ka1] = Int32 -> Failures -> ka1 & Impure
+    type alias FailK[ka1] = Int32 -> Failures -> ka1
 
-    type alias SuccessK[ka1, st, ans] = ans -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1 & Impure
+    type alias SuccessK[ka1, st, ans] = ans -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1
 
     /// `st` is the type of user state
     /// `ans` is the type of "immediate answer"
@@ -33,7 +33,7 @@ namespace FlixParsec {
     /// be hidden as an existential type. Generally it will always be represented with a type variable
     /// except in "run" functions.
     ///
-    pub enum GenParser[ka1, st, ans](SuccessK[ka1, st, ans] -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1 & Impure)
+    pub enum GenParser[ka1, st, ans](SuccessK[ka1, st, ans] -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1)
 
     pub type alias Parser[ka1, ans] = GenParser[ka1, Unit, ans]
 
@@ -123,19 +123,19 @@ namespace FlixParsec/Prim {
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def runParser(p: Parser1[ans], tabSize: Int32, input: String) : Result[ans, ParseError] & Impure =
+    pub def runParser(p: Parser1[ans], tabSize: Int32, input: String) : Result[ans, ParseError] =
         runGenParser(p, (), tabSize, input)
 
 
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def runGenParser(p: GenParser1[st, ans], initState: st, tabSize: Int32, input: String) : Result[ans, ParseError] & Impure =
+    pub def runGenParser(p: GenParser1[st, ans], initState: st, tabSize: Int32, input: String) : Result[ans, ParseError] =
         use FlixParsec/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
         let context = {input = input, tabSize = tabSize};
         let state = {pos = 0, userState = initState};
-        let fk = (posn, errs) -> Err({messages = errs, position = posn}) as & Impure;
-        let sk = (a, _, _, _, _) -> Ok(a) as & Impure;
+        let fk = (posn, errs) -> Err({messages = errs, position = posn});
+        let sk = (a, _, _, _, _) -> Ok(a);
         let GenParser(p1) = p;
         match p1(sk, fk, context, state, Chain.empty()) {
             case Ok(a) => Ok(a)
@@ -150,15 +150,14 @@ namespace FlixParsec/Prim {
             }
         }
 
-    /// parseString is Impure because the parser might have lifted impure actions (e.g. debugging / tracing)
-    pub def parseString(p: GenParser1[st, ans], initState: st, input: String): Result[ans, String] & Impure =
+    pub def parseString(p: GenParser1[st, ans], initState: st, input: String): Result[ans, String] =
         match runGenParser(p, initState, 4, input) {
             case Ok(a) => Ok(a)
             case Err(e) => Err(showSourcePosition(e.position) + ": " + e.message)
         }
 
     /// 
-    pub def parsesString(p: Parser1[ans], input: String): Result[ans, String] & Impure = parseString(p, (), input)
+    pub def parsesString(p: Parser1[ans], input: String): Result[ans, String] = parseString(p, (), input)
 
     pub def point(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
 
@@ -184,18 +183,18 @@ namespace FlixParsec/Prim {
                 fk: FailK[ka1], 
                 ctx: ParseContext, 
                 st: ParseState[st], 
-                errs: Failures): ka1 & Impure =
+                errs: Failures): ka1 =
         let GenParser(pf) = p;
         pf(sk, fk, ctx, st, errs)
 
     pub def map(f: a -> b & ef, p: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef =
         GenParser((sk, fk, ctx, pos, errs) ->
-            let sk1 = (x, fk1, _, pos1, errs1) -> sk(f(x) as & Impure, fk1, ctx, pos1, errs1);
+            let sk1 = (x, fk1, _, pos1, errs1) -> sk(f(x) as & Pure, fk1, ctx, pos1, errs1);
             apply1(p, sk1, fk, ctx, pos, errs)
         ) as & ef
 
     pub def ap(mf: GenParser[ka1, st, a -> b & ef], ma: GenParser[ka1, st, a]): GenParser[ka1, st, b] & ef =
-        (let* f = mf; let* a = ma; liftAction(_ -> f(a) as & Impure)) as & ef
+        (let* f = mf; let* a = ma; liftAction(_ -> f(a)))
 
     pub def bind(ma: GenParser[ka1, st, a], k: a -> GenParser[ka1, st, b] & ef):  GenParser[ka1, st, b] & ef =
         GenParser(sk ->
@@ -228,21 +227,21 @@ namespace FlixParsec/Prim {
         case Err(e) => fail(makeErrMsg(e))
     }
 
-
-    pub def liftAction(f: Unit -> a & ef): GenParser[ka1, st, a] =
+    /// TODO - should float the effect to `GenParser[ka1, st, a] & ef`
+    pub def liftAction(f: Unit -> a & ef): GenParser[ka1, st, a] & ef =
         GenParser((sk, fk, ctx, st, errs) ->
-            let a = f() as & Impure;
+            let a = f() as & Pure;
             sk(a, fk, ctx, st, errs)
-        )
+        ) as & ef
 
-    pub def liftActionResult(f: Unit -> Result[a, e] & ef): GenParser[ka1, st, a] =
+    pub def liftActionResult(f: Unit -> Result[a, e] & ef): GenParser[ka1, st, a] & ef =
         GenParser((sk, fk, ctx, st, errs) ->
-            let ans = f() as & Impure;
+            let ans = f() as & Pure;
             match ans {
                 case Ok(a) => sk(a, fk, ctx, st, errs)
                 case Err(_) => fk(st.pos, Chain.singleton("listActionResult"))
             }
-        )
+        ) as & ef
 
     pub def getPosition(): GenParser[ka1, st, SourcePosition] =  
         GenParser((sk, fk, ctx, st) ->

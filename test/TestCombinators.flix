@@ -23,7 +23,7 @@ namespace TestCombinators {
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def many01(): Bool & Impure =
+def many01(): Bool =
     use FlixParsec/Prim.{parsesString, endOfInput};
     use FlixParsec/Char.{char};
     use FlixParsec/Combinators.{many};
