@@ -14,9 +14,14 @@ continuations), this appears to make it fast enough to comfortably parse
 Dependencies: 
 
 https://github.com/stephentetley/flix-regex
+
 https://github.com/stephentetley/flix-sandbox
-https://github.com/stephentetley/charset-locale
-https://github.com/stephentetley/collection-interop
+
+https://github.com/stephentetley/interop-filepath
+
+https://github.com/stephentetley/interop-charset-locale
+
+https://github.com/stephentetley/interop-collections
 
 Apache Commons IO
 
