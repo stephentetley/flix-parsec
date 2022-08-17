@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-/// This module contains Extra functions that have dependencies on Flix-Sandbox.
+/// This module contains Extra functions that have dependencies on `basis-base`...
 
 namespace FlixParsec/Extras {
 
-    use Interop/System.FilePath;
-    use Interop/Text.Charset;
+    use Basis/System.FilePath;
+    use Basis/Text.Charset;
 
     use FlixParsec/Prim.{GenParser1, Parser1, ParseError};
 
@@ -29,9 +29,9 @@ namespace FlixParsec/Extras {
                         path: FilePath, 
                         cs: Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
-        let* exists = FlixSandbox/System/IO.fileExists(path) |> Result.mapErr(FlixParsec/Prim.generalError);
+        let* exists = Basis/System/Files.exists(path, Nil) |> Result.mapErr(FlixParsec/Prim.generalError);
         if (exists) {
-            let* src = FlixSandbox/System/IO.readFile(cs, path) |> Result.mapErr(FlixParsec/Prim.generalError);
+            let* src = Basis/System/Files.readStringWithCharset(path, cs) |> Result.mapErr(FlixParsec/Prim.generalError);
             FlixParsec/Prim.runGenParser(parser, initState, tabSize, src)
         } else
             Err(FlixParsec/Prim.fileNotFoundError(ToString.toString(path)))
@@ -46,24 +46,24 @@ namespace FlixParsec/Extras {
             case Err(e) => Err(FlixParsec/Prim.showSourcePosition(e.position) + ": " + e.message)
         }
 
-    pub def parseFileWithBOM(parser: GenParser1[st, ans], 
-                                initState: st, 
-                                tabSize: Int32, 
-                                path: FilePath): Result[ans, ParseError] & Impure =
-        use Result.flatMap;
-        let* exists = FlixSandbox/System/IO.fileExists(path) |> Result.mapErr(FlixParsec/Prim.generalError);
-        if (exists) {
-            let* src = FlixSandbox/System/File/BOM.readFileWithBOM(path) |> Result.mapErr(FlixParsec/Prim.generalError);
-            FlixParsec/Prim.runGenParser(parser, initState, tabSize, src)
-        } else
-            Err(FlixParsec/Prim.fileNotFoundError(ToString.toString(path)))
+    // pub def parseFileWithBOM(parser: GenParser1[st, ans], 
+    //                             initState: st, 
+    //                             tabSize: Int32, 
+    //                             path: FilePath): Result[ans, ParseError] & Impure =
+    //     use Result.flatMap;
+    //     let* exists = FlixSandbox/System/IO.fileExists(path) |> Result.mapErr(FlixParsec/Prim.generalError);
+    //     if (exists) {
+    //         let* src = FlixSandbox/System/File/BOM.readFileWithBOM(path) |> Result.mapErr(FlixParsec/Prim.generalError);
+    //         FlixParsec/Prim.runGenParser(parser, initState, tabSize, src)
+    //     } else
+    //         Err(FlixParsec/Prim.fileNotFoundError(ToString.toString(path)))
 
-    pub def parsesFileWithBOM(parser: Parser1[ans], 
-                                tabSize: Int32, 
-                                path: FilePath): Result[ans, String] & Impure =
-        match parseFileWithBOM(parser, (), tabSize, path) {
-            case Ok(a) => Ok(a)
-            case Err(e) => Err(FlixParsec/Prim.showSourcePosition(e.position) + ": " + e.message)
-        }
+    // pub def parsesFileWithBOM(parser: Parser1[ans], 
+    //                             tabSize: Int32, 
+    //                             path: FilePath): Result[ans, String] & Impure =
+    //     match parseFileWithBOM(parser, (), tabSize, path) {
+    //         case Ok(a) => Ok(a)
+    //         case Err(e) => Err(FlixParsec/Prim.showSourcePosition(e.position) + ": " + e.message)
+    //     }
 
 }

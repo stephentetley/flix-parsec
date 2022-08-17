@@ -11,18 +11,15 @@ continuations), this appears to make it fast enough to comfortably parse
 "medium sized" files (e.g 1MB).
 
 
-Dependencies: 
+## Dependencies: 
 
 https://github.com/stephentetley/flix-regex
 
-https://github.com/stephentetley/flix-sandbox
+https://github.com/stephentetley/basis-base
 
-https://github.com/stephentetley/interop-filepath
+https://github.com/stephentetley/monad-lib
 
-https://github.com/stephentetley/interop-charset-locale
+https://github.com/stephentetley/interop-base
 
-https://github.com/stephentetley/interop-collections
-
-Apache Commons IO
 
 Compatible *.pkg and *.jar files are included in the folder `lib`.
