@@ -70,10 +70,10 @@ namespace FlixParsec/Prim {
     pub type alias InternalError = { messages :: Chain[String], position :: Int32 }
 
     pub type alias ParseError = 
-        { message :: String
-        , position :: SourcePosition
-        , textBefore :: String
-        , textAfter :: String
+        { message = String
+        , position = SourcePosition
+        , textBefore = String
+        , textAfter = String
         }
 
     pub def showSourcePosition(pos: SourcePosition): String = 
