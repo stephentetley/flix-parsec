@@ -65,9 +65,15 @@ namespace FlixParsec/Prim {
 
     /// Note `SourcePosition` is derived when there is a parse error. 
     /// During parsing, the parse state tracks just an index into the input string.
-    pub type alias SourcePosition = { lineNumber :: Int32, column :: Int32 }
+    pub type alias SourcePosition = 
+        { lineNumber = Int32
+        , column = Int32 
+        }
 
-    pub type alias InternalError = { messages :: Chain[String], position :: Int32 }
+    pub type alias InternalError = 
+        { messages = Chain[String]
+        , position = Int32 
+        }
 
     pub type alias ParseError = 
         { message = String
