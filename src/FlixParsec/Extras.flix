@@ -18,7 +18,7 @@
 
 namespace FlixParsec/Extras {
 
-    use Basis/System.FilePath;
+    use Basis/System.Path;
     use Basis/Text.Charset;
 
     use FlixParsec/Prim.{GenParser1, Parser1, ParseError};
@@ -26,7 +26,7 @@ namespace FlixParsec/Extras {
     pub def parseFile(parser: GenParser1[st, ans], 
                         initState: st, 
                         tabSize: Int32, 
-                        path: FilePath, 
+                        path: Path, 
                         cs: Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
         let* exists = Basis/System/Files.exists(path, Nil) |> Result.mapErr(FlixParsec/Prim.generalError);
@@ -39,7 +39,7 @@ namespace FlixParsec/Extras {
 
     pub def parsesFile(parser: Parser1[ans],
                         tabSize: Int32, 
-                        path: FilePath, 
+                        path: Path, 
                         cs: Charset): Result[ans, String] & Impure =
         match parseFile(parser, (), tabSize, path, cs) {
             case Ok(a) => Ok(a)
