@@ -18,8 +18,8 @@
 
 namespace FlixParsec/Extras {
 
-    use Basis/System.Path;
-    use Basis/Text.Charset;
+    use Basis/NIO/File.Path;
+    use Basis/NIO/Charset.Charset;
 
     use FlixParsec/Prim.{GenParser1, Parser1, ParseError};
 
@@ -29,9 +29,9 @@ namespace FlixParsec/Extras {
                         path: Path, 
                         cs: Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
-        let* exists = Basis/System/Files.exists(path, Nil) |> Result.mapErr(FlixParsec/Prim.generalError);
+        let* exists = Basis/NIO/File/Files.exists(path, Nil) |> Result.mapErr(FlixParsec/Prim.generalError);
         if (exists) {
-            let* src = Basis/System/Files.readStringWithCharset(path, cs) |> Result.mapErr(FlixParsec/Prim.generalError);
+            let* src = Basis/NIO/File/Files.readStringWithCharset(path, cs) |> Result.mapErr(FlixParsec/Prim.generalError);
             FlixParsec/Prim.runGenParser(parser, initState, tabSize, src)
         } else
             Err(FlixParsec/Prim.fileNotFoundError(ToString.toString(path)))
