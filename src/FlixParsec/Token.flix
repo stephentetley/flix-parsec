@@ -29,17 +29,17 @@ namespace FlixParsec/Token {
     
 
     pub type alias LanguageDef[ka1, st] = 
-        { commentStart :: String
-        , commentEnd :: String
-        , commentLine :: String
-        , nestedComments :: Bool  
-        , identStart :: GenParser[ka1, st, Char]
-        , identLetter :: GenParser[ka1, st, Char]
-        , opStart :: GenParser[ka1, st, Char]
-        , opLetter :: GenParser[ka1, st, Char]
-        , reservedNames :: List[String]
-        , reservedOpNames :: List[String]
-        , caseSensitive :: Bool
+        { commentStart = String
+        , commentEnd = String
+        , commentLine = String
+        , nestedComments = Bool  
+        , identStart = GenParser[ka1, st, Char]
+        , identLetter = GenParser[ka1, st, Char]
+        , opStart = GenParser[ka1, st, Char]
+        , opLetter = GenParser[ka1, st, Char]
+        , reservedNames = List[String]
+        , reservedOpNames = List[String]
+        , caseSensitive = Bool
         }
 
     enum Status { 

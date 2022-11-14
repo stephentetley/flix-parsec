@@ -59,7 +59,7 @@ def parseFile01(): Unit & Impure =
         case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => println("empty results")
-            case _ => List.foreach(write1, xs)
+            case _ => List.forEach(write1, xs)
         }
     } 
 
@@ -147,7 +147,7 @@ def parseFile02(): Unit & Impure =
         case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => println("empty results")
-            case _ => List.foreach(write1, xs)
+            case _ => List.forEach(write1, xs)
         }
     }   
         
@@ -160,7 +160,7 @@ def temp01(): Unit & Impure =
         case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => println("empty results")
-            case _ => List.foreach(write1, xs)
+            case _ => List.forEach(write1, xs)
         }
     } 
 
@@ -172,6 +172,6 @@ def temp02(): Unit & Impure =
         case Err(e) => println(TextParser/Error.showParserError(e))
         case Ok(xs) => match xs { 
             case Nil => println("empty results")
-            case _ => List.foreach(write1, xs)
+            case _ => List.forEach(write1, xs)
         }
     } 

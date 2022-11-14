@@ -17,9 +17,9 @@
 
 namespace FlixParsec {
 
-    type alias ParseContext = {input :: String, tabSize :: Int32}
+    type alias ParseContext = {input = String, tabSize = Int32}
 
-    type alias ParseState[st] = {pos :: Int32, userState :: st}
+    type alias ParseState[st] = {pos = Int32, userState = st}
 
     type alias Failures = Chain[String]
 
