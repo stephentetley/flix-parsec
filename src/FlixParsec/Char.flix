@@ -21,7 +21,6 @@ namespace FlixParsec/Char {
 
     use FlixParsec.{GenParser};
     use FlixParsec/Prim.{flatMap, fail, lookahead, swapError, liftOption};
-    use FlixParsec/Combinators.{ignore};
     use FlixParsec/Regex.{lookingAts, skippingAts};
 
 

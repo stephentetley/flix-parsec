@@ -18,8 +18,6 @@
 
 namespace FlixParsec/Regex {
 
-    use Text/RegexEval.MatchEvaluator;
-
     use FlixParsec.{GenParser};
     use FlixParsec.GenParser.{GenParser};
 

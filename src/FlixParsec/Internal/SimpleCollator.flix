@@ -21,11 +21,12 @@
 namespace FlixParsec/Internal/SimpleCollator {
 
     /// Compare with the default collator (this will be locale specific).
-    pub def caseInsenstiveEquals(s1: String, s2: String): Bool = caseInsenstiveEqualsHelper(s1, s2) as & Pure 
+    pub def caseInsenstiveEquals(s1: String, s2: String): Bool = 
+        unsafe_cast caseInsenstiveEqualsHelper(s1, s2) as \ {} 
 
-    def caseInsenstiveEqualsHelper(s1: String, s2: String): Bool & Impure = 
-        import static java.text.Collator.getInstance(): ##java.text.Collator & Impure;
-        import java.text.Collator.equals(String, String): Bool & Pure;
+    def caseInsenstiveEqualsHelper(s1: String, s2: String): Bool \ IO = 
+        import static java.text.Collator.getInstance(): ##java.text.Collator \ IO;
+        import java.text.Collator.equals(String, String): Bool \ {};
         let collator = getInstance();
         equals(collator, s1, s2)
 
