@@ -22,7 +22,7 @@ mod FlixParsec.Internal.SimpleCollator {
 
     /// Compare with the default collator (this will be locale specific).
     pub def caseInsenstiveEquals(s1: String, s2: String): Bool = 
-        unsafe_cast caseInsenstiveEqualsHelper(s1, s2) as \ {} 
+        unchecked_cast(caseInsenstiveEqualsHelper(s1, s2) as _ \ {})
 
     def caseInsenstiveEqualsHelper(s1: String, s2: String): Bool \ IO = 
         import static java.text.Collator.getInstance(): ##java.text.Collator \ IO;

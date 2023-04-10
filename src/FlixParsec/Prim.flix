@@ -58,7 +58,7 @@ mod FlixParsec {
 
 }
 
-modPrim {
+mod FlixParsec.Prim {
 
     use FlixParsec.{GenParser, Parser, ParseContext, ParseState, Failures, SuccessK, FailK};
     use FlixParsec.GenParser.{GenParser};

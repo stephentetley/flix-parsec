@@ -17,7 +17,8 @@
 
 mod FlixParsec.Char {
 
-    use Applicative.{point};
+    use GradedApplicative.{point};
+    use GradedMonad.{>>=};
 
     use FlixParsec.{GenParser};
     use FlixParsec.Prim.{flatMap, fail, lookahead, swapError, liftOption};
@@ -25,9 +26,9 @@ mod FlixParsec.Char {
 
 
     pub def satisfy(test: Char -> Bool): GenParser[ka1, st, Char] = 
-        let* a = anyChar();
-        if (test(a))
-            point(a)
+        anyChar()       >>= ans ->
+        if (test(ans))
+            point(ans)
         else
             fail("satisfy")
 
@@ -41,7 +42,7 @@ mod FlixParsec.Char {
         satisfy(x -> x == c) `swapError` "char('${c}')"
 
     pub def string(s: String): GenParser[ka1, st, String] =
-        let* s1 = FlixParsec.Prim.take(String.length(s));
+        FlixParsec.Prim.take(String.length(s)) >>= s1 ->
         if (s1 == s)
             point(s)
         else

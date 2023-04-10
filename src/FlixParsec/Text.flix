@@ -17,8 +17,8 @@
 
 mod FlixParsec.Text {
 
-    use Functor.{<$>};
-    use Applicative.{point};
+    use GradedFunctor.{<$>};
+    use GradedApplicative.{point};
 
     use FlixParsec.{GenParser};
     use FlixParsec.Prim.{flatMap, fail, lookahead, swapError, liftResult1};    
@@ -41,9 +41,8 @@ mod FlixParsec.Text {
     pub def parseLine(p: GenParser[ka1, st, a], consumeNewline: Bool): GenParser[ka1, st, a] =
         use FlixParsec.Prim.{bounded};
         let regex = if (consumeNewline) ".*\\R?" else ".*";
-        let* restofline = lookahead(lookingAts(regex));
-        let* ans = bounded(String.length(restofline), p);
-        point(ans)
+        lookahead(lookingAts(regex))                >>= restofline ->
+        bounded(String.length(restofline), p)
 
     /// Parse the rest of the line.
     pub def restOfLine(consumeNewline: Bool): GenParser[ka1, st, String] = 
@@ -65,17 +64,17 @@ mod FlixParsec.Text {
 
     
     pub def anchorLineMatches(regex: String): GenParser[ka1, st, Unit] =    
-        let* rest1 = restOfLine(true);
-        let* patt = makePattern(regex);
-        if (Text.Regex.isMatch(patt, rest1)) 
+        restOfLine(true)                >>= rest1 ->
+        makePattern(regex)              >>= patt ->
+        if (Regex.isMatch(patt, rest1)) 
             point()
         else
             fail("anchorLineMatches not matched")
 
     pub def anchorLine(regex: String): GenParser[ka1, st, Unit] =        
-        let* rest1 = restOfLine(true);
-        let* patt = makePattern(regex);
-        if (Text.Regex.isSubmatch(patt, rest1)) 
+        restOfLine(true)                        >>= rest1 ->
+        makePattern(regex)                      >>= patt ->
+        if (Regex.isSubmatch(patt, rest1)) 
             point()
         else
             fail("anchorLine not matched")

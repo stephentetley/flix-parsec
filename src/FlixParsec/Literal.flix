@@ -17,8 +17,8 @@
 
 mod FlixParsec.Literal {
 
-    use Functor.{map};
-    use Applicative.{point, *>};
+    use GradedFunctor.{map};
+    use GradedApplicative.{point, *>};
 
     use FlixParsec.{GenParser};
     use FlixParsec.Prim.{flatMap, swapError, liftOption};
@@ -64,9 +64,7 @@ mod FlixParsec.Literal {
         /// charEsc <|> charNum <|> charAscii <|> charControl
 
     def charUnicode(): GenParser[ka1, st, Char] = 
-        let* _      = alt(char('u'), char('U'));
-        let* num    = hexNumber() |> map(Char.fromInt32);
-        point(num) 
+        (char('u') <|> char('U')) *> map(Char.fromInt32, hexNumber())
 
 
     def hexNumber(): GenParser[ka1, st, Int32] =  
@@ -96,34 +94,34 @@ mod FlixParsec.Literal {
         }
 
     pub def int8(): GenParser[ka1, st, Int8] = 
-        let* a = lookingAts("-?\\d+");
-        liftOption(Int8.fromString(a), "int8")
+        lookingAts("-?\\d+")                    >>= s ->
+        liftOption(Int8.fromString(s), "int8")
         
     pub def int16(): GenParser[ka1, st, Int16] = 
-        let* s = lookingAts("-?\\d+");
+        lookingAts("-?\\d+")                    >>= s ->
         liftOption(Int16.fromString(s), "int16")
     
     pub def int32(): GenParser[ka1, st, Int32] = 
-        let* s = lookingAts("-?\\d+");
+        lookingAts("-?\\d+")                    >>= s -> 
         liftOption(Int32.fromString(s), "int32")
 
     pub def int64(): GenParser[ka1, st, Int64] = 
-        let* s = lookingAts("-?\\d+");
+        lookingAts("-?\\d+")                    >>= s ->
         liftOption(Int64.fromString(s), "int64")
 
 
     pub def bigInt(): GenParser[ka1, st, BigInt] = 
-        let* s = lookingAts("-?\\d+");
+        lookingAts("-?\\d+")                    >>= s ->
         liftOption(BigInt.fromString(s), "bigInt")
 
     /// TODO - handle exponent notation...
     pub def float32(): GenParser[ka1, st, Float32] = 
-        let* s = lookingAts("-?\\d+\\.\\d+");
+        lookingAts("-?\\d+\\.\\d+")             >>= s ->
         liftOption(Float32.fromString(s), "float32")
 
     /// TODO - handle exponent notation...
     pub def float64(): GenParser[ka1, st, Float64] = 
-        let* s = lookingAts("-?\\d+\\.\\d+");
+        lookingAts("-?\\d+\\.\\d+")             >>= s ->
         liftOption(Float64.fromString(s), "float64")
         
     pub def hexInt32(): GenParser[ka1, st, Int32] = 

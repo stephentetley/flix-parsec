@@ -1,13 +1,13 @@
 
 mod SkipManyTest {
 
-    use FlixParsec.Parser;
+    use FlixParsec.Parser
+    use GradedMonad.{>>=}
 
     def parser1(): Parser[ka1, Char] = 
-        use FlixParsec.Prim.{flatMap, point};
         use FlixParsec.Char.{char, anyChar};
-        let* _  = FlixParsec.Combinators.skipManyTill(anyChar(), char('F'));
-        let* c1 = anyChar();
+        FlixParsec.Combinators.skipManyTill(anyChar(), char('F'))   >>= _  ->
+        anyChar()                                                   >>= c1 ->
         point(c1) 
 
     @test    

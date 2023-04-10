@@ -18,20 +18,20 @@
 
 mod FlixParsec.Extras {
 
-    use Basis.NIO.File.Path;
-    use Basis.NIO.Charset.Charset;
+    use Basis.NIO.File.Path
+    use Basis.NIO.Charset.Charset
 
-    use FlixParsec.Prim.{GenParser1, Parser1, ParseError};
+    use FlixParsec.Prim.{GenParser1, Parser1, ParseError}
 
     pub def parseFile(parser: GenParser1[st, ans], 
                         initState: st, 
                         tabSize: Int32, 
                         path: Path, 
                         cs: Charset): Result[ans, ParseError] & Impure =
-        use Result.flatMap;
-        let* exists = Basis.NIO.File.Files.exists(path, Nil) |> Result.mapErr(FlixParsec.Prim.generalError);
+        use Monad.{>>=};
+        Basis.NIO.File.Files.exists(path, Nil) |> Result.mapErr(FlixParsec.Prim.generalError) >>= exists ->
         if (exists) {
-            let* src = Basis.NIO.File.Files.readStringWithCharset(path, cs) |> Result.mapErr(FlixParsec.Prim.generalError);
+            Basis.NIO.File.Files.readStringWithCharset(path, cs) |> Result.mapErr(FlixParsec.Prim.generalError) >>= src ->
             FlixParsec.Prim.runGenParser(parser, initState, tabSize, src)
         } else
             Err(FlixParsec.Prim.fileNotFoundError(ToString.toString(path)))

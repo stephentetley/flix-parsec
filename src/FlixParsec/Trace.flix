@@ -18,25 +18,26 @@
 
 mod FlixParsec.Trace {
 
-    use Applicative.{point};
+    use GradedApplicative.{point};
+    use GradedMonad.{>>=};
     use FlixParsec.{GenParser};
 
     /// TODO - multilines...
     
     pub def trace(message: String, p: GenParser[ka, st, a]): GenParser[ka, st, a] & Impure = 
-        use FlixParsec.Prim.{flatMap, getPosition, showSourcePosition, liftAction};
-        let* pos1 = getPosition();
-        let* ans = p;
-        let* pos2 = getPosition();
-        let msg = "// ${message}. Start <<${showSourcePosition(pos1)}>>, End <<${showSourcePosition(pos2)}>>";
-        let* _ =  liftAction(_ -> println(msg));
+        use FlixParsec.Prim.{getPosition, showSourcePosition, liftAction};
+        getPosition()       >>= pos1 -> 
+        p                   >>= ans ->
+        getPosition()       >>= pos2 ->
+        {let msg = "// ${message}. Start <<${showSourcePosition(pos1)}>>, End <<${showSourcePosition(pos2)}>>";
+            liftAction(_ -> println(msg))} >>= _ -> 
         point(ans)
 
     pub def tell(message: String): GenParser[ka, st, Unit] & Impure  = 
         use FlixParsec.Prim.{flatMap, getPosition, showSourcePosition, liftAction};
-        let* pos1 = getPosition();
-        let msg = "// ${message}. Position <<${showSourcePosition(pos1)}>>";
-        let* _ =  liftAction(_ -> println(msg));
+        getPosition() >>= pos1 -> 
+        {let msg = "// ${message}. Position <<${showSourcePosition(pos1)}>>"; 
+            liftAction(_ -> println(msg))} >>= _ ->
         point()
 
 }

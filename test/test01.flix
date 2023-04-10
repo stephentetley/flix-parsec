@@ -1,6 +1,9 @@
 
 mod Test01 {
 
+    use GradedApplicative.{*>}
+    use GradedApplicative.{point}
+
 @test
 def test01(): Unit & Impure =     
     let parser = FlixParsec.Combinators.many(FlixParsec.Char.anyChar());
@@ -27,11 +30,10 @@ def test03(): Unit & Impure =
 
 @test
 def test04(): Unit & Impure =
-    use FlixParsec.Prim.{flatMap, point};
     use FlixParsec.Combinators.{alt};
     use FlixParsec.Char.{char};
-    let p1 = { let* _ = char('a'); let* _ = char('b'); let* _ = char('a'); point("aba")};
-    let p2 = { let* _ = char('a'); let* _ = char('b'); let* _ = char('c'); point("abc")};
+    let p1 = { char('a') *> char('b') *> char('a') *> point("aba")};
+    let p2 = { char('a') *> char('b') *> char('c') *> point("abc")};
     let parser = alt(p1, p2);
     FlixParsec.Prim.parsesString(parser, "abc") |> println;
     ()
