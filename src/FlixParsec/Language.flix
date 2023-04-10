@@ -16,12 +16,12 @@
 
 
 
-namespace FlixParsec/Language {
+mod FlixParsec.Language {
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Combinators.{alt};
-    use FlixParsec/Char.{letter, alphaNum, oneOf, char};
-    use FlixParsec/Token.{LanguageDef};
+    use FlixParsec.Combinators.{alt};
+    use FlixParsec.Char.{letter, alphaNum, oneOf, char};
+    use FlixParsec.Token.{LanguageDef};
 
     pub def emptyDef(): LanguageDef[ka1, st] = 
         let opLetterP = oneOf(

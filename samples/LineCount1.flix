@@ -16,7 +16,7 @@
 
 /// A baseline count lines that doesn't use the parser combinators.
 
-namespace LineCount1 {
+mod LineCount1 {
 
     pub def timeOperation(thunk: Unit -> a & e): (Int64, a) & Impure = 
         import java.lang.System:nanoTime();
@@ -46,9 +46,9 @@ namespace LineCount1 {
                 
     
     pub def runLineCount1(path: String): Unit & Impure = 
-        let path1 = System/FilePath.new(path);
-        match System/File.readFile(path1, Text/Charset.utf_16le()) { 
-            case Err(e) => println(System/Error.toString(e))
+        let path1 = System.FilePath.new(path);
+        match System.File.readFile(path1, Text.Charset.utf_16le()) { 
+            case Err(e) => println(System.Error.toString(e))
             case Ok(s) => runLineCounter("lineCount01", lineCount01, s)
         }
         

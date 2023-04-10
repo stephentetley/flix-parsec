@@ -19,16 +19,16 @@
 /// combinators derived with it see whitespace as the the usual space characters: 
 /// space, tab, carriage return and line feed.
 
-namespace FlixParsec/TokenSimple {
+mod FlixParsec.TokenSimple {
 
     use Applicative.{point, <*};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, liftResult};
-    use FlixParsec/Combinators.{between, sepBy, sepBy1, sepByWith, sepBy1With};
-    use FlixParsec/Char.{string};
-    use FlixParsec/Text.{whiteSpace, digits};
-    use FlixParsec/Regex.{lookingAts};
+    use FlixParsec.Prim.{flatMap, liftResult};
+    use FlixParsec.Combinators.{between, sepBy, sepBy1, sepByWith, sepBy1With};
+    use FlixParsec.Char.{string};
+    use FlixParsec.Text.{whiteSpace, digits};
+    use FlixParsec.Regex.{lookingAts};
     
 
     pub def lexeme(p: GenParser[ka1, st, r]): GenParser[ka1, st, r] = p <* whiteSpace()
@@ -73,40 +73,40 @@ namespace FlixParsec/TokenSimple {
 
 
     pub def charLiteral(): GenParser[ka1, st, Char] =  
-        lexeme(FlixParsec/Literal.charLiteral())
+        lexeme(FlixParsec.Literal.charLiteral())
 
     pub def stringLiteral(): GenParser[ka1, st, String] =  
-        lexeme(FlixParsec/Literal.stringLiteral())
+        lexeme(FlixParsec.Literal.stringLiteral())
 
 
 
     pub def int8(): GenParser[ka1, st, Int8] = 
-        lexeme(FlixParsec/Literal.int8())
+        lexeme(FlixParsec.Literal.int8())
 
     pub def int16(): GenParser[ka1, st, Int16] = 
-        lexeme(FlixParsec/Literal.int16())
+        lexeme(FlixParsec.Literal.int16())
     
     pub def int32(): GenParser[ka1, st, Int32] = 
-        lexeme(FlixParsec/Literal.int32())
+        lexeme(FlixParsec.Literal.int32())
     
 
     pub def int64(): GenParser[ka1, st, Int64] = 
-        lexeme(FlixParsec/Literal.int64())
+        lexeme(FlixParsec.Literal.int64())
 
     pub def bigInt(): GenParser[ka1, st, BigInt] = 
-        lexeme(FlixParsec/Literal.bigInt())
+        lexeme(FlixParsec.Literal.bigInt())
 
     pub def float32(): GenParser[ka1, st, Float32] = 
-        lexeme(FlixParsec/Literal.float32())
+        lexeme(FlixParsec.Literal.float32())
 
     pub def float64(): GenParser[ka1, st, Float64] = 
-        lexeme(FlixParsec/Literal.float64())
+        lexeme(FlixParsec.Literal.float64())
 
 
     pub def hexInt32(): GenParser[ka1, st, Int32] = 
-        lexeme(FlixParsec/Literal.hexInt32())
+        lexeme(FlixParsec.Literal.hexInt32())
 
     pub def octInt32(): GenParser[ka1, st, Int32] = 
-        lexeme(FlixParsec/Literal.octInt32())
+        lexeme(FlixParsec.Literal.octInt32())
 
 }

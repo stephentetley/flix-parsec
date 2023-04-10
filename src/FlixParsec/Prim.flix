@@ -15,7 +15,7 @@
  */
 
 
-namespace FlixParsec {
+mod FlixParsec {
 
     type alias ParseContext = {input = String, tabSize = Int32}
 
@@ -39,26 +39,26 @@ namespace FlixParsec {
 
     instance Functor[GenParser[ka, st]] {
         pub def map(f: a -> b \ ef, x: GenParser[ka1, st, a]): GenParser[ka1, st, b] \ ef = 
-            FlixParsec/Prim.map(f, x)
+            FlixParsec.Prim.map(f, x)
     }
 
     instance Applicative[GenParser[ka, st]] {
         pub def point(x: a): GenParser[ka, st, a] = 
-            FlixParsec/Prim.point(x)
+            FlixParsec.Prim.point(x)
 
         pub def ap(f: GenParser[ka, st, a -> b \ ef], x: GenParser[ka, st, a]): GenParser[ka, st, b] \ ef = 
-            FlixParsec/Prim.ap(f, x)
+            FlixParsec.Prim.ap(f, x)
     }
 
 
     instance Monad[GenParser[ka, st]] {
         pub def flatMap(f: a -> GenParser[ka, st, b] \ ef, o: GenParser[ka, st, a]): GenParser[ka, st, b] \ ef = 
-            FlixParsec/Prim.flatMap(f, o)
+            FlixParsec.Prim.flatMap(f, o)
     }
 
 }
 
-namespace FlixParsec/Prim {
+modPrim {
 
     use FlixParsec.{GenParser, Parser, ParseContext, ParseState, Failures, SuccessK, FailK};
     use FlixParsec.GenParser.{GenParser};
@@ -137,7 +137,7 @@ namespace FlixParsec/Prim {
     /// Run parser `p` on the string `input`.
     ///
     pub def runGenParser(p: GenParser1[st, ans], initState: st, tabSize: Int32, input: String) : Result[ans, ParseError] =
-        use FlixParsec/Internal/ErrorUtils.{textPos, getTextBeforeAndAfter};
+        use FlixParsec.Internal.ErrorUtils.{textPos, getTextBeforeAndAfter};
         let context = {input = input, tabSize = tabSize};
         let state = {pos = 0, userState = initState};
         let fk = (posn, errs) -> Err({messages = errs, position = posn});
@@ -251,7 +251,7 @@ namespace FlixParsec/Prim {
 
     pub def getPosition(): GenParser[ka1, st, SourcePosition] =  
         GenParser((sk, fk, ctx, st) ->
-            let (x,y) = FlixParsec/Internal/ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
+            let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
             sk({ lineNumber = x, column = y }, fk, ctx, st)
         )
 

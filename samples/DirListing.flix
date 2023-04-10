@@ -22,9 +22,9 @@
 
 use TextParser.Parser;
 use TextParser.{return, nestError, alt};
-use TextParser/Combinators.{seqLeft, seqRight, count, many, many1, manyTill, ignore, tuple2};
-use TextParser/Text.{char, countChar, restOfLine, lookingAts, newline, many1OneOf};
-use TextParser/Token.{symbol, int32, int64};
+use TextParser.Combinators.{seqLeft, seqRight, count, many, many1, manyTill, ignore, tuple2};
+use TextParser.Text.{char, countChar, restOfLine, lookingAts, newline, many1OneOf};
+use TextParser.Token.{symbol, int32, int64};
 
 type alias TimeStamp = { day: Int32, month: Int32, year: Int32, hour: Int32, minute: Int32 }
 
@@ -179,8 +179,8 @@ namespace DirListing {
             |> nestError("directoryListing")
 
 
-    pub def parseDirListing(path: String): Result[List[DirListingFolder], TextParser/Error.ParseError] & Impure = 
-        let path1 = System/FilePath.new(path);
-        TextParser.parseFile(DirListing.directoryListing(), path1, Text/Charset.utf_16le())
+    pub def parseDirListing(path: String): Result[List[DirListingFolder], TextParser.Error.ParseError] & Impure = 
+        let path1 = System.FilePath.new(path);
+        TextParser.parseFile(DirListing.directoryListing(), path1, Text.Charset.utf_16le())
             
 }

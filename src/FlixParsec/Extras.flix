@@ -16,12 +16,12 @@
 
 /// This module contains Extra functions that have dependencies on `basis-base`...
 
-namespace FlixParsec/Extras {
+mod FlixParsec.Extras {
 
-    use Basis/NIO/File.Path;
-    use Basis/NIO/Charset.Charset;
+    use Basis.NIO.File.Path;
+    use Basis.NIO.Charset.Charset;
 
-    use FlixParsec/Prim.{GenParser1, Parser1, ParseError};
+    use FlixParsec.Prim.{GenParser1, Parser1, ParseError};
 
     pub def parseFile(parser: GenParser1[st, ans], 
                         initState: st, 
@@ -29,12 +29,12 @@ namespace FlixParsec/Extras {
                         path: Path, 
                         cs: Charset): Result[ans, ParseError] & Impure =
         use Result.flatMap;
-        let* exists = Basis/NIO/File/Files.exists(path, Nil) |> Result.mapErr(FlixParsec/Prim.generalError);
+        let* exists = Basis.NIO.File.Files.exists(path, Nil) |> Result.mapErr(FlixParsec.Prim.generalError);
         if (exists) {
-            let* src = Basis/NIO/File/Files.readStringWithCharset(path, cs) |> Result.mapErr(FlixParsec/Prim.generalError);
-            FlixParsec/Prim.runGenParser(parser, initState, tabSize, src)
+            let* src = Basis.NIO.File.Files.readStringWithCharset(path, cs) |> Result.mapErr(FlixParsec.Prim.generalError);
+            FlixParsec.Prim.runGenParser(parser, initState, tabSize, src)
         } else
-            Err(FlixParsec/Prim.fileNotFoundError(ToString.toString(path)))
+            Err(FlixParsec.Prim.fileNotFoundError(ToString.toString(path)))
 
 
     pub def parsesFile(parser: Parser1[ans],
@@ -43,7 +43,7 @@ namespace FlixParsec/Extras {
                         cs: Charset): Result[ans, String] & Impure =
         match parseFile(parser, (), tabSize, path, cs) {
             case Ok(a) => Ok(a)
-            case Err(e) => Err(FlixParsec/Prim.showSourcePosition(e.position) + ": " + e.message)
+            case Err(e) => Err(FlixParsec.Prim.showSourcePosition(e.position) + ": " + e.message)
         }
 
     // pub def parseFileWithBOM(parser: GenParser1[st, ans], 
@@ -51,19 +51,19 @@ namespace FlixParsec/Extras {
     //                             tabSize: Int32, 
     //                             path: FilePath): Result[ans, ParseError] & Impure =
     //     use Result.flatMap;
-    //     let* exists = FlixSandbox/System/IO.fileExists(path) |> Result.mapErr(FlixParsec/Prim.generalError);
+    //     let* exists = FlixSandbox.System.IO.fileExists(path) |> Result.mapErr(FlixParsec.Prim.generalError);
     //     if (exists) {
-    //         let* src = FlixSandbox/System/File/BOM.readFileWithBOM(path) |> Result.mapErr(FlixParsec/Prim.generalError);
-    //         FlixParsec/Prim.runGenParser(parser, initState, tabSize, src)
+    //         let* src = FlixSandbox.System.File.BOM.readFileWithBOM(path) |> Result.mapErr(FlixParsec.Prim.generalError);
+    //         FlixParsec.Prim.runGenParser(parser, initState, tabSize, src)
     //     } else
-    //         Err(FlixParsec/Prim.fileNotFoundError(ToString.toString(path)))
+    //         Err(FlixParsec.Prim.fileNotFoundError(ToString.toString(path)))
 
     // pub def parsesFileWithBOM(parser: Parser1[ans], 
     //                             tabSize: Int32, 
     //                             path: FilePath): Result[ans, String] & Impure =
     //     match parseFileWithBOM(parser, (), tabSize, path) {
     //         case Ok(a) => Ok(a)
-    //         case Err(e) => Err(FlixParsec/Prim.showSourcePosition(e.position) + ": " + e.message)
+    //         case Err(e) => Err(FlixParsec.Prim.showSourcePosition(e.position) + ": " + e.message)
     //     }
 
 }

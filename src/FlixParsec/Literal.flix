@@ -15,16 +15,16 @@
  */
 
 
-namespace FlixParsec/Literal {
+mod FlixParsec.Literal {
 
     use Functor.{map};
     use Applicative.{point, *>};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, swapError, liftOption};
-    use FlixParsec/Combinators.{alt, choice, between, manyWith};
-    use FlixParsec/Char.{char, string, satisfy};
-    use FlixParsec/Regex.{lookingAts};
+    use FlixParsec.Prim.{flatMap, swapError, liftOption};
+    use FlixParsec.Combinators.{alt, choice, between, manyWith};
+    use FlixParsec.Char.{char, string, satisfy};
+    use FlixParsec.Regex.{lookingAts};
 
     pub def stringLiteral(): GenParser[ka1, st, String] = 
         let step = (ac, x) -> match x { 
@@ -70,8 +70,8 @@ namespace FlixParsec/Literal {
 
 
     def hexNumber(): GenParser[ka1, st, Int32] =  
-        use FlixParsec/Combinators.{countWith};
-        use FlixParsec/Char.{hexDigit};
+        use FlixParsec.Combinators.{countWith};
+        use FlixParsec.Char.{hexDigit};
         let step = (ac, ch) -> match asciiDigitToInt32(ch) {
             case Some(i) => ac * 16 + i
             case None => ac * 16
@@ -130,8 +130,8 @@ namespace FlixParsec/Literal {
         alt(string("0X"), string("0x")) *> hexInt32Base()
         
     pub def hexInt32Base(): GenParser[ka1, st, Int32] =  
-        use FlixParsec/Combinators.{many1With};
-        use FlixParsec/Char.{hexDigit};
+        use FlixParsec.Combinators.{many1With};
+        use FlixParsec.Char.{hexDigit};
         let step = (ac, ch) -> match asciiDigitToInt32(ch) {
             case Some(i) => ac * 16 + i
             case None => ac * 16
@@ -142,8 +142,8 @@ namespace FlixParsec/Literal {
         alt(string("0o"), string("0O")) *> octInt32Base()
         
     pub def octInt32Base(): GenParser[ka1, st, Int32] =  
-        use FlixParsec/Combinators.{many1With};
-        use FlixParsec/Char.{octDigit};
+        use FlixParsec.Combinators.{many1With};
+        use FlixParsec.Char.{octDigit};
         let step = (ac, ch) -> match asciiDigitToInt32(ch) {
             case Some(i) => ac * 8 + i
             case None => ac * 8

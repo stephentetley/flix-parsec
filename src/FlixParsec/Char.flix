@@ -15,13 +15,13 @@
  */
 
 
-namespace FlixParsec/Char {
+mod FlixParsec.Char {
 
     use Applicative.{point};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, fail, lookahead, swapError, liftOption};
-    use FlixParsec/Regex.{lookingAts, skippingAts};
+    use FlixParsec.Prim.{flatMap, fail, lookahead, swapError, liftOption};
+    use FlixParsec.Regex.{lookingAts, skippingAts};
 
 
     pub def satisfy(test: Char -> Bool): GenParser[ka1, st, Char] = 
@@ -41,13 +41,13 @@ namespace FlixParsec/Char {
         satisfy(x -> x == c) `swapError` "char('${c}')"
 
     pub def string(s: String): GenParser[ka1, st, String] =
-        let* s1 = FlixParsec/Prim.take(String.length(s));
+        let* s1 = FlixParsec.Prim.take(String.length(s));
         if (s1 == s)
             point(s)
         else
             fail("string")
 
-    pub def anyChar(): GenParser[ka1, st, Char] = FlixParsec/Prim.take1()
+    pub def anyChar(): GenParser[ka1, st, Char] = FlixParsec.Prim.take1()
 
     pub def upper(): GenParser[ka1, st, Char] = 
         satisfy(Char.isUpperCase)

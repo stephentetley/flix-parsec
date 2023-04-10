@@ -16,16 +16,16 @@
 
 
 
-namespace FlixParsec/Token {
+mod FlixParsec.Token {
 
     use Functor.{ignore};
     use Applicative.{point, *>};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, fail};
-    use FlixParsec/Combinators.{alt, skipMany1, skipMany, between, 
+    use FlixParsec.Prim.{flatMap, fail};
+    use FlixParsec.Combinators.{alt, skipMany1, skipMany, between, 
         sepBy, sepBy1, notFollowedBy, manyWith, sepByWith, sepBy1With};
-    use FlixParsec/Char.{string, char, oneOf, noneOf, satisfy};
+    use FlixParsec.Char.{string, char, oneOf, noneOf, satisfy};
     
 
     pub type alias LanguageDef[ka1, st] = 
@@ -93,39 +93,39 @@ namespace FlixParsec/Token {
 
 
     pub def charLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Char] =  
-        lexeme(langDef, FlixParsec/Literal.charLiteral())
+        lexeme(langDef, FlixParsec.Literal.charLiteral())
 
     pub def stringLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
-        lexeme(langDef, FlixParsec/Literal.stringLiteral())
+        lexeme(langDef, FlixParsec.Literal.stringLiteral())
 
 
 
     pub def int8(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int8] = 
-        lexeme(langDef, FlixParsec/Literal.int8())
+        lexeme(langDef, FlixParsec.Literal.int8())
 
     pub def int16(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int16] = 
-        lexeme(langDef, FlixParsec/Literal.int16())
+        lexeme(langDef, FlixParsec.Literal.int16())
     
     pub def int32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
-        lexeme(langDef, FlixParsec/Literal.int32())
+        lexeme(langDef, FlixParsec.Literal.int32())
     
     pub def int64(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int64] = 
-        lexeme(langDef, FlixParsec/Literal.int64())
+        lexeme(langDef, FlixParsec.Literal.int64())
 
     pub def bigInt(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, BigInt] = 
-        lexeme(langDef, FlixParsec/Literal.bigInt())
+        lexeme(langDef, FlixParsec.Literal.bigInt())
 
     pub def float32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Float32] = 
-        lexeme(langDef, FlixParsec/Literal.float32())
+        lexeme(langDef, FlixParsec.Literal.float32())
 
     pub def float64(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Float64] = 
-        lexeme(langDef, FlixParsec/Literal.float64())
+        lexeme(langDef, FlixParsec.Literal.float64())
 
     pub def hexInt32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
-        lexeme(langDef, FlixParsec/Literal.hexInt32())
+        lexeme(langDef, FlixParsec.Literal.hexInt32())
 
     pub def octInt32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
-        lexeme(langDef, FlixParsec/Literal.octInt32())
+        lexeme(langDef, FlixParsec.Literal.octInt32())
 
     pub def symbol(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, String] = 
         lexeme(langDef, string(name))
@@ -152,7 +152,7 @@ namespace FlixParsec/Token {
         skipMany1(satisfy(Char.isWhiteSpace))
 
     def onelineComment(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
-        use FlixParsec/Text.{restOfLine};
+        use FlixParsec.Text.{restOfLine};
         (string(langDef.commentLine) *> restOfLine(true)) 
             |> ignore
 
@@ -241,7 +241,7 @@ namespace FlixParsec/Token {
         if (langDef.caseSensitive)
             List.exists(x -> x == name, langDef.reservedNames)
         else
-            List.exists(x -> FlixParsec/Internal/SimpleCollator.caseInsenstiveEquals(x, name), langDef.reservedNames)
+            List.exists(x -> FlixParsec.Internal.SimpleCollator.caseInsenstiveEquals(x, name), langDef.reservedNames)
 
 
 

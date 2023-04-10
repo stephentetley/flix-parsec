@@ -15,10 +15,10 @@
  */
 
 /// Note
-/// This a substitute for the Text/Collator module in `flix-sandbox` that 
+/// This a substitute for the Text.Collator module in `interop-base` that 
 /// has a larger API and allows the collator to be customized
 
-namespace FlixParsec/Internal/SimpleCollator {
+mod FlixParsec.Internal.SimpleCollator {
 
     /// Compare with the default collator (this will be locale specific).
     pub def caseInsenstiveEquals(s1: String, s2: String): Bool = 

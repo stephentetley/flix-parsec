@@ -15,13 +15,13 @@
  */
 
 
-namespace FlixParsec/Combinators {
+mod FlixParsec.Combinators {
 
     use Functor.{map};
     use Applicative.{point, <*, *>};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, fail, bind, ifThenElse, lookahead};
+    use FlixParsec.Prim.{flatMap, fail, bind, ifThenElse, lookahead};
 
     
     pub def <!>(p1: GenParser[ka1, st, a], p2: GenParser[ka1, st, a]): GenParser[ka1, st, a] =

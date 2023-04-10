@@ -15,22 +15,22 @@
  */
 
 
-namespace FlixParsec/Text {
+mod FlixParsec.Text {
 
     use Functor.{<$>};
     use Applicative.{point};
 
     use FlixParsec.{GenParser};
-    use FlixParsec/Prim.{flatMap, fail, lookahead, swapError, liftResult1};    
-    use FlixParsec/Regex.{lookingAts, skippingAts};
-    use FlixParsec/Char.{char};
+    use FlixParsec.Prim.{flatMap, fail, lookahead, swapError, liftResult1};    
+    use FlixParsec.Regex.{lookingAts, skippingAts};
+    use FlixParsec.Char.{char};
     
 
-    pub def makePattern(regex: String): GenParser[ka1, st, Text/Regex.Pattern] = 
-        liftResult1(Text/Regex/Pattern.compile(regex), _ -> "makePattern")
+    pub def makePattern(regex: String): GenParser[ka1, st, Text.Regex.Pattern] = 
+        liftResult1(Text.Regex.Pattern.compile(regex), _ -> "makePattern")
 
-    pub def makePatternWithFlags(regex: String, flags: List[Text/Regex/Pattern.Flag]): GenParser[ka1, st, Text/Regex.Pattern] = 
-        liftResult1(Text/Regex/Pattern.compileWithFlags(regex, flags), _ -> "makePatternWithFlags")
+    pub def makePatternWithFlags(regex: String, flags: List[Text.Regex.Pattern.Flag]): GenParser[ka1, st, Text.Regex.Pattern] = 
+        liftResult1(Text.Regex.Pattern.compileWithFlags(regex, flags), _ -> "makePatternWithFlags")
 
     // Parse a newline recognized by the regular expression "\R".
     pub def newline(): GenParser[ka1, st, Unit] = skippingAts("\\R")
@@ -39,7 +39,7 @@ namespace FlixParsec/Text {
     /// Run parser `p` bounding the input to only the rest of the current line.
     /// If `p` succeeds continue parsing the whole input.
     pub def parseLine(p: GenParser[ka1, st, a], consumeNewline: Bool): GenParser[ka1, st, a] =
-        use FlixParsec/Prim.{bounded};
+        use FlixParsec.Prim.{bounded};
         let regex = if (consumeNewline) ".*\\R?" else ".*";
         let* restofline = lookahead(lookingAts(regex));
         let* ans = bounded(String.length(restofline), p);
@@ -67,7 +67,7 @@ namespace FlixParsec/Text {
     pub def anchorLineMatches(regex: String): GenParser[ka1, st, Unit] =    
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
-        if (Text/Regex.isMatch(patt, rest1)) 
+        if (Text.Regex.isMatch(patt, rest1)) 
             point()
         else
             fail("anchorLineMatches not matched")
@@ -75,7 +75,7 @@ namespace FlixParsec/Text {
     pub def anchorLine(regex: String): GenParser[ka1, st, Unit] =        
         let* rest1 = restOfLine(true);
         let* patt = makePattern(regex);
-        if (Text/Regex.isSubmatch(patt, rest1)) 
+        if (Text.Regex.isSubmatch(patt, rest1)) 
             point()
         else
             fail("anchorLine not matched")
@@ -108,16 +108,16 @@ namespace FlixParsec/Text {
     pub def horizontalWhiteSpace1(): GenParser[ka1, st, Unit] = skippingAts("\\h+")
 
     pub def manyChar(c: Char): GenParser[ka1, st, String] =
-        let regex = Text/Regex/Pattern.quote(Char.toString(c)) + "*";
+        let regex = Text.Regex.Pattern.quote(Char.toString(c)) + "*";
         lookingAts(regex)
 
     pub def many1Char(c: Char): GenParser[ka1, st, String] =
-        let regex = Text/Regex/Pattern.quote(Char.toString(c)) + "+";
+        let regex = Text.Regex.Pattern.quote(Char.toString(c)) + "+";
         lookingAts(regex)
 
         
     pub def content(n: Int32): GenParser[ka1, st, String] =
-        String.trim <$> FlixParsec/Prim.horizon(n)
+        String.trim <$> FlixParsec.Prim.horizon(n)
 
     /// One or more ASCII digits [0-9].
     pub def digits(): GenParser[ka1, st, String] = lookingAts("\\d+")
@@ -139,6 +139,6 @@ namespace FlixParsec/Text {
 
 
     pub def isEof(): GenParser[ka1, st, Bool] = 
-        FlixParsec/Combinators.succeeds(FlixParsec/Prim.endOfInput())
+        FlixParsec.Combinators.succeeds(FlixParsec.Prim.endOfInput())
         
 }

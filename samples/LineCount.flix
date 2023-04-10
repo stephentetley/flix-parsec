@@ -19,7 +19,7 @@ use TextParser.{runs, return, fail, map};
 
 /// Very simple parser to count lines.
 
-namespace LineCount {
+mod LineCount {
 
 
     pub def timeOperation(thunk: Unit -> a & e): (Int64, a) & Impure = 
@@ -51,32 +51,32 @@ namespace LineCount {
 
     pub def lineCount02(s: String): Int32 & Impure = 
         match runs(lc02(), s) {
-            case Err(e) => { println(System/Error.toString(e)); -1 }
+            case Err(e) => { println(System.Error.toString(e)); -1 }
             case Ok(c) => c
         }
 
     pub def lc02(): Parser[Int32] = 
-        use TextParser/Combinators.ntimes; 
+        use TextParser.Combinators.ntimes; 
         ntimes(parseLine2())
 
     pub def parseLine2(): Parser[Unit] =
-        use TextParser/Combinators.skipManyTill; 
-        use TextParser/Text.{anyChar, newline};
+        use TextParser.Combinators.skipManyTill; 
+        use TextParser.Text.{anyChar, newline};
         skipManyTill(anyChar(), newline())
 
     pub def lineCount03(s: String): Int32 & Impure = 
         match runs(lc03(), s) {
-            case Err(e) => { println(System/Error.toString(e)); -1 }
+            case Err(e) => { println(System.Error.toString(e)); -1 }
             case Ok(c) => c
         }
 
     pub def lc03(): Parser[Int32] = 
-        use TextParser/Combinators.ntimes; 
+        use TextParser.Combinators.ntimes; 
         TextParser.map(x -> x + 1, ntimes(parseLine3()))
 
     def parseLine3(): Parser[Unit] =
         use TextParser.flatMap;
-        use TextParser/Text.{isEof, restOfLine};
+        use TextParser.Text.{isEof, restOfLine};
         let* end = isEof();
         if (end)
             fail("eof")

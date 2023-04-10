@@ -16,7 +16,7 @@
 
 
 
-namespace FlixParsec/Internal/ErrorUtils {
+mod FlixParsec.Internal.ErrorUtils {
 
     
 

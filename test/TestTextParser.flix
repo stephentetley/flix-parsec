@@ -16,7 +16,7 @@
 
 
 
-namespace TestTextParser {
+mod TestTextParser {
 
 /*
 def whenErr(x: Result[a, e], test: e -> Bool & ef): Bool & ef = match x {
@@ -142,7 +142,7 @@ def errorPos02(): Bool & Impure =
 @test
 def errorPos03(): Bool & Impure =
     use TextParser.{run, string, samePosition};
-    use TextParser/Combinators.{count};
+    use TextParser.Combinators.{count};
     let p1 = string("a");
     run(count(3, p1), "aab") |> Result.mapErr(e -> e.position) |> x -> whenErr(x, samePosition({ lineNumber = 1, column = 3}))
 
@@ -212,7 +212,7 @@ def swapError06(): Bool & Impure =
 @test
 def parseLine01(): Bool & Impure =
     use TextParser.{run, string, parseLine};
-    use TextParser/Text.{alphas};
+    use TextParser.Text.{alphas};
     let p1 = parseLine(alphas(), true);
     let input = "abc";
     run(p1, input).whenOk(x -> x == "abc")
@@ -220,7 +220,7 @@ def parseLine01(): Bool & Impure =
 @test
 def parseLine02(): Bool & Impure =
     use TextParser.{run, string, parseLine};
-    use TextParser/Text.{alphas};
+    use TextParser.Text.{alphas};
     let p1 = parseLine(alphas(), true);
     let input = String.unlines("abc" :: "def" :: Nil);
     run(p1, input).whenOk(x -> x == "abc")

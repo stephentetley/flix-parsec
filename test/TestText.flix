@@ -16,7 +16,7 @@
 
 /*
 
-namespace TestText {
+mod TestText {
 
 def whenOk(x: Result[a, e], test: a -> Bool): Bool = match x {
     case Ok(a) => test(a)
@@ -30,19 +30,19 @@ def whenOk(x: Result[a, e], test: a -> Bool): Bool = match x {
 @test
 def restOfLine01(): Bool & Impure =
     use TextParser.{run};
-    use TextParser/Text.{restOfLine};
+    use TextParser.Text.{restOfLine};
     run(restOfLine(true), "").whenOk(ans -> ans == "")
 
 @test
 def restOfLine02(): Bool & Impure =
     use TextParser.{run};
-    use TextParser/Text.{restOfLine};
+    use TextParser.Text.{restOfLine};
     run(restOfLine(true), "abc").whenOk(ans -> ans == "abc")
 
 @test
 def restOfLine03(): Bool & Impure =
     use TextParser.{run};
-    use TextParser/Text.{restOfLine};
+    use TextParser.Text.{restOfLine};
     let input = String.unlines("abc" :: "def" :: Nil);
     run(restOfLine(true), input).whenOk(ans -> String.trim(ans) == "abc")
 
@@ -53,19 +53,19 @@ def restOfLine03(): Bool & Impure =
 @test
 def restOfLineLength01(): Bool & Impure =
     use TextParser.{run};
-    use TextParser/Text.{restOfLineLength};
+    use TextParser.Text.{restOfLineLength};
     run(restOfLineLength(), "").whenOk(ans -> ans == 0)
 
 @test
 def restOfLineLength02(): Bool & Impure =
     use TextParser.{run};
-    use TextParser/Text.{restOfLineLength};
+    use TextParser.Text.{restOfLineLength};
     run(restOfLineLength(), "abc").whenOk(ans -> ans == 3)
 
 @test
 def restOfLineLength03(): Bool & Impure =
     use TextParser.{run};
-    use TextParser/Text.{restOfLineLength};
+    use TextParser.Text.{restOfLineLength};
     let input = String.unlines("abc" :: "def" :: Nil);
     run(restOfLineLength(), input).whenOk(ans -> ans == 3)
 
