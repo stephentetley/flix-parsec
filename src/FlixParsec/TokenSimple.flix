@@ -21,6 +21,7 @@
 
 mod FlixParsec.TokenSimple {
 
+/*
     use Applicative.{point, <*};
 
     use FlixParsec.{GenParser};
@@ -108,5 +109,6 @@ mod FlixParsec.TokenSimple {
 
     pub def octInt32(): GenParser[ka1, st, Int32] = 
         lexeme(FlixParsec.Literal.octInt32())
+*/
 
 }

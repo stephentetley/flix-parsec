@@ -16,7 +16,7 @@
 
 
 mod FlixParsec.Char {
-
+/*
     use GradedApplicative.{point};
     use GradedMonad.{>>=};
 
@@ -88,5 +88,5 @@ mod FlixParsec.Char {
     /// \r is carriage return
     pub def space(): GenParser[ka1, st, Char] = 
         satisfy(c -> c == ' ' or c == '\u0009' or c == '\u000A' or c == '\u000B' or c == '\u000C' or c == '\u000D')        
-
+*/
 }

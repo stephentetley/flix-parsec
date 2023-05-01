@@ -16,7 +16,7 @@
 
 
 mod FlixParsec.Combinators {
-
+/*
     use GradedFunctor.{map}
     use GradedApplicative.{point, <*, *>}
     use GradedMonad.{>>=}
@@ -283,7 +283,5 @@ mod FlixParsec.Combinators {
     pub def chainr(p: GenParser[ka1, st, a], op: GenParser[ka1, st, (a, a) -> a], x: a): GenParser[ka1, st, a] = 
         alt(chainr1(p, op), point(x))
 
-
-
-
+*/
 }

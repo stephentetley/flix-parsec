@@ -16,7 +16,7 @@
 
 
 mod FlixParsec.Literal {
-
+/*
     use GradedFunctor.{map};
     use GradedApplicative.{point, *>};
 
@@ -147,5 +147,5 @@ mod FlixParsec.Literal {
             case None => ac * 8
         };
         many1With(step, 0, octDigit())        
-
+*/
 }

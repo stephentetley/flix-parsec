@@ -17,7 +17,7 @@
 
 
 mod FlixParsec.Token {
-
+/*
     use GradedFunctor.{ignore}
     use GradedApplicative.{point, *>, <*}
     use GradedMonad.{>>=}
@@ -264,5 +264,5 @@ mod FlixParsec.Token {
 
     def isReservedOp(langDef: LanguageDef[ka1, st], name: String): Bool = 
         List.exists(x -> x == name, langDef.reservedOpNames)
-
+*/
 }

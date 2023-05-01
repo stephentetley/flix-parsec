@@ -17,6 +17,7 @@
 
 mod FlixParsec.Text {
 
+/*
     use GradedFunctor.{<$>};
     use GradedApplicative.{point};
 
@@ -139,5 +140,6 @@ mod FlixParsec.Text {
 
     pub def isEof(): GenParser[ka1, st, Bool] = 
         FlixParsec.Combinators.succeeds(FlixParsec.Prim.endOfInput())
-        
+
+*/        
 }

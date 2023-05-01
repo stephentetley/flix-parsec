@@ -17,207 +17,179 @@
 
 mod FlixParsec {
 
+    /// Parser is env x state x failure
+
     type alias ParseContext = {input = String, tabSize = Int32}
 
-    type alias ParseState[st] = {pos = Int32, userState = st}
+    type alias ParseState[ust: Type] = {pos = Int32, userState = ust}
 
-    type alias Failures = Chain[String]
+    
+    pub enum GenParser[ka: Type, ust: Type, ef: Bool, a: Type](
+        Graded.EnvStateError[ka, ParseContext, ParseState[ust], ef, a]
+        // ParseContext -> ParseState[ust] -> (a -> ParseState[ust] -> Result[String, ka] \ ef) -> Result[String, ka] \ ef
+    )
 
-    type alias FailK[ka1] = Int32 -> Failures -> ka1
+    /// No user state
+    pub type alias Parser[ka: Type, ef: Bool, a: Type] = GenParser[ka, Unit, ef, a]
 
-    type alias SuccessK[ka1, st, ans] = ans -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1
-
-    /// `st` is the type of user state
-    /// `ans` is the type of "immediate answer"
-    /// `ka1` is the continuation answer type - if Flix had user visible existentials it would 
-    /// be hidden as an existential type. Generally it will always be represented with a type variable
-    /// except in "run" functions.
-    ///
-    pub enum GenParser[ka1, st, ans](SuccessK[ka1, st, ans] -> FailK[ka1] -> ParseContext -> ParseState[st] -> Failures -> ka1)
-
-    pub type alias Parser[ka1, ans] = GenParser[ka1, Unit, ans]
-
-    instance Functor[GenParser[ka, st]] {
-        pub def map(f: a -> b \ ef, x: GenParser[ka1, st, a]): GenParser[ka1, st, b] \ ef = 
+    instance GradedFunctor[GenParser[ka, ust]] {
+        pub def map(f: a -> b \ ef1, x: GenParser[ka1, ust, ef, a]): GenParser[ka1, ust, ef and ef1, b] = 
             FlixParsec.Prim.map(f, x)
     }
 
-    instance Applicative[GenParser[ka, st]] {
-        pub def point(x: a): GenParser[ka, st, a] = 
+    instance GradedApplicative[GenParser[ka, ust]] {
+        pub def point(x: a): GenParser[ka, ust, ef, a] = 
             FlixParsec.Prim.point(x)
 
-        pub def ap(f: GenParser[ka, st, a -> b \ ef], x: GenParser[ka, st, a]): GenParser[ka, st, b] \ ef = 
-            FlixParsec.Prim.ap(f, x)
+        pub def ap(f: GenParser[ka, ust, ef1, a -> b \ ef2], m: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1 and ef2, b] = 
+            FlixParsec.Prim.ap(f, m)
     }
 
 
-    instance Monad[GenParser[ka, st]] {
-        pub def flatMap(f: a -> GenParser[ka, st, b] \ ef, o: GenParser[ka, st, a]): GenParser[ka, st, b] \ ef = 
-            FlixParsec.Prim.flatMap(f, o)
+    instance GradedMonad[GenParser[ka, ust]] {
+        pub def flatMap(f: a -> GenParser[ka, ust, ef1, b] \ ef2, m: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1 and ef2, b] = 
+            FlixParsec.Prim.flatMap(f, m)
     }
 
 }
 
 mod FlixParsec.Prim {
 
-    use FlixParsec.{GenParser, Parser, ParseContext, ParseState, Failures, SuccessK, FailK};
-    use FlixParsec.GenParser.{GenParser};
+    use FlixParsec.{GenParser, Parser, ParseContext, ParseState}
+    use FlixParsec.GenParser.{GenParser}
+
+    def getGenParser(m: GenParser[ka, ust, ef, a]): Graded.EnvStateError[ka, ParseContext, ParseState[ust], ef, a] = 
+        let GenParser(m1) = m;
+        m1
 
     /// Note `SourcePosition` is derived when there is a parse error. 
     /// During parsing, the parse state tracks just an index into the input string.
-    pub type alias SourcePosition = 
-        { lineNumber = Int32
-        , column = Int32 
-        }
+    // pub type alias SourcePosition = 
+    //     { lineNumber = Int32
+    //     , column = Int32 
+    //     }
 
-    pub type alias InternalError = 
-        { messages = Chain[String]
-        , position = Int32 
-        }
+    // pub type alias InternalError = 
+    //     { message = String
+    //     , position = Int32 
+    //     }
 
-    pub type alias ParseError = 
-        { message = String
-        , position = SourcePosition
-        , textBefore = String
-        , textAfter = String
-        }
+    // pub type alias ParseError = 
+    //     { message = String
+    //     , position = SourcePosition
+    //     , textBefore = String
+    //     , textAfter = String
+    //     }
 
-    pub def showSourcePosition(pos: SourcePosition): String = 
-        "Line=${pos.lineNumber}, Col=${pos.column}"
+    // pub def showSourcePosition(pos: SourcePosition): String = 
+    //     "Line=${pos.lineNumber}, Col=${pos.column}"
 
-    pub def samePosition(pos1: SourcePosition, pos2: SourcePosition): Bool =
-        pos1.lineNumber == pos2.lineNumber and pos1.column == pos2.column
+    // pub def samePosition(pos1: SourcePosition, pos2: SourcePosition): Bool =
+    //     pos1.lineNumber == pos2.lineNumber and pos1.column == pos2.column
 
-    pub def showParseError(err: ParseError): String = 
-        String.unlines(err.message :: showSourcePosition(err.position) 
-                            :: "Seen:" :: "-----" :: err.textBefore 
-                            :: "Pending:" :: "--------" :: err.textAfter :: Nil)
+    // pub def showParseError(err: ParseError): String = 
+    //     String.unlines(err.message :: showSourcePosition(err.position) 
+    //                         :: "Seen:" :: "-----" :: err.textBefore 
+    //                         :: "Pending:" :: "--------" :: err.textAfter :: Nil)
 
-    def showErrorsChain(stk: Chain[String]): String = match Chain.toList(stk) {
-        case Nil => "*error*"
-        case x :: rs => x + errorMessageHelper(rs)
-    }
+    // def showErrorsChain(stk: Chain[String]): String = match Chain.toList(stk) {
+    //     case Nil => "*error*"
+    //     case x :: rs => x + errorMessageHelper(rs)
+    // }
 
-    def errorMessageHelper(rest: List[String]): String = match rest {
-        case Nil => ""
-        case x :: Nil => "[${x}]"
-        case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
-    }
+    // def errorMessageHelper(rest: List[String]): String = match rest {
+    //     case Nil => ""
+    //     case x :: Nil => "[${x}]"
+    //     case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
+    // }
 
-    pub def fileNotFoundError(path: String): ParseError = 
-        { message = "File not found: ${path}"
-        , position = {lineNumber = 0, column = 0}
-        , textBefore = ""
-        , textAfter = ""
-        }
+    // pub def fileNotFoundError(path: String): ParseError = 
+    //     { message = "File not found: ${path}"
+    //     , position = {lineNumber = 0, column = 0}
+    //     , textBefore = ""
+    //     , textAfter = ""
+    //     }
 
-    pub def generalError(err: a): ParseError with ToString[a] = 
-        { message = "${err}"
-        , position = {lineNumber = 0, column = 0}
-        , textBefore = ""
-        , textAfter = ""
-        }
+    // pub def generalError(err: a): ParseError with ToString[a] = 
+    //     { message = "${err}"
+    //     , position = {lineNumber = 0, column = 0}
+    //     , textBefore = ""
+    //     , textAfter = ""
+    //     }
 
     ///
     /// This is exposed so client code can implement wrappers over `run` etc. without
-    /// knowing about the internal error type `InternalError`.
+    /// knowing about the internal type `ParseState`.
     ///
-    pub type alias Parser1[ans] = Parser[Result[ans, InternalError], ans]
+    pub type alias Parser1[ef: Bool, a: Type] = Parser[(ParseState[Unit], a), ef, a]
 
-    pub type alias GenParser1[st, ans] = GenParser[Result[ans, InternalError], st, ans]
+    pub type alias GenParser1[ust: Type, ef: Bool, a: Type] = GenParser[(ParseState[ust], a), ust, ef, a]
 
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def runParser(p: Parser1[ans], tabSize: Int32, input: String) : Result[ans, ParseError] =
+    pub def runParser(p: Parser1[ef, a], tabSize: Int32, input: String) : Result[String, a] \ ef =
         runGenParser(p, (), tabSize, input)
 
 
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def runGenParser(p: GenParser1[st, ans], initState: st, tabSize: Int32, input: String) : Result[ans, ParseError] =
-        use FlixParsec.Internal.ErrorUtils.{textPos, getTextBeforeAndAfter};
+    pub def runGenParser(p: GenParser1[st, ef, a], initState: st, tabSize: Int32, input: String) : Result[String, a] \ ef =
         let context = {input = input, tabSize = tabSize};
         let state = {pos = 0, userState = initState};
-        let fk = (posn, errs) -> Err({messages = errs, position = posn});
-        let sk = (a, _, _, _, _) -> Ok(a);
         let GenParser(p1) = p;
-        match p1(sk, fk, context, state, Chain.empty()) {
-            case Ok(a) => Ok(a)
-            case Err(e1) => {
-                let (l, c) = textPos(context.tabSize, e1.position, input);
-                let posn = { lineNumber = l, column = c };
-                let (before, after) = getTextBeforeAndAfter(e1.position, input);
-                Err({ message = showErrorsChain(e1.messages)
-                    , position = posn
-                    , textBefore = before
-                    , textAfter = after })
-            }
+        match FlixParsec.Internal.GradedExtras.runEnvStateError(p1, context, state) {
+            case Ok((_, a)) => Ok(a)
+            case Err(msg)   => Err(msg)
         }
 
-    pub def parseString(p: GenParser1[st, ans], initState: st, input: String): Result[ans, String] =
-        match runGenParser(p, initState, 4, input) {
-            case Ok(a) => Ok(a)
-            case Err(e) => Err(showSourcePosition(e.position) + ": " + e.message)
-        }
+    pub def parseString(p: GenParser1[ust, ef, a], initState: ust, input: String): Result[String, a] \ ef =
+        runGenParser(p, initState, 4, input)
 
     /// 
-    pub def parsesString(p: Parser1[ans], input: String): Result[ans, String] = parseString(p, (), input)
+    pub def parsesString(p: Parser1[ef, a], input: String): Result[String, a] \ ef = parseString(p, (), input)
 
-    pub def point(x: a): GenParser[ka1, st, a] = GenParser(sk -> sk(x))
-
-    pub def throwError(message: String) : GenParser[ka1, st, ans] =
-        GenParser((_, fk, _, st, _) -> fk(st.pos, Chain.singleton(message)))
-
-    pub def fail(message: String) : GenParser[ka1, st, ans] = throwError(message)
-
+    
     ///
-    /// `swapError` is quite subtle. Swapping the error continuation needs to be
-    /// a "local" operation which is undone (restored) afterwards (c.f. local in the Reader
-    /// monad). It must not be a "stateful" operation with unlimited extent.
-    ///
-    pub def swapError(p: GenParser[ka1, st, ans], message: String) : GenParser[ka1, st, ans] =
-        GenParser((sk, fk, ctx, st, errs) ->
-            let fk1 = (pos, _) -> fk(pos, Chain.singleton(message));
-            let sk1 = (x, _, _, st1, _) -> sk(x, fk, ctx, st1, errs);
-            apply1(p, sk1, fk1, ctx, st, errs)
+    pub def swapError(p: GenParser[ka, ust, ef, a], message: String) : GenParser[ka, ust, ef, a] =
+        GenParser(
+            FlixParsec.Internal.GradedExtras.swapError(getGenParser(p), message)
         )
 
-    def apply1 (p: GenParser[ka1, st, ans], 
-                sk: SuccessK[ka1, st, ans], 
-                fk: FailK[ka1], 
-                ctx: ParseContext, 
-                st: ParseState[st], 
-                errs: Failures): ka1 =
-        let GenParser(pf) = p;
-        pf(sk, fk, ctx, st, errs)
+    pub def point(x: a): GenParser[ka, ust, ef, a] = 
+        GenParser(Graded.EnvStateError.point(x))
 
-    pub def map(f: a -> b \ ef, p: GenParser[ka1, st, a]): GenParser[ka1, st, b] \ ef =
-        unsafe_cast (GenParser((sk, fk, ctx, pos, errs) ->
-            let sk1 = (x, fk1, _, pos1, errs1) -> sk(unsafe_cast f(x) as \ {}, fk1, ctx, pos1, errs1);
-            apply1(p, sk1, fk, ctx, pos, errs)
-        )) as \ ef
+    
 
-    pub def ap(mf: GenParser[ka1, st, a -> b \ ef], ma: GenParser[ka1, st, a]): GenParser[ka1, st, b] \ ef =
-        (let* f = mf; let* a = ma; liftAction(_ -> f(a)))
+    pub def map(f: a -> b \ ef1, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1, b] =
+        GenParser(
+            Graded.EnvStateError.map(f, getGenParser(ma))
+        )
 
-    pub def bind(ma: GenParser[ka1, st, a], k: a -> GenParser[ka1, st, b] \ ef):  GenParser[ka1, st, b] \ ef =
-        unsafe_cast (GenParser(sk ->
-            apply1(ma, x -> apply1(unsafe_cast k(x) as \ {}, sk))
-        )) as \ ef
-
-    pub def flatMap(k: a -> GenParser[ka1, st, b] \ ef, ma: GenParser[ka1, st, a]):  GenParser[ka1, st, b] \ ef = 
-        bind(ma, k)
+    pub def ap(mf: GenParser[ka, ust, ef1, a -> b \ ef2], ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1 and ef2, b] =
+        GenParser(
+            Graded.EnvStateError.ap(getGenParser(mf), getGenParser(ma))
+        )
 
 
-    pub def ifThenElse(cond: GenParser[ka1, st, a], 
-                        thenp: a -> GenParser[ka1, st, b], 
-                        elsep: GenParser[ka1, st, b]): GenParser[ka1, st, b] = 
-        GenParser((sk, fk, ctx, st) ->
-            apply1(cond, x -> apply1(thenp(x), sk), _ -> apply1(elsep, sk, fk, ctx, st), ctx, st))
+    pub def flatMap(k: a -> GenParser[ka, ust, ef1, b] \ ef2, ma: GenParser[ka, ust, ef, a]):  GenParser[ka, ust, ef and ef1 and ef2, b] = 
+        GenParser(
+            Graded.EnvStateError.flatMap(a -> getGenParser(k(a)), getGenParser(ma))
+        )
+
+    pub def throwError(message: String) : GenParser[ka, st, ef, a] =
+        GenParser(Graded.EnvStateError.throwError(message))
 
 
+
+    // pub def ifThenElse(cond: GenParser[ka1, st, ef, a], 
+    //                     thenp: a -> GenParser[ka1, st, ef1, b] \ ef2, 
+    //                     elsep: GenParser[ka1, st, ef3, b]): GenParser[ka1, st, ef and ef1 and ef2 and ef3, b] = 
+    //     GenParser((sk, fk, ctx, st) ->
+    //         apply1(cond, x -> apply1(thenp(x), sk), _ -> apply1(elsep, sk, fk, ctx, st), ctx, st))
+
+/*
     pub def liftOption(x: Option[a], errMsg: String): GenParser[ka1, st, a] =  match x {
         case Some(a) => point(a)
         case None    => fail(errMsg)
@@ -235,19 +207,19 @@ mod FlixParsec.Prim {
 
     /// TODO - should float the effect to `GenParser[ka1, st, a] \ ef`
     pub def liftAction(f: Unit -> a \ ef): GenParser[ka1, st, a] \ ef =
-        unsafe_cast (GenParser((sk, fk, ctx, st, errs) ->
+        GenParser((sk, fk, ctx, st, errs) ->
             let a = unsafe_cast f() as \ {};
             sk(a, fk, ctx, st, errs)
-        )) as \ ef
+        )
 
     pub def liftActionResult(f: Unit -> Result[a, e] \ ef): GenParser[ka1, st, a] \ ef =
-        unsafe_cast (GenParser((sk, fk, ctx, st, errs) ->
+        GenParser((sk, fk, ctx, st, errs) ->
             let ans = unsafe_cast f() as \ {};
             match ans {
                 case Ok(a) => sk(a, fk, ctx, st, errs)
                 case Err(_) => fk(st.pos, Chain.singleton("listActionResult"))
             }
-        )) as \ ef
+        )
 
     pub def getPosition(): GenParser[ka1, st, SourcePosition] =  
         GenParser((sk, fk, ctx, st) ->
@@ -341,5 +313,5 @@ mod FlixParsec.Prim {
             apply1(p, sk1, fk1, {input = str1 | ctx}, {pos = 0 | st}, errs)
         )
 
-
+*/
 }

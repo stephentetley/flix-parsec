@@ -39,7 +39,7 @@ mod FlixParsec.Internal.ErrorUtils {
                     case '\n' => textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+1)
                     case '\r' =>
                         if (ix+1 <= pos and ix + 1 <= len) {
-                            if (String.charAt(ix+1,src) == '\n') { 
+                            if (String.charAt(ix+1, src) == '\n') { 
                                 // carriage return & line feed
                                 textPosHelper(len, pos, tabsize, src, linenum+1, 1, ix+2)
                             } else {
@@ -62,14 +62,14 @@ mod FlixParsec.Internal.ErrorUtils {
         let afters = String.split({regex = "\\R{1}"}, after);
         let after1 = { 
             if (List.length(afters) > 3) 
-                String.unlines(List.slice(0, 2, afters))
+                String.unlines(List.slice(start = 0, end = 2, afters))
             else 
                 after
         };
         let before1 ={ 
             let len = List.length(befores);
             if (len > 3) 
-                String.unlines(List.slice(len - 3, len, befores))
+                String.unlines(List.slice(start = len - 3, end = len, befores))
             else 
                 before
         }; 

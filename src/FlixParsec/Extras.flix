@@ -17,7 +17,7 @@
 /// This module contains Extra functions that have dependencies on `basis-base`...
 
 mod FlixParsec.Extras {
-
+/*
     use Basis.NIO.File.Path
     use Basis.NIO.Charset.Charset
 
@@ -65,5 +65,5 @@ mod FlixParsec.Extras {
     //         case Ok(a) => Ok(a)
     //         case Err(e) => Err(FlixParsec.Prim.showSourcePosition(e.position) + ": " + e.message)
     //     }
-
+*/
 }

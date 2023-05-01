@@ -17,7 +17,7 @@
 
 
 mod FlixParsec.Language {
-
+/*
     use FlixParsec.{GenParser};
     use FlixParsec.Combinators.{alt};
     use FlixParsec.Char.{letter, alphaNum, oneOf, char};
@@ -42,5 +42,5 @@ mod FlixParsec.Language {
         , reservedNames     = Nil
         , caseSensitive     = true
         }
-
+*/
 }

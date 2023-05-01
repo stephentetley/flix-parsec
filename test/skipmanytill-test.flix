@@ -1,6 +1,6 @@
 
 mod SkipManyTest {
-
+/*
     use FlixParsec.Parser
     use GradedMonad.{>>=}
 
@@ -20,5 +20,5 @@ mod SkipManyTest {
         let input = String.repeat(20000, "AAAAAAAAAA") + "FGHI";
         FlixParsec.Prim.parsesString(parser1(), input) |> println;
         ()    
-
+*/
 }
