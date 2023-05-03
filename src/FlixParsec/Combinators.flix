@@ -22,7 +22,7 @@ mod FlixParsec.Combinators {
     use GradedMonad.{>>=}
 
     use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{fail, bind, ifThenElse, lookahead}
+    use FlixParsec.Prim.{fail, bind, flatMapElse, lookahead}
 
     
     pub def <!>(p1: GenParser[ka1, st, a], p2: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
@@ -32,18 +32,18 @@ mod FlixParsec.Combinators {
 
     /// `alt` rolls back the parser state (including the position) if `p` fails.
     pub def alt(p: GenParser[ka1, st, a], q: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
-        ifThenElse(p, point, q)
+        flatMapElse(p, point, q)
 
 
     pub def notFollowedBy(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] =
-        ifThenElse(p, _ -> fail("notFollowedBy"), point()) 
+        flatMapElse(p, _ -> fail("notFollowedBy"), point()) 
         
 
 
 
     pub def choice(ps: List[GenParser[ka1, st, a]]): GenParser[ka1, st, a] =
         match ps {
-            case p1 :: rs => ifThenElse(p1, point, choice(rs))
+            case p1 :: rs => flatMapElse(p1, point, choice(rs))
             case Nil => fail("choice")
         }
 
@@ -85,7 +85,7 @@ mod FlixParsec.Combinators {
 
 
     pub def manyWith(combine: (ac, a) -> ac, acc: ac, p: GenParser[ka1, st, a]): GenParser[ka1, st, ac] = 
-        ifThenElse(p, a -> manyWith(combine, combine(acc, a), p), point(acc))
+        flatMapElse(p, a -> manyWith(combine, combine(acc, a), p), point(acc))
 
 
     pub def many(p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] = 
@@ -110,7 +110,7 @@ mod FlixParsec.Combinators {
                             acc: ac, 
                             p: GenParser[ka1, st, a], 
                             endp: GenParser[ka1, st, end]): GenParser[ka1, st, ac] = 
-        ifThenElse(endp, _ -> point(acc), bind(p, a -> manyTillWith(combine, combine(acc, a), p, endp)))
+        flatMapElsee(endp, _ -> point(acc), bind(p, a -> manyTillWith(combine, combine(acc, a), p, endp)))
 
     pub def manyTill(p: GenParser[ka1, st, a], endp: GenParser[ka1, st, end]): GenParser[ka1, st, List[a]] = 
         use Chain.{empty, snoc, toList};
@@ -131,14 +131,14 @@ mod FlixParsec.Combinators {
                         acc: ac, 
                         p: GenParser[ka1, st, a], 
                         sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
-        ifThenElse(p, x -> sepByWithHelper(combine, combine(acc, x), p, sep), point(acc))
+        flatMapElse(p, x -> sepByWithHelper(combine, combine(acc, x), p, sep), point(acc))
     
     // Initial p has been consumed
     def sepByWithHelper(combine: (ac, a) -> ac, 
                         acc: ac, 
                         p: GenParser[ka1, st, a], 
                         sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
-        ifThenElse((sep *> p), x -> sepByWithHelper(combine, combine(acc, x), p, sep), point(acc))
+        flatMapElse((sep *> p), x -> sepByWithHelper(combine, combine(acc, x), p, sep), point(acc))
 
     pub def sepBy(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
         use Chain.{empty, snoc, toList};
@@ -180,7 +180,7 @@ mod FlixParsec.Combinators {
                             p: GenParser[ka1, st, a], 
                             sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
         sepByWith(combine, acc, p, sep) >>= xs ->
-        ifThenElse(sep, _ -> point(xs), point(xs))
+        flatMapElse(sep, _ -> point(xs), point(xs))
 
     // seperated and optionally terminated with sep.
     pub def sepEndBy(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
@@ -193,7 +193,7 @@ mod FlixParsec.Combinators {
                             p: GenParser[ka1, st, a], 
                             sep: GenParser[ka1, st, sep]): GenParser[ka1, st, ac] = 
         sepBy1With(combine, acc, p, sep) >>= xs ->
-        ifThenElse(sep, _ -> point(xs), point(xs))
+        flatMapElse(sep, _ -> point(xs), point(xs))
 
     // seperated and optionally terminated with sep.
     pub def sepEndBy1(p: GenParser[ka1, st, a], sep: GenParser[ka1, st, sep]): GenParser[ka1, st, List[a]] = 
@@ -244,14 +244,14 @@ mod FlixParsec.Combinators {
 
 
     pub def skipMany(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] = 
-        ifThenElse(p, _ -> skipMany(p), point())
+        flatMapElse(p, _ -> skipMany(p), point())
 
     pub def skipMany1(p: GenParser[ka1, st, a]): GenParser[ka1, st, Unit] = 
         bind(p, _ -> skipMany(p))
 
 
     pub def skipManyTill(p: GenParser[ka1, st, a], endp: GenParser[ka1, st, end]): GenParser[ka1, st, Unit] = 
-        ifThenElse(endp, _ -> point(), bind(p, _ -> skipManyTill(p, endp)))
+        flatMapElse(endp, _ -> point(), bind(p, _ -> skipManyTill(p, endp)))
 
     pub def skipMany1Till(p: GenParser[ka1, st, a], endp: GenParser[ka1, st, end]): GenParser[ka1, st, Unit] = 
         bind(p, _ -> skipManyTill(p, endp))

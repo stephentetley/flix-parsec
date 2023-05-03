@@ -40,25 +40,25 @@ def return01() : Bool & Impure =
 
 
 /////////////////////////////////////////////////////////////////////////////
-// ifThenElse                                                              //
+// flatMapElse                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
 def ifTheElse01(): Bool & Impure =
-    use TextParser.{run, char, failure, ifThenElse};
-    let p1 = ifThenElse(char('a'), _ -> char('b'), failure("ifTheElse"));
+    use TextParser.{run, char, failure, flatMapElse};
+    let p1 = flatMapElse(char('a'), _ -> char('b'), failure("ifTheElse"));
     run(p1, "ab") |> x -> whenOk(x, c -> c == 'b')
 
 @test
 def ifTheElse02(): Bool & Impure =
-    use TextParser.{run, char, string, ifThenElse};
-    let p1 = ifThenElse(char('x'), _ -> string("yz"), string("abc"));
+    use TextParser.{run, char, string, flatMapElse};
+    let p1 = flatMapElse(char('x'), _ -> string("yz"), string("abc"));
     run(p1, "xyz") |> x -> whenOk(x, s -> s == "yz")
 
 @test
 def ifTheElse03(): Bool & Impure =
-    use TextParser.{run, char, string, ifThenElse};
-    let p1 = ifThenElse(char('x'), _ -> string("yz"), string("abc"));
+    use TextParser.{run, char, string, flatMapElse};
+    let p1 = flatMapElse(char('x'), _ -> string("yz"), string("abc"));
     run(p1, "abc") |> x -> whenOk(x, s -> s == "abc")
 
 

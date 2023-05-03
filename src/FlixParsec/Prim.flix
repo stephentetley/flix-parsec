@@ -51,6 +51,26 @@ mod FlixParsec {
             FlixParsec.Prim.flatMap(f, m)
     }
 
+    instance GradedOr[GenParser[ka, ust]] { 
+        pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 and ef2, a] =
+            FlixParsec.Prim.orelse(ma, mb)
+    }
+
+    instance GradedError[GenParser[ka, ust]] {
+        pub def throwError(message: String): GenParser[ka, ust, ef, a] =
+            FlixParsec.Prim.throwError(message)
+    
+        pub def mapError(f: String -> String \ ef1, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1, a] = 
+            FlixParsec.Prim.mapError(f, ma)
+
+        pub def catchError(ma: GenParser[ka, ust, ef, a], 
+                            hdlr: String -> GenParser[ka, ust, ef1, a] \ ef2): GenParser[ka, ust, ef and ef1 and ef2, a] = 
+            FlixParsec.Prim.catchError(ma, hdlr)
+
+        pub def reifyError(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, Result[String, a]] = 
+            FlixParsec.Prim.reifyError(ma)
+    }
+
 }
 
 mod FlixParsec.Prim {
@@ -139,7 +159,7 @@ mod FlixParsec.Prim {
         let context = {input = input, tabSize = tabSize};
         let state = {pos = 0, userState = initState};
         let GenParser(p1) = p;
-        match FlixParsec.Internal.GradedExtras.runEnvStateError(p1, context, state) {
+        match Graded.EnvStateError.runEnvStateError(p1, context, state) {
             case Ok((_, a)) => Ok(a)
             case Err(msg)   => Err(msg)
         }
@@ -151,39 +171,40 @@ mod FlixParsec.Prim {
     pub def parsesString(p: Parser1[ef, a], input: String): Result[String, a] \ ef = parseString(p, (), input)
 
     
-    ///
-    pub def swapError(p: GenParser[ka, ust, ef, a], message: String) : GenParser[ka, ust, ef, a] =
-        GenParser(
-            FlixParsec.Internal.GradedExtras.swapError(getGenParser(p), message)
-        )
-
     pub def point(x: a): GenParser[ka, ust, ef, a] = 
         GenParser(Graded.EnvStateError.point(x))
 
     
 
     pub def map(f: a -> b \ ef1, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1, b] =
-        GenParser(
-            Graded.EnvStateError.map(f, getGenParser(ma))
-        )
+        GenParser(Graded.EnvStateError.map(f, getGenParser(ma)))
 
     pub def ap(mf: GenParser[ka, ust, ef1, a -> b \ ef2], ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1 and ef2, b] =
-        GenParser(
-            Graded.EnvStateError.ap(getGenParser(mf), getGenParser(ma))
-        )
+        GenParser(Graded.EnvStateError.ap(getGenParser(mf), getGenParser(ma)))
 
 
-    pub def flatMap(k: a -> GenParser[ka, ust, ef1, b] \ ef2, ma: GenParser[ka, ust, ef, a]):  GenParser[ka, ust, ef and ef1 and ef2, b] = 
-        GenParser(
-            Graded.EnvStateError.flatMap(a -> getGenParser(k(a)), getGenParser(ma))
-        )
+    pub def flatMap(k: a -> GenParser[ka, ust, ef1, b] \ ef2, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1 and ef2, b] = 
+        GenParser(Graded.EnvStateError.flatMap(a -> getGenParser(k(a)), getGenParser(ma)))
 
-    pub def throwError(message: String) : GenParser[ka, st, ef, a] =
+
+    pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 and ef2, a] =
+        GenParser(Graded.EnvStateError.orelse(getGenParser(ma), getGenParser(mb)))
+
+    pub def throwError(message: String): GenParser[ka, ust, ef, a] =
         GenParser(Graded.EnvStateError.throwError(message))
+    
+    pub def mapError(f: String -> String \ ef1, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef and ef1, a] = 
+        GenParser(Graded.EnvStateError.mapError(f, getGenParser(ma)))
 
+    pub def catchError(ma: GenParser[ka, ust, ef, a], 
+                        hdlr: String -> GenParser[ka, ust, ef1, a] \ ef2): GenParser[ka, ust, ef and ef1 and ef2, a] = 
+            GenParser(Graded.EnvStateError.catchError(getGenParser(ma), msg -> getGenParser(hdlr(msg))))
 
+    pub def reifyError(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, Result[String, a]] = 
+        GenParser(Graded.EnvStateError.reifyError(getGenParser(ma)))
 
-    // pub def ifThenElse(cond: GenParser[ka1, st, ef, a], 
+    /// `flatMapElse` is now flatMapElse
+    // pub def flatMapElse(cond: GenParser[ka1, st, ef, a], 
     //                     thenp: a -> GenParser[ka1, st, ef1, b] \ ef2, 
     //                     elsep: GenParser[ka1, st, ef3, b]): GenParser[ka1, st, ef and ef1 and ef2 and ef3, b] = 
     //     GenParser((sk, fk, ctx, st) ->

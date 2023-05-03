@@ -26,8 +26,6 @@ mod FlixParsec.Internal.GradedExtras {
     pub def swapError(p: EnvStateError[ka, env, st, ef, a], message: String) : EnvStateError[ka, env, st, ef, a] =
         Graded.EnvStateError.catchError(p, _ -> Graded.EnvStateError.throwError(message))
 
-    /// Wrong name in EnvStateError...
-    pub def runEnvStateError(ma: EnvStateError[(s, a), env, s, ef, a], e: env, st: s): Result[String, (s, a)] \ ef =
-        Graded.EnvStateError.runStateError(ma, e, st)
+
 
 }
