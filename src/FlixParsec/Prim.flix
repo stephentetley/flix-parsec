@@ -85,12 +85,14 @@ mod FlixParsec.Prim {
         let GenParser(m1) = m;
         m1
 
+    ///
     /// Note `SourcePosition` is derived when there is a parse error. 
-    /// During parsing, the parse state tracks just an index into the input string.
-    // pub type alias SourcePosition = 
-    //     { lineNumber = Int32
-    //     , column = Int32 
-    //     }
+    /// During parsing, the parse state tracks just an index (cursor) into the input string.
+    ///
+    pub type alias SourcePosition = 
+        { lineNumber = Int32
+        , column = Int32 
+        }
 
     // pub type alias InternalError = 
     //     { message = String
@@ -230,6 +232,20 @@ mod FlixParsec.Prim {
     def totalInput(): GenParser[ka, st, Pure, String] =
         GenParser(Graded.EnvStateError.asks(env -> env.input))
     
+    /// Not sufficiently polymorphic in effect...
+    def tabSize(): GenParser[ka, st, Pure, Int32] =
+        GenParser(Graded.EnvStateError.asks(env -> env.tabSize))
+
+
+    pub def getPosition(): GenParser[ka, st, ef, SourcePosition] = 
+        totalInput()                >>= input   ->
+        getCursorPosition()         >>= pos     ->
+        tabSize()                   >>= tabw    -> {
+            let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(tabw, pos, input);
+            point({lineNumber = x, column = y})
+        }
+
+
     pub def endOfInput(): GenParser[ka, st, ef, Unit] =
         (totalInput() <$$> String.length)   >>= len ->
         getCursorPosition()                    >>= pos -> 
@@ -247,23 +263,16 @@ mod FlixParsec.Prim {
             }
         }
 
-    //     GenParser((sk, fk, ctx, st, errs) ->
-    //         let len = String.length(ctx.input);
-    //         if (st.pos < len) {
-    //             let c = String.charAt(st.pos, ctx.input);
-    //             sk(c, fk, ctx, {pos = st.pos + 1 | st}, errs)
-    //         } else {
-    //             let msg = "anyChar - eof";
-    //             fk(st.pos, Chain.singleton(msg))
-    //         }
-    //     )
 
 
-    // pub def getPosition(): GenParser[ka1, st, SourcePosition] =  
-    //     GenParser((sk, fk, ctx, st) ->
-    //         let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
-    //         sk({ lineNumber = x, column = y }, fk, ctx, st)
-    //     )
+    pub def take(n: Int32): GenParser[ka, st, ef, String] =
+        totalInput()                >>= input   ->
+        getCursorPosition()         >>= pos     -> {
+            let maxlen = String.length(input);
+            let end = if (pos + n > maxlen) maxlen else pos + n;
+            let s1 = String.slice(start = pos, end = end, input);
+            setCursorPosition(pos + n) *> point(s1)
+        }
 
 
 /*
@@ -299,13 +308,6 @@ mod FlixParsec.Prim {
         )
 
         
-    pub def take(len: Int32): GenParser[ka1, st, String] =
-        GenParser((sk, fk, ctx, st, errs) ->
-            let slen = String.length(ctx.input);
-            let end = if (st.pos + len > slen) slen else st.pos + len;
-            let s1 = String.slice(st.pos, end, ctx.input);
-            sk(s1, fk, ctx, {pos = st.pos + len | st}, errs)
-        )
 
 
 
