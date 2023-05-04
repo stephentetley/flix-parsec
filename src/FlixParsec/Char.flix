@@ -26,7 +26,7 @@ mod FlixParsec.Char {
 
     pub def anyChar(): GenParser[ka, ust, ef, Char] = FlixParsec.Prim.take1()
 
-    pub def satisfy(test: Char -> Bool): GenParser[ka, ust, ef, Char] = 
+    pub def satisfy(test: Char -> Bool \ ef1): GenParser[ka, ust, ef and ef1, Char] = 
         anyChar()       >>= ans ->
         if (test(ans))
             point(ans)

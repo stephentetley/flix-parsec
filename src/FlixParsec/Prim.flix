@@ -208,6 +208,8 @@ mod FlixParsec.Prim {
     pub def reifyError(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, Result[String, a]] = 
         GenParser(Graded.EnvStateError.reifyError(getGenParser(ma)))
     
+    pub def bind(ma: GenParser[ka, ust, ef, a], k: a -> GenParser[ka, ust, ef1, b] \ ef2): GenParser[ka, ust, ef and ef1 and ef2, b] = 
+        flatMap(k, ma)
 
     pub def fail(message: String): GenParser[ka, ust, ef, a] = 
         throwError(message)
