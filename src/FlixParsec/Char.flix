@@ -19,9 +19,10 @@ mod FlixParsec.Char {
 
     use GradedApplicative.{point}
     use GradedMonad.{>>=}
-    use GradedError.{throwError, swapError}
+    use GradedError.{swapError}
 
     use FlixParsec.{GenParser}
+    use FlixParsec.Prim.{fail}
 
     pub def anyChar(): GenParser[ka, ust, ef, Char] = FlixParsec.Prim.take1()
 
@@ -30,7 +31,7 @@ mod FlixParsec.Char {
         if (test(ans))
             point(ans)
         else
-            throwError("satisfy")
+            fail("satisfy")
 
     pub def oneOf(cs: List[Char]): GenParser[ka, ust, ef, Char] = 
         satisfy(c -> List.memberOf(c, cs))
@@ -46,7 +47,7 @@ mod FlixParsec.Char {
         if (s1 == s)
             point(s)
         else
-            throwError("string")
+            fail("string")
 
 
     pub def upper(): GenParser[ka, ust, ef, Char] = 

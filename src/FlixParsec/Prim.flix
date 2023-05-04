@@ -208,6 +208,10 @@ mod FlixParsec.Prim {
     pub def reifyError(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, Result[String, a]] = 
         GenParser(Graded.EnvStateError.reifyError(getGenParser(ma)))
     
+
+    pub def fail(message: String): GenParser[ka, ust, ef, a] = 
+        throwError(message)
+
     /// `EnvStateError.gets` currently not sufficiently polymorphic in effect...
     pub def getState(): GenParser[ka1, ust, ef, ust] =  
         GenParser(Graded.EnvStateError.get()) <$$> s -> s.userState
@@ -263,8 +267,6 @@ mod FlixParsec.Prim {
             }
         }
 
-
-
     pub def take(n: Int32): GenParser[ka, st, ef, String] =
         totalInput()                >>= input   ->
         getCursorPosition()         >>= pos     -> {
@@ -273,32 +275,42 @@ mod FlixParsec.Prim {
             let s1 = String.slice(start = pos, end = end, input);
             setCursorPosition(pos + n) *> point(s1)
         }
+    
+    ///
+    /// lookahead - run the parser but don't consume input on success
+    /// On fail, fail.
+    ///
+    pub def lookahead(p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, a] =
+        getCursorPosition()     >>= pos ->
+        p                       >>= ans ->
+        setCursorPosition(pos)  >>= _   ->
+        point(ans)
 
 
 /*
-    pub def liftOption(x: Option[a], errMsg: String): GenParser[ka1, st, a] =  match x {
+    pub def liftOption(x: Option[a], errMsg: String): GenParser[ka, st, ef, a] =  match x {
         case Some(a) => point(a)
         case None    => fail(errMsg)
     }
 
-    pub def liftResult(x: Result[a, String]): GenParser[ka1, st, a] =  match x {
+    pub def liftResult(x: Result[a, String]): GenParser[ka, st, ef, a] =  match x {
         case Ok(a)    => point(a)
         case Err(msg) => fail(msg)
     }
 
-    pub def liftResult1(x: Result[a, e], makeErrMsg: e -> String): GenParser[ka1, st, a] =  match x {
+    pub def liftResult1(x: Result[a, e], makeErrMsg: e -> String): GenParser[ka, st, ef, a] =  match x {
         case Ok(a) => point(a)
         case Err(e) => fail(makeErrMsg(e))
     }
 
-    /// TODO - should float the effect to `GenParser[ka1, st, a] \ ef`
-    pub def liftAction(f: Unit -> a \ ef): GenParser[ka1, st, a] \ ef =
+    /// TODO - should float the effect to `GenParser[ka, st, ef, a] \ ef`
+    pub def liftAction(f: Unit -> a \ ef): GenParser[ka, st, ef, a] \ ef =
         GenParser((sk, fk, ctx, st, errs) ->
             let a = unsafe_cast f() as \ {};
             sk(a, fk, ctx, st, errs)
         )
 
-    pub def liftActionResult(f: Unit -> Result[a, e] \ ef): GenParser[ka1, st, a] \ ef =
+    pub def liftActionResult(f: Unit -> Result[a, e] \ ef): GenParser[ka, st, ef, a] \ ef =
         GenParser((sk, fk, ctx, st, errs) ->
             let ans = unsafe_cast f() as \ {};
             match ans {
@@ -313,7 +325,7 @@ mod FlixParsec.Prim {
 
 
     // Truncates if eof...
-    pub def horizon(n: Int32): GenParser[ka1, st, String] = 
+    pub def horizon(n: Int32): GenParser[ka, st, ef, String] = 
         GenParser((sk, fk, ctx, st, errs) ->
             if (n < 0) {
                 let msg = "horizon - invalid size";
@@ -325,20 +337,12 @@ mod FlixParsec.Prim {
         )
 
 
-    ///
-    /// lookahead - run the parser but don't consume input on success
-    /// On fail, fail.
-    ///
-    pub def lookahead(p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
-        GenParser((sk, fk, ctx, st) ->
-            let sk1 = (ans, fk1, _, _) -> sk(ans, fk1, ctx, st);
-            apply1(p, sk1, fk, ctx, st)
-        )
+
 
     ///
     /// Run parser `p` within a bounded length
     ///
-    pub def bounded(n: Int32, p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =
+    pub def bounded(n: Int32, p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, a] =
         GenParser((sk, fk, ctx, st, errs) ->
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
@@ -349,4 +353,5 @@ mod FlixParsec.Prim {
         )
 
 */
+
 }
