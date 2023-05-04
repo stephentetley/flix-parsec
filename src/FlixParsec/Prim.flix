@@ -75,6 +75,9 @@ mod FlixParsec {
 
 mod FlixParsec.Prim {
 
+    use GradedFunctor.{<$$>}
+    use GradedApplicative.{*>}
+    use GradedMonad.{>>=}
     use FlixParsec.{GenParser, Parser, ParseContext, ParseState}
     use FlixParsec.GenParser.{GenParser}
 
@@ -202,13 +205,66 @@ mod FlixParsec.Prim {
 
     pub def reifyError(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, Result[String, a]] = 
         GenParser(Graded.EnvStateError.reifyError(getGenParser(ma)))
+    
+    /// `EnvStateError.gets` currently not sufficiently polymorphic in effect...
+    pub def getState(): GenParser[ka1, ust, ef, ust] =  
+        GenParser(Graded.EnvStateError.get()) <$$> s -> s.userState
 
-    /// `flatMapElse` is now flatMapElse
-    // pub def flatMapElse(cond: GenParser[ka1, st, ef, a], 
-    //                     thenp: a -> GenParser[ka1, st, ef1, b] \ ef2, 
-    //                     elsep: GenParser[ka1, st, ef3, b]): GenParser[ka1, st, ef and ef1 and ef2 and ef3, b] = 
+    /// `EnvStateError.update` currently not sufficiently polymorphic in effect...
+    pub def setState(state: ust): GenParser[ka, ust, Pure, Unit] =  
+        GenParser(Graded.EnvStateError.update(s -> {userState = state | s}))
+
+
+    pub def updateState(modify: ust -> ust \ ef1): GenParser[ka, ust, ef1, Unit] =  
+        GenParser(Graded.EnvStateError.update(s -> let us1 = modify(s.userState); {userState = us1 | s}))
+
+    /// Not sufficiently polymorphic in effect...
+    def getCursorPosition(): GenParser[ka, st, Pure, Int32] =
+        GenParser(Graded.EnvStateError.gets(s -> s.pos))
+
+    /// Not sufficiently polymorphic in effect...
+    def setCursorPosition(cpos: Int32): GenParser[ka, st, Pure, Unit] =
+        GenParser(Graded.EnvStateError.update(s -> {pos = cpos | s}))
+
+    /// Not sufficiently polymorphic in effect...
+    def totalInput(): GenParser[ka, st, Pure, String] =
+        GenParser(Graded.EnvStateError.asks(env -> env.input))
+    
+    pub def endOfInput(): GenParser[ka, st, ef, Unit] =
+        (totalInput() <$$> String.length)   >>= len ->
+        getCursorPosition()                    >>= pos -> 
+        if (pos >= len) point() else throwError("endOfInput - not at end")
+
+    pub def take1(): GenParser[ka, st, ef, Char] =
+        totalInput()                >>= input   ->
+        getCursorPosition()         >>= pos     -> {
+            let len = String.length(input);
+            if (pos < len) {
+                let c = String.charAt(pos, input);
+                setCursorPosition(pos+1) *> point(c)
+            } else {
+                throwError("take1 - eof")
+            }
+        }
+
+    //     GenParser((sk, fk, ctx, st, errs) ->
+    //         let len = String.length(ctx.input);
+    //         if (st.pos < len) {
+    //             let c = String.charAt(st.pos, ctx.input);
+    //             sk(c, fk, ctx, {pos = st.pos + 1 | st}, errs)
+    //         } else {
+    //             let msg = "anyChar - eof";
+    //             fk(st.pos, Chain.singleton(msg))
+    //         }
+    //     )
+
+
+    // pub def getPosition(): GenParser[ka1, st, SourcePosition] =  
     //     GenParser((sk, fk, ctx, st) ->
-    //         apply1(cond, x -> apply1(thenp(x), sk), _ -> apply1(elsep, sk, fk, ctx, st), ctx, st))
+    //         let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
+    //         sk({ lineNumber = x, column = y }, fk, ctx, st)
+    //     )
+
 
 /*
     pub def liftOption(x: Option[a], errMsg: String): GenParser[ka1, st, a] =  match x {
@@ -242,40 +298,7 @@ mod FlixParsec.Prim {
             }
         )
 
-    pub def getPosition(): GenParser[ka1, st, SourcePosition] =  
-        GenParser((sk, fk, ctx, st) ->
-            let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(ctx.tabSize, st.pos, ctx.input);
-            sk({ lineNumber = x, column = y }, fk, ctx, st)
-        )
-
-    pub def getState(): GenParser[ka1, st, st] =  
-        GenParser((sk, fk, ctx, st) ->            
-            sk(st.userState, fk, ctx, st)
-        )
-
-    pub def setState(state: st): GenParser[ka1, st, Unit] =  
-        GenParser((sk, fk, ctx, st) ->
-            let st1 = { userState = state | st};
-            sk((), fk, ctx, st1)
-        )
-
-
-    pub def updateState(modify: st -> st): GenParser[ka1, st, Unit] =  
-        GenParser((sk, fk, ctx, st) ->
-            let st1 = { userState = modify(st.userState) | st};
-            sk((), fk, ctx, st1)
-        )  
-
-
-    pub def endOfInput() : GenParser[ka1, st, Unit] =
-        GenParser((sk, fk, ctx, st, errs) ->
-            let len = String.length(ctx.input);
-            if (st.pos >= len)
-                sk((), fk, ctx, st, errs)
-            else
-                fk(st.pos, Chain.singleton("eof - not at end"))
-        ) 
-
+        
     pub def take(len: Int32): GenParser[ka1, st, String] =
         GenParser((sk, fk, ctx, st, errs) ->
             let slen = String.length(ctx.input);
@@ -285,17 +308,6 @@ mod FlixParsec.Prim {
         )
 
 
-    pub def take1(): GenParser[ka1, st, Char] =
-        GenParser((sk, fk, ctx, st, errs) ->
-            let len = String.length(ctx.input);
-            if (st.pos < len) {
-                let c = String.charAt(st.pos, ctx.input);
-                sk(c, fk, ctx, {pos = st.pos + 1 | st}, errs)
-            } else {
-                let msg = "anyChar - eof";
-                fk(st.pos, Chain.singleton(msg))
-            }
-        )
 
 
     // Truncates if eof...
