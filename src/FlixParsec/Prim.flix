@@ -19,7 +19,7 @@ mod FlixParsec {
 
     /// Parser is env x state x failure
 
-    type alias ParseContext = {input = String, tabSize = Int32}
+    type alias ParseContext = {offset = Int32, input = String, tabSize = Int32}
 
     type alias ParseState[ust: Type] = {pos = Int32, userState = ust}
 
@@ -156,17 +156,27 @@ mod FlixParsec.Prim {
         runGenParser(p, (), tabSize, input)
 
 
+        
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def runGenParser(p: GenParser1[st, ef, a], initState: st, tabSize: Int32, input: String) : Result[String, a] \ ef =
-        let context = {input = input, tabSize = tabSize};
+    /// This allows running "nested" parsers - `offset` represents the start position
+    /// of the input (sub-) String. 
+    ///
+    def runGenParser1(p: GenParser1[ust, ef, a], initState: ust, offfset: {offset = Int32}, tabSize: {tabSize = Int32}, input: String) : Result[String, a] \ ef =
+        let context = {offset = offset.offset, input = input, tabSize = tabSize.tabSize};
         let state = {pos = 0, userState = initState};
         let GenParser(p1) = p;
         match Graded.EnvStateError.runEnvStateError(p1, context, state) {
             case Ok((_, a)) => Ok(a)
             case Err(msg)   => Err(msg)
         }
+
+    ///
+    /// Run parser `p` on the string `input`.
+    ///
+    pub def runGenParser(p: GenParser1[ust, ef, a], initState: ust, tabSize: Int32, input: String) : Result[String, a] \ ef =
+        runGenParser1(p, initState, offfset = 0, tabSize = tabSize, input)
 
     pub def parseString(p: GenParser1[ust, ef, a], initState: ust, input: String): Result[String, a] \ ef =
         runGenParser(p, initState, 4, input)
@@ -225,6 +235,10 @@ mod FlixParsec.Prim {
     pub def updateState(modify: ust -> ust \ ef1): GenParser[ka, ust, ef1, Unit] =  
         GenParser(Graded.EnvStateError.update(s -> let us1 = modify(s.userState); {userState = us1 | s}))
 
+
+    def getOffset(): GenParser[ka, st, Pure, Int32] =
+        GenParser(Graded.EnvStateError.asks(env -> env.offset))
+
     /// Not sufficiently polymorphic in effect...
     def getCursorPosition(): GenParser[ka, st, Pure, Int32] =
         GenParser(Graded.EnvStateError.gets(s -> s.pos))
@@ -244,16 +258,17 @@ mod FlixParsec.Prim {
 
     pub def getPosition(): GenParser[ka, st, ef, SourcePosition] = 
         totalInput()                >>= input   ->
+        getOffset()                 >>= offset  -> 
         getCursorPosition()         >>= pos     ->
         tabSize()                   >>= tabw    -> {
-            let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(tabw, pos, input);
+            let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(tabw, offset + pos, input);
             point({lineNumber = x, column = y})
         }
 
 
     pub def endOfInput(): GenParser[ka, st, ef, Unit] =
         (totalInput() <$$> String.length)   >>= len ->
-        getCursorPosition()                    >>= pos -> 
+        getCursorPosition()                 >>= pos -> 
         if (pos >= len) point() else throwError("endOfInput - not at end")
 
 
@@ -287,13 +302,18 @@ mod FlixParsec.Prim {
             }
         }
 
+    // `n` is "atmost", if eof is found return upto eof.
     pub def take(n: Int32): GenParser[ka, st, ef, String] =
-        totalInput()                >>= input   ->
-        getCursorPosition()         >>= pos     -> {
-            let maxlen = String.length(input);
-            let end = if (pos + n > maxlen) maxlen else pos + n;
-            let s1 = String.slice(start = pos, end = end, input);
-            setCursorPosition(pos + n) *> point(s1)
+        if (n < 0) {
+            throwError("take - invalid size")
+        } else {
+            totalInput()                >>= input   ->
+            getCursorPosition()         >>= pos     -> {
+                let maxlen = String.length(input);
+                let end = if (pos + n > maxlen) maxlen else pos + n;
+                let s1 = String.slice(start = pos, end = end, input);
+                setCursorPosition(pos + n) *> point(s1)
+            }
         }
     
     ///
@@ -307,63 +327,23 @@ mod FlixParsec.Prim {
         point(ans)
 
 
+
+
+    /// Probably to difficult / invasive to implement until GradedLib GradedError 
+    /// changes to have an associated error type rather than always fixed to String
+
 /*
-    pub def liftOption(x: Option[a], errMsg: String): GenParser[ka, st, ef, a] =  match x {
-        case Some(a) => point(a)
-        case None    => fail(errMsg)
-    }
-
-    pub def liftResult(x: Result[a, String]): GenParser[ka, st, ef, a] =  match x {
-        case Ok(a)    => point(a)
-        case Err(msg) => fail(msg)
-    }
-
-    pub def liftResult1(x: Result[a, e], makeErrMsg: e -> String): GenParser[ka, st, ef, a] =  match x {
-        case Ok(a) => point(a)
-        case Err(e) => fail(makeErrMsg(e))
-    }
-
-    /// TODO - should float the effect to `GenParser[ka, st, ef, a] \ ef`
-    pub def liftAction(f: Unit -> a \ ef): GenParser[ka, st, ef, a] \ ef =
-        GenParser((sk, fk, ctx, st, errs) ->
-            let a = unsafe_cast f() as \ {};
-            sk(a, fk, ctx, st, errs)
-        )
-
-    pub def liftActionResult(f: Unit -> Result[a, e] \ ef): GenParser[ka, st, ef, a] \ ef =
-        GenParser((sk, fk, ctx, st, errs) ->
-            let ans = unsafe_cast f() as \ {};
-            match ans {
-                case Ok(a) => sk(a, fk, ctx, st, errs)
-                case Err(_) => fk(st.pos, Chain.singleton("listActionResult"))
-            }
-        )
-
-        
-
-
-
-
-    // Truncates if eof...
-    pub def horizon(n: Int32): GenParser[ka, st, ef, String] = 
-        GenParser((sk, fk, ctx, st, errs) ->
-            if (n < 0) {
-                let msg = "horizon - invalid size";
-                fk(st.pos, Chain.singleton(msg))
-            } else {
-                let str = String.slice(st.pos, st.pos + n, ctx.input);
-                sk(str, fk, ctx, {pos = st.pos + String.length(str) | st}, errs)
-            } 
-        )
-
-
-
-
     ///
     /// Run parser `p` within a bounded length
     ///
     pub def bounded(n: Int32, p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, a] =
-        GenParser((sk, fk, ctx, st, errs) ->
+        totalInput()                >>= input   ->
+        getOffset()                 >>= offset  -> 
+        getCursorPosition()         >>= pos     ->
+        tabSize()                   >>= tabw    -> {
+            let (x,y) = FlixParsec.Internal.ErrorUtils.textPos(tabw, offset + pos, input);
+            point({lineNumber = x, column = y})
+        }
             /// Applies parser `p` on a slice of the input, then "restores" the full input 
             /// for the success continuation.
             let str1 = String.slice(st.pos, st.pos + n, ctx.input);
