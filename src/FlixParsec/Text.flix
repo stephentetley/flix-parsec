@@ -27,44 +27,44 @@ mod FlixParsec.Text {
     use FlixParsec.Char.{char};
     
 
-    pub def makePattern(regex: String): GenParser[ka1, st, Text.Regex.Pattern] = 
+    pub def makePattern(regex: String): GenParser[ka1 st, ef, Text.Regex.Pattern] = 
         liftResult1(Text.Regex.Pattern.compile(regex), _ -> "makePattern")
 
-    pub def makePatternWithFlags(regex: String, flags: List[Text.Regex.Pattern.Flag]): GenParser[ka1, st, Text.Regex.Pattern] = 
+    pub def makePatternWithFlags(regex: String, flags: List[Text.Regex.Pattern.Flag]): GenParser[ka1 st, ef, Text.Regex.Pattern] = 
         liftResult1(Text.Regex.Pattern.compileWithFlags(regex, flags), _ -> "makePatternWithFlags")
 
     // Parse a newline recognized by the regular expression "\R".
-    pub def newline(): GenParser[ka1, st, Unit] = skippingAts("\\R")
+    pub def newline(): GenParser[ka1 st, ef, Unit] = skippingAts("\\R")
         
 
     /// Run parser `p` bounding the input to only the rest of the current line.
     /// If `p` succeeds continue parsing the whole input.
-    pub def parseLine(p: GenParser[ka1, st, a], consumeNewline: Bool): GenParser[ka1, st, a] =
+    pub def parseLine(p: GenParser[ka1 st, ef, a], consumeNewline: Bool): GenParser[ka1 st, ef, a] =
         use FlixParsec.Prim.{bounded};
         let regex = if (consumeNewline) ".*\\R?" else ".*";
         lookahead(lookingAts(regex))                >>= restofline ->
         bounded(String.length(restofline), p)
 
     /// Parse the rest of the line.
-    pub def restOfLine(consumeNewline: Bool): GenParser[ka1, st, String] = 
+    pub def restOfLine(consumeNewline: Bool): GenParser[ka1 st, ef, String] = 
         let regex = if (consumeNewline) ".*\\R?" else ".*";
         lookingAts(regex)
         
     /// Peek rest of line.
-    pub def peekRestOfLine(): GenParser[ka1, st, String] = 
+    pub def peekRestOfLine(): GenParser[ka1 st, ef, String] = 
         lookahead(restOfLine(false))
 
     /// Does not consume input.
-    pub def restOfLineLength(): GenParser[ka1, st, Int32] = 
+    pub def restOfLineLength(): GenParser[ka1 st, ef, Int32] = 
         String.length <$> peekRestOfLine()
 
     /// Skip the rest of the line including the terminating newline if present.
-    pub def skipLine(): GenParser[ka1, st, Unit] =
+    pub def skipLine(): GenParser[ka1 st, ef, Unit] =
         skippingAts(".*\\R?")
 
 
     
-    pub def anchorLineMatches(regex: String): GenParser[ka1, st, Unit] =    
+    pub def anchorLineMatches(regex: String): GenParser[ka1 st, ef, Unit] =    
         restOfLine(true)                >>= rest1 ->
         makePattern(regex)              >>= patt ->
         if (Regex.isMatch(patt, rest1)) 
@@ -72,7 +72,7 @@ mod FlixParsec.Text {
         else
             fail("anchorLineMatches not matched")
 
-    pub def anchorLine(regex: String): GenParser[ka1, st, Unit] =        
+    pub def anchorLine(regex: String): GenParser[ka1 st, ef, Unit] =        
         restOfLine(true)                        >>= rest1 ->
         makePattern(regex)                      >>= patt ->
         if (Regex.isSubmatch(patt, rest1)) 
@@ -84,61 +84,61 @@ mod FlixParsec.Text {
 
 
     /// zero or more
-    pub def whiteSpace(): GenParser[ka1, st, Unit] = skippingAts("\\s*")
+    pub def whiteSpace(): GenParser[ka1 st, ef, Unit] = skippingAts("\\s*")
 
     
     /// one or more
-    pub def spaces(): GenParser[ka1, st, Unit] = skippingAts("\\s*")
+    pub def spaces(): GenParser[ka1 st, ef, Unit] = skippingAts("\\s*")
 
     /// one or more
-    pub def whiteSpace1(): GenParser[ka1, st, Unit] = skippingAts("\\s+")
+    pub def whiteSpace1(): GenParser[ka1 st, ef, Unit] = skippingAts("\\s+")
 
     /// space or tab, zero or more
-    pub def blank(): GenParser[ka1, st, Unit] = skippingAts("\\p{Blank}*")
+    pub def blank(): GenParser[ka1 st, ef, Unit] = skippingAts("\\p{Blank}*")
 
     
     /// space or tab,  one or more
-    pub def blank1(): GenParser[ka1, st, Unit] = skippingAts("\\p{Blank}+")
+    pub def blank1(): GenParser[ka1 st, ef, Unit] = skippingAts("\\p{Blank}+")
 
     /// zero or more
-    pub def horizontalWhiteSpace(): GenParser[ka1, st, Unit] = skippingAts("\\h*")
+    pub def horizontalWhiteSpace(): GenParser[ka1 st, ef, Unit] = skippingAts("\\h*")
 
     
     /// one or more
-    pub def horizontalWhiteSpace1(): GenParser[ka1, st, Unit] = skippingAts("\\h+")
+    pub def horizontalWhiteSpace1(): GenParser[ka1 st, ef, Unit] = skippingAts("\\h+")
 
-    pub def manyChar(c: Char): GenParser[ka1, st, String] =
+    pub def manyChar(c: Char): GenParser[ka1 st, ef, String] =
         let regex = Text.Regex.Pattern.quote(Char.toString(c)) + "*";
         lookingAts(regex)
 
-    pub def many1Char(c: Char): GenParser[ka1, st, String] =
+    pub def many1Char(c: Char): GenParser[ka1 st, ef, String] =
         let regex = Text.Regex.Pattern.quote(Char.toString(c)) + "+";
         lookingAts(regex)
 
         
-    pub def content(n: Int32): GenParser[ka1, st, String] =
+    pub def content(n: Int32): GenParser[ka1 st, ef, String] =
         String.trim <$> FlixParsec.Prim.horizon(n)
 
     /// One or more ASCII digits [0-9].
-    pub def digits(): GenParser[ka1, st, String] = lookingAts("\\d+")
+    pub def digits(): GenParser[ka1 st, ef, String] = lookingAts("\\d+")
 
     /// One or more ASCII hex digits.
-    pub def hexDigits(): GenParser[ka1, st, String] = lookingAts("\\p{XDigit}+")
+    pub def hexDigits(): GenParser[ka1 st, ef, String] = lookingAts("\\p{XDigit}+")
 
     /// One or more.
-    pub def lowerLetters(): GenParser[ka1, st, String] = lookingAts("\\p{Lower}+")
+    pub def lowerLetters(): GenParser[ka1 st, ef, String] = lookingAts("\\p{Lower}+")
 
     /// One or more.
-    pub def upperLetters(): GenParser[ka1, st, String] = lookingAts("\\p{Upper}+")
+    pub def upperLetters(): GenParser[ka1 st, ef, String] = lookingAts("\\p{Upper}+")
 
     /// One or more.
-    pub def alphas(): GenParser[ka1, st, String] = lookingAts("\\p{Alpha}+")
+    pub def alphas(): GenParser[ka1 st, ef, String] = lookingAts("\\p{Alpha}+")
 
     /// One or more.
-    pub def alphanums(): GenParser[ka1, st, String] = lookingAts("\\p{Alnum}+")
+    pub def alphanums(): GenParser[ka1 st, ef,  String] = lookingAts("\\p{Alnum}+")
 
 
-    pub def isEof(): GenParser[ka1, st, Bool] = 
+    pub def isEof(): GenParser[ka1 st, ef,  Bool] = 
         FlixParsec.Combinators.succeeds(FlixParsec.Prim.endOfInput())
 
 */        

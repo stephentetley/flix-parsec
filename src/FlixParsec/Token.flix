@@ -17,127 +17,127 @@
 
 
 mod FlixParsec.Token {
-/*
+
     use GradedFunctor.{ignore}
     use GradedApplicative.{point, *>, <*}
     use GradedMonad.{>>=}
     use GradedOr.{<|>}
-
+/*
     use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{flatMap, fail};
+    use FlixParsec.Prim.{fail};
     use FlixParsec.Combinators.{alt, skipMany1, skipMany, between, 
-        sepBy, sepBy1, notFollowedBy, manyWith, sepByWith, sepBy1With}
+            sepBy, sepBy1, notFollowedBy, manyWith, sepByWith, sepBy1With}
     use FlixParsec.Char.{string, char, oneOf, noneOf, satisfy}
     
+    // use FlixParsec.Token.Status.{Done, More}
 
-    pub type alias LanguageDef[ka1, st] = 
+
+    pub type alias LanguageDef[ka: Type, ust: Type, ef: Eff] = 
         { commentStart = String
         , commentEnd = String
         , commentLine = String
         , nestedComments = Bool  
-        , identStart = GenParser[ka1, st, Char]
-        , identLetter = GenParser[ka1, st, Char]
-        , opStart = GenParser[ka1, st, Char]
-        , opLetter = GenParser[ka1, st, Char]
+        , identStart = GenParser[ka, ust, ef, Char]
+        , identLetter = GenParser[ka, ust, ef, Char]
+        , opStart = GenParser[ka, ust, ef, Char]
+        , opLetter = GenParser[ka, ust, ef, Char]
         , reservedNames = List[String]
         , reservedOpNames = List[String]
         , caseSensitive = Bool
         }
 
-    enum Status { 
+    enum Status with Eq { 
         case More
         case Done
     }
 
 
-    pub def parens(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+    pub def parens(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
         between(symbol(langDef, "("), symbol(langDef, ")"), p)
 
-    pub def braces(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+    pub def braces(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, a] =  
         between(symbol(langDef, "{"), symbol(langDef, "}"), p)
 
-    pub def angles(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+    pub def angles(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
         between(symbol(langDef, "<"), symbol(langDef, ">"), p)
 
-    pub def brackets(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+    pub def brackets(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
         between(symbol(langDef, "["), symbol(langDef, "]"), p)
 
-    pub def squotes(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] =  
+    pub def squotes(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
         between(symbol(langDef, "'"), symbol(langDef, "'"), p)
 
-    pub def dquotes(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] = 
+    pub def dquotes(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
         let dquote = Char.toString('\u0022');
         between(symbol(langDef, dquote), symbol(langDef, dquote), p)
         
-    pub def semi(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+    pub def semi(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] =  
         symbol(langDef, ";")
 
-    pub def comma(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+    pub def comma(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] =  
         symbol(langDef, ",")
 
-    pub def colon(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+    pub def colon(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] =  
         symbol(langDef, ":")
 
-    pub def dot(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+    pub def dot(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] =  
         symbol(langDef, ".")
 
-    pub def semiSep(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+    pub def semiSep(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy(p, semi(langDef))
     
-    pub def commaSep(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+    pub def commaSep(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy(p, comma(langDef))
 
-    pub def semiSep1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+    pub def semiSep1(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy1(p, semi(langDef))
     
-    pub def commaSep1(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, List[a]] =  
+    pub def commaSep1(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy1(p, comma(langDef))
 
 
-    pub def charLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Char] =  
+    pub def charLiteral(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Char] =  
         lexeme(langDef, FlixParsec.Literal.charLiteral())
 
-    pub def stringLiteral(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] =  
+    pub def stringLiteral(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] =  
         lexeme(langDef, FlixParsec.Literal.stringLiteral())
 
-
-
-    pub def int8(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int8] = 
+    pub def int8(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Int8] = 
         lexeme(langDef, FlixParsec.Literal.int8())
 
-    pub def int16(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int16] = 
+    pub def int16(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Int16] = 
         lexeme(langDef, FlixParsec.Literal.int16())
     
-    pub def int32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
+    pub def int32(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Int32] = 
         lexeme(langDef, FlixParsec.Literal.int32())
     
-    pub def int64(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int64] = 
+    pub def int64(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Int64] = 
         lexeme(langDef, FlixParsec.Literal.int64())
 
-    pub def bigInt(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, BigInt] = 
+    pub def bigInt(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, BigInt] = 
         lexeme(langDef, FlixParsec.Literal.bigInt())
 
-    pub def float32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Float32] = 
+    pub def float32(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Float32] = 
         lexeme(langDef, FlixParsec.Literal.float32())
 
-    pub def float64(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Float64] = 
+    pub def float64(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Float64] = 
         lexeme(langDef, FlixParsec.Literal.float64())
 
-    pub def hexInt32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
+    pub def hexInt32(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Int32] = 
         lexeme(langDef, FlixParsec.Literal.hexInt32())
 
-    pub def octInt32(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Int32] = 
+    pub def octInt32(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Int32] = 
         lexeme(langDef, FlixParsec.Literal.octInt32())
 
-    pub def symbol(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, String] = 
+    pub def symbol(langDef: LanguageDef[ka, ust, ef], name: String): GenParser[ka, ust, ef, String] = 
         lexeme(langDef, string(name))
 
-    pub def lexeme(langDef: LanguageDef[ka1, st], p: GenParser[ka1, st, a]): GenParser[ka1, st, a] = 
+    pub def lexeme(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
         p <* whiteSpace(langDef)
 
     /// White space
 
-    pub def whiteSpace(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
+    pub def whiteSpace(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         let noLine = String.isEmpty(langDef.commentLine);
         let noMulti = String.isEmpty(langDef.commentStart);
         match (noLine, noMulti) {
@@ -148,24 +148,24 @@ mod FlixParsec.Token {
         }
 
 
-    def simpleSpace(): GenParser[ka1, st, Unit] =  
+    def simpleSpace(): GenParser[ka, ust, ef, Unit] =  
         skipMany1(satisfy(Char.isWhiteSpace))
 
-    def onelineComment(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
+    def onelineComment(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         use FlixParsec.Text.{restOfLine};
         (string(langDef.commentLine) *> restOfLine(true)) 
             |> ignore
 
-    def multilineComment(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
+    def multilineComment(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         string(langDef.commentStart) *> inComment(langDef)
 
-    def inComment(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
+    def inComment(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         if (langDef.nestedComments) 
             inCommentMulti(langDef) 
         else 
             inCommentSingle(langDef)
 
-    def inCommentMulti(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
+    def inCommentMulti(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         let startEnd = List.distinct(String.toList(langDef.commentEnd) ::: String.toList(langDef.commentStart));
         let endP = string(langDef.commentEnd)   *> point(Done);
         let p1 = multilineComment(langDef)      *> point(More);
@@ -177,7 +177,7 @@ mod FlixParsec.Token {
             case More => inCommentSingle(langDef)
         }
 
-    def inCommentSingle(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, Unit] = 
+    def inCommentSingle(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         let startEnd = List.distinct(String.toList(langDef.commentEnd) ::: String.toList(langDef.commentStart));
         let endP = string(langDef.commentEnd) *> point(Done);
         let p1 = skipMany1(noneOf(startEnd)) *> point(More);
@@ -190,25 +190,25 @@ mod FlixParsec.Token {
 
     /// Reserved
 
-    pub def reserved(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] = 
+    pub def reserved(langDef: LanguageDef[ka, ust, ef], name: String): GenParser[ka, ust, ef, Unit] = 
         lexeme(langDef, reservedHelper(langDef, name)) 
 
-    def reservedHelper(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
+    def reservedHelper(langDef: LanguageDef[ka, ust, ef], name: String): GenParser[ka, ust, ef, Unit] =
         caseString(langDef, name) *> notFollowedBy(langDef.identLetter) *> point()
 
-    def caseString(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
+    def caseString(langDef: LanguageDef[ka, ust, ef], name: String): GenParser[ka, ust, ef, Unit] =
         if (langDef.caseSensitive) 
             ignore(string(name))
         else 
             walk(String.toList(name))
 
-    def walk(cs: List[Char]): GenParser[ka1, st, Unit] =
+    def walk(cs: List[Char]): GenParser[ka, ust, ef, Unit] =
         match cs { 
             case c :: rs => caseChar(c) *> walk(rs)
             case Nil     => point()
         }           
     
-    def caseChar(c: Char): GenParser[ka1, st, Char] = 
+    def caseChar(c: Char): GenParser[ka, ust, ef, Char] = 
         if (Char.isLetter(c)) 
             alt(char(Char.toUpperCase(c)), char(Char.toLowerCase(c)))
         else
@@ -216,10 +216,10 @@ mod FlixParsec.Token {
 
     /// Identifier
 
-    pub def identifier(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+    pub def identifier(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         lexeme(langDef, identifierHelper(langDef))
 
-    def identifierHelper(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+    def identifierHelper(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         ident(langDef) >>= name -> 
         if (isReservedName(langDef, name))
             fail("reserved word: ${name}")
@@ -227,12 +227,12 @@ mod FlixParsec.Token {
             point(name) 
 
 
-    def ident(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+    def ident(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         langDef.identStart >>= c1 ->
         manyWith((ac, x) -> "${ac}${x}", "${c1}", langDef.identLetter)
 
 
-    def isReservedName(langDef: LanguageDef[ka1, st], name: String): Bool = 
+    def isReservedName(langDef: LanguageDef[ka, ust, ef], name: String): Bool = 
         if (langDef.caseSensitive)
             List.exists(x -> x == name, langDef.reservedNames)
         else
@@ -241,28 +241,28 @@ mod FlixParsec.Token {
 
 
     /// Reserved-op
-    pub def reservedOp(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] = 
+    pub def reservedOp(langDef: LanguageDef[ka, ust, ef], name: String): GenParser[ka, ust, ef, Unit] = 
         lexeme(langDef, reservedOpHelper(langDef, name)) 
 
-    def reservedOpHelper(langDef: LanguageDef[ka1, st], name: String): GenParser[ka1, st, Unit] =
+    def reservedOpHelper(langDef: LanguageDef[ka, ust, ef], name: String): GenParser[ka, ust, ef, Unit] =
         string(name) *> notFollowedBy(langDef.opLetter) *> point()
 
     /// Operator
-    pub def operator(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+    pub def operator(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         lexeme(langDef, operatorHelper(langDef))
 
-    def operatorHelper(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+    def operatorHelper(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         oper(langDef) >>= name -> 
         if (isReservedOp(langDef, name))
             fail("reserved word: ${name}")
         else 
             point(name) 
 
-    def oper(langDef: LanguageDef[ka1, st]): GenParser[ka1, st, String] = 
+    def oper(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         langDef.opStart                                             >>= c1 ->
         manyWith((ac, x) -> "${ac}${x}", "${c1}", langDef.opLetter)
 
-    def isReservedOp(langDef: LanguageDef[ka1, st], name: String): Bool = 
+    def isReservedOp(langDef: LanguageDef[ka, ust, ef], name: String): Bool = 
         List.exists(x -> x == name, langDef.reservedOpNames)
 */
 }

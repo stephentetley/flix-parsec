@@ -16,24 +16,24 @@
 
 
 mod FlixParsec.Literal {
-/*
-    use GradedFunctor.{map};
-    use GradedApplicative.{point, *>};
 
-    use FlixParsec.{GenParser};
-    use FlixParsec.Prim.{flatMap, swapError, liftOption};
-    use FlixParsec.Combinators.{alt, choice, between, manyWith};
-    use FlixParsec.Char.{char, string, satisfy};
-    use FlixParsec.Regex.{lookingAts};
+    use GradedFunctor.{map}
+    use GradedApplicative.{point, *>}
+    use GradedOr.{<|>}
+/*
+    use FlixParsec.{GenParser}
+    use FlixParsec.Prim.{flatMap}
+    use FlixParsec.Combinators.{alt, choice, between, manyWith}
+    use FlixParsec.Char.{char, string, satisfy}
+    // use FlixParsec.Regex.{lookingAts}
+
 
     pub def stringLiteral(): GenParser[ka1, st, String] = 
         let step = (ac, x) -> match x { 
             case Some(c) => "${ac}${c}"
-            case None => ac
+            case None    => ac
         };
         between( char('\u0022'),  char('\u0022'), manyWith(step, "", stringChar())) 
-
-
 
     def stringChar(): GenParser[ka1, st, Option[Char]] = 
         alt(stringLetter() |> map(Some), stringEscape())
@@ -70,7 +70,7 @@ mod FlixParsec.Literal {
     def hexNumber(): GenParser[ka1, st, Int32] =  
         use FlixParsec.Combinators.{countWith};
         use FlixParsec.Char.{hexDigit};
-        let step = (ac, ch) -> match asciiDigitToInt32(ch) {
+        let step = (ac, ch) -> match Char.getNumericValue(ch) {
             case Some(i) => ac * 16 + i
             case None => ac * 16
         };
@@ -84,15 +84,9 @@ mod FlixParsec.Literal {
             :: (char('n')   *> point('\u000A'))    /// line feed
             :: Nil
         )    
+*/
 
-    def asciiDigitToInt32(c: Char): Option[Int32] = 
-        match Char.toInt32(c) {
-            case i if i >= 0x0030 and i <= 0x0039 => Some(i - 0x0030)        // '0'..'9'
-            case i if i >= 0x0041 and i <= 0x0046 => Some(i - 0x0041)        // 'A'..'F'
-            case i if i >= 0x0061 and i <= 0x0066 => Some(i - 0x0061)        // 'a'..'f'
-            case _ => None
-        }
-
+/*
     pub def int8(): GenParser[ka1, st, Int8] = 
         lookingAts("-?\\d+")                    >>= s ->
         liftOption(Int8.fromString(s), "int8")
@@ -130,7 +124,7 @@ mod FlixParsec.Literal {
     pub def hexInt32Base(): GenParser[ka1, st, Int32] =  
         use FlixParsec.Combinators.{many1With};
         use FlixParsec.Char.{hexDigit};
-        let step = (ac, ch) -> match asciiDigitToInt32(ch) {
+        let step = (ac, ch) -> match Char.getNumericValue(ch) {
             case Some(i) => ac * 16 + i
             case None => ac * 16
         };
