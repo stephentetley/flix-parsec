@@ -21,10 +21,9 @@ mod FlixParsec.Combinators {
     use GradedApplicative.{point, <*, *>}
     use GradedMonad.{>>=}
     use GradedOr.{<|>}
-    use GradedError.{flatMapOr}
 
     use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{bind, fail, lookahead}
+    use FlixParsec.Prim.{bind, fail, lookahead, flatMapOr}
 
     
     // pub def <!>(p1: GenParser[ka, st, ef, a], p2: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, a] =

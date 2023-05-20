@@ -22,7 +22,7 @@ mod FlixParsec.Char {
     use GradedError.{swapError}
 
     use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{fail}
+    use FlixParsec.Prim.{fail, swapErrorMessage}
 
     pub def anyChar(): GenParser[ka, ust, ef, Char] = FlixParsec.Prim.takeChar()
 
@@ -40,7 +40,7 @@ mod FlixParsec.Char {
         satisfy(c -> not List.memberOf(c, cs))
 
     pub def char(c: Char): GenParser[ka, ust, ef, Char] = 
-        swapError("char('${c}')", satisfy(x -> x == c))
+        swapErrorMessage("char('${c}')", satisfy(x -> x == c))
 
     pub def string(s: String): GenParser[ka, ust, ef, String] =
         FlixParsec.Prim.take(String.length(s)) >>= s1 ->

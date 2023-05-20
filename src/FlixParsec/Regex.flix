@@ -17,11 +17,11 @@
 
 
 mod FlixParsec.Regex {
-/*
+
     use FlixParsec.{GenParser};
     use FlixParsec.GenParser.{GenParser};
-
-    pub def lookingAt(patt: Text.Regex.Pattern): GenParser[ka1, st, String] =
+/*
+    pub def lookingAt(rgx: Regex): GenParser[ka1, ust, ef, String] =
         GenParser((sk, fk, ctx, st, errs) ->
             let ans = Text.Regex.boundedMatchPrefixContent({start = st.pos}, {end = String.length(ctx.input)}, patt, ctx.input);
             match ans { 

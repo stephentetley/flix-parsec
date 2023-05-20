@@ -16,9 +16,64 @@
 
 
 
-mod FlixParsec.Internal.ErrorUtils {
+mod FlixParsec.Internal.ParseError {
 
-    
+    ///
+    /// Note `SourcePosition` is derived when there is a parse error. 
+    /// During parsing, the parse state tracks just an index (cursor) into the input string.
+    ///
+    pub type alias SourcePosition = 
+        { lineNumber = Int32
+        , column = Int32 
+        }
+
+    pub type alias InternalError = 
+        { message = String
+        , position = Int32 
+        }
+
+    pub type alias ParseError = 
+        { message = String
+        , position = SourcePosition
+        , textBefore = String
+        , textAfter = String
+        }
+
+    pub def showSourcePosition(pos: SourcePosition): String = 
+        "Line=${pos.lineNumber}, Col=${pos.column}"
+
+    pub def samePosition(pos1: SourcePosition, pos2: SourcePosition): Bool =
+        pos1.lineNumber == pos2.lineNumber and pos1.column == pos2.column
+
+    pub def showParseError(err: ParseError): String = 
+        String.unlines(err.message :: showSourcePosition(err.position) 
+                            :: "Seen:" :: "-----" :: err.textBefore 
+                            :: "Pending:" :: "--------" :: err.textAfter :: Nil)
+
+    // def showErrorsChain(stk: Chain[String]): String = match Chain.toList(stk) {
+    //     case Nil => "*error*"
+    //     case x :: rs => x + errorMessageHelper(rs)
+    // }
+
+    // def errorMessageHelper(rest: List[String]): String = match rest {
+    //     case Nil => ""
+    //     case x :: Nil => "[${x}]"
+    //     case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
+    // }
+
+    // pub def fileNotFoundError(path: String): ParseError = 
+    //     { message = "File not found: ${path}"
+    //     , position = {lineNumber = 0, column = 0}
+    //     , textBefore = ""
+    //     , textAfter = ""
+    //     }
+
+    // pub def generalError(err: a): ParseError with ToString[a] = 
+    //     { message = "${err}"
+    //     , position = {lineNumber = 0, column = 0}
+    //     , textBefore = ""
+    //     , textAfter = ""
+    //     }
 
     pub def textPos(tabsize: Int32, pos: Int32, s: String): (Int32, Int32) = 
         match textPosHelper(String.length(s), pos, tabsize, s, 1, 1, 0) {
