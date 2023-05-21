@@ -167,6 +167,13 @@ mod FlixParsec.Internal.ParserMonad {
         )
 
 
+    pub def liftAction(f: Unit -> a \ ef): ParserMonad[ka, env, st, err, ef, a] = 
+        ParserMonad((_, s, k) ->
+            let a = f(); 
+            k(a, s)  
+        )
+
+
     pub def update(f: st -> st \ ef1): ParserMonad[ka, env, st, err, ef + ef1, Unit] = 
         ParserMonad((_, s, k) -> 
             k((), f(s))

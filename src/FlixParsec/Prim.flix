@@ -177,6 +177,10 @@ mod FlixParsec.Prim {
     pub def fail(message: String): GenParser[ka, ust, ef, a] = 
         throwError(message)
 
+
+    pub def liftAction(f: Unit -> a \ ef): GenParser[ka, ust, ef, a] = 
+        GenParser(FlixParsec.Internal.ParserMonad.liftAction(f))
+
     /// `EnvStateError.gets` currently not sufficiently polymorphic in effect...
     pub def getUserState(): GenParser[ka1, ust, ef, ust] =  
         GenParser(FlixParsec.Internal.ParserMonad.get()) <$$> s -> s.userState
