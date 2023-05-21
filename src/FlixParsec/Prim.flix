@@ -115,12 +115,14 @@ mod FlixParsec.Prim {
         runGenParser1(p, initState, offset = 0, tabSize = tabSize, input)
             |> Result.map(snd)
 
-    pub def parseString(p: GenParser1[ust, ef, a], initState: ust, input: String): Result[InternalError, a] \ ef =
-        evalGenParser1(p, initState, 4, input)
+    pub def parseString(p: GenParser1[ust, ef, a], initState: ust, input: String): Result[String, a] \ ef =
+        use FlixParsec.Internal.ParseError.{makeParseError, showParseError};
+        evalGenParser1(p, initState, 4, input) 
+            |> Result.mapErr(err -> makeParseError(tabSize = 4, err, input) |> showParseError)
 
     /// 
-    pub def parsesString(p: Parser1[ef, a], input: String): Result[InternalError, a] \ ef = 
-        parseString(p, (), input)
+    pub def parsesString(p: Parser1[ef, a], input: String): Result[String, a] \ ef = 
+        parseString(p, (), input) 
 
     
     pub def point(x: a): GenParser[ka, ust, ef, a] = 
@@ -225,8 +227,8 @@ mod FlixParsec.Prim {
         askOffset()                 >>= offset  -> 
         getCursorPosition()         >>= pos     ->
         askTabSize()                >>= tabw    -> {
-            let (x,y) = FlixParsec.Internal.ParseError.textPos(tabw, offset + pos, input);
-            point({lineNumber = x, column = y})
+            let ans = FlixParsec.Internal.ParseError.sourcePosition(tabSize = tabw, position = offset + pos, input);
+            point(ans)
         }
 
 

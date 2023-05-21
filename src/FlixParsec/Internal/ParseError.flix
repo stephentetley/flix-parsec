@@ -39,6 +39,15 @@ mod FlixParsec.Internal.ParseError {
         , textAfter = String
         }
 
+    pub def makeParseError(tabSize: {tabSize = Int32}, err: InternalError, input: String): ParseError = 
+        let (before, after) = getTextBeforeAndAfter(err.position, input);
+        { message    = err.message
+        , position   = sourcePosition(tabSize, position = err.position, input)
+        , textBefore = before
+        , textAfter  = after
+        }
+
+
     pub def showSourcePosition(pos: SourcePosition): String = 
         "Line=${pos.lineNumber}, Col=${pos.column}"
 
@@ -50,42 +59,38 @@ mod FlixParsec.Internal.ParseError {
                             :: "Seen:" :: "-----" :: err.textBefore 
                             :: "Pending:" :: "--------" :: err.textAfter :: Nil)
 
-    // def showErrorsChain(stk: Chain[String]): String = match Chain.toList(stk) {
-    //     case Nil => "*error*"
-    //     case x :: rs => x + errorMessageHelper(rs)
-    // }
 
-    // def errorMessageHelper(rest: List[String]): String = match rest {
-    //     case Nil => ""
-    //     case x :: Nil => "[${x}]"
-    //     case x :: rs => "[" + x + errorMessageHelper(rs) + "]"
-    // }
+    pub def fileNotFoundError(path: String): ParseError = 
+        { message = "File not found: ${path}"
+        , position = {lineNumber = 0, column = 0}
+        , textBefore = ""
+        , textAfter = ""
+        }
 
-    // pub def fileNotFoundError(path: String): ParseError = 
-    //     { message = "File not found: ${path}"
-    //     , position = {lineNumber = 0, column = 0}
-    //     , textBefore = ""
-    //     , textAfter = ""
-    //     }
+    pub def generalError(msg: String): ParseError = 
+        { message = msg
+        , position = {lineNumber = 0, column = 0}
+        , textBefore = ""
+        , textAfter = ""
+        }
 
-    // pub def generalError(err: a): ParseError with ToString[a] = 
-    //     { message = "${err}"
-    //     , position = {lineNumber = 0, column = 0}
-    //     , textBefore = ""
-    //     , textAfter = ""
-    //     }
-
-    pub def textPos(tabsize: Int32, pos: Int32, s: String): (Int32, Int32) = 
-        match textPosHelper(String.length(s), pos, tabsize, s, 1, 1, 0) {
-            case Some(x) => x
-            case None => (0,0)
+    pub def sourcePosition(tabSize: {tabSize = Int32}, position: {position = Int32}, s: String): SourcePosition = 
+        match textPosHelper(String.length(s), position.position, tabSize.tabSize, s, 1, 1, 0) {
+            case Some(sp)   => sp
+            case None       => {lineNumber = 0, column = 0}
         }
 
 
     /// TODO - we could do a simpler version of this with Regex ranges and `countMatch("\R")`
-    def textPosHelper(len: Int32, pos: Int32, tabsize: Int32, src: String, linenum: Int32, col: Int32, ix: Int32): Option[(Int32, Int32)] = 
+    def textPosHelper(len: Int32, 
+                        pos: Int32, 
+                        tabsize: Int32, 
+                        src: String, 
+                        linenum: Int32, 
+                        col: Int32, 
+                        ix: Int32): Option[SourcePosition] = 
         if (ix == pos)
-            Some((linenum, col))
+            Some({lineNumber = linenum, column = col})
         else { 
             if (ix > len)
                 None        
@@ -103,7 +108,7 @@ mod FlixParsec.Internal.ParseError {
                             }
                         } else {
                             // At end anyway, just seen newline so increment to next
-                            Some(linenum+1, 1)
+                            Some({lineNumber = linenum+1, column = 1})
                         }
                     case '\t' => textPosHelper(len, pos, tabsize, src, linenum, col + tabsize, ix+1)
                     case _ => textPosHelper(len, pos, tabsize, src, linenum, col + 1, ix+1)

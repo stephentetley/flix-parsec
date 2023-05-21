@@ -7,4 +7,4 @@ should not tax the garbage collector by generating intermediate input strings,
 but the original string will remain in memory until parsing has finished. 
 
 May 2023 - Flix-Parsec rewritten use a new Graded Parser Monad that works with 
-effects. The new version 
+effects. The new version is mostly untested...
