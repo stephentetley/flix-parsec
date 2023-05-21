@@ -159,12 +159,12 @@ mod FlixParsec.Internal.ParserMonad {
     pub def flatMapOr(start: ParserMonad[ka, env, st, err, ef, a], 
                         mnext: a -> ParserMonad[ka, env, st, err, ef1, b] \ ef2, 
                         melse: err -> ParserMonad[ka, env, st, err, ef3, b]): ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b] =
-        flatMap(ans -> match ans {
-                    case Ok(a)    => unchecked_cast(mnext(a) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b])
-                    case Err(msg) => unchecked_cast(melse(msg) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b])
-                    },
-                reifyError(start)
-        )
+       ParserMonad((e, s, k) -> 
+            apply1WithHandler(unchecked_cast(start as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, a]), e, s, 
+                (a, s1) -> apply1(unchecked_cast(mnext(a) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b]), e, s1, k),
+                err -> apply1(unchecked_cast(melse(err) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b]), e, s, k)
+            )
+       )
 
 
     pub def liftAction(f: Unit -> a \ ef): ParserMonad[ka, env, st, err, ef, a] = 
