@@ -15,10 +15,28 @@
  */
 
 /// Parser for PowerShell `dir` output.
-/// Note - PowerShell ouput is commonly UTF16_LE
+/// Note - PowerShell ouput is commonly "UTF-16LE"
 ///
 /// Also note, a `dir` listing is flat without recursion and the results
 /// are therefore a list not a tree. 
+
+mod TestDirListing {
+
+    @test
+    def test01(): Unit \ IO = 
+        let path = "e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt";
+        DirListing.parseDirListing(charSet = "UTF-16LE", path) 
+            |> Result.map(xs -> List.map(DirListing.dirListingFolderToString, xs) |> String.unlines) 
+            |> println
+
+    @test
+    def test02(): Unit \ IO = 
+        let path = "e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt";
+        DirListing.parseDirListing(charSet = "UTF-16LE", path) 
+            |> Result.map(xs -> List.map(DirListing.dirListingFolderToString, xs) |> String.unlines) 
+            |> println
+
+}
 
 
 mod DirListing {
@@ -68,7 +86,7 @@ mod DirListing {
         case FileLine(name, _, _, sz) => name + " " + Int64.toString(sz)
     }
 
-    pub def toString(x: DirListingFolder): String = region rc { 
+    pub def dirListingFolderToString(x: DirListingFolder): String = region rc { 
         let sb = StringBuilder.new(rc);
         StringBuilder.appendLine!("", sb);
         StringBuilder.appendLine!("Directory: ${x.path}", sb);
