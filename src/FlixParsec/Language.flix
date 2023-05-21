@@ -17,13 +17,13 @@
 
 
 mod FlixParsec.Language {
-/*
+
     use FlixParsec.{GenParser};
     use FlixParsec.Combinators.{alt};
     use FlixParsec.Char.{letter, alphaNum, oneOf, char};
     use FlixParsec.Token.{LanguageDef};
 
-    pub def emptyDef(): LanguageDef[ka1, st] = 
+    pub def emptyDef(): LanguageDef[ka, ust, ef] = 
         let opLetterP = oneOf(
             ':' :: '!' :: '#' :: '$' :: '%' :: '&' :: '*' :: '+' 
             :: '.' :: '/' :: '<' :: '=' :: '>' :: '?' :: '@' :: '\\' 
@@ -42,5 +42,5 @@ mod FlixParsec.Language {
         , reservedNames     = Nil
         , caseSensitive     = true
         }
-*/
+
 }
