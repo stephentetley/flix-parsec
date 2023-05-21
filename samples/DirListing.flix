@@ -22,19 +22,20 @@
 
 mod TestDirListing {
 
-    @test
-    def test01(): Unit \ IO = 
-        let path = "e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt";
+    def run1(path: String): Unit \ IO = 
         DirListing.parseDirListing(charSet = "UTF-16LE", path) 
             |> Result.map(xs -> List.map(DirListing.dirListingFolderToString, xs) |> String.unlines) 
             |> println
 
     @test
-    def test02(): Unit \ IO = 
-        let path = "e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt";
-        DirListing.parseDirListing(charSet = "UTF-16LE", path) 
-            |> Result.map(xs -> List.map(DirListing.dirListingFolderToString, xs) |> String.unlines) 
-            |> println
+    def test01(): Unit \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt")
+
+    @test
+    def test02(): Unit \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\long_names_dir.txt")
+
+    @test
+    def test03(): Unit \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt")
+
 
 }
 
@@ -124,11 +125,15 @@ mod DirListing {
     /// Note - Windows Dir Listing can run to muliple lines
     pub def multilineName(offset: Int32): GenParser[ka, ust, ef, String] = 
         let lineCont = () -> {
-            count(offset, char(' ')) *> restOfLine(true)
+            count(offset, char(' '))    >>= _    -> 
+            restOfLine(false)           >>= body ->
+            newline()                   >>= _    ->
+            point(body)
         };
-        restOfLine(true)        >>= x  -> 
-        many(lineCont())        >>= xs -> {
-            let ans = List.foldLeft((ss,s) -> ss + s, x, xs) |> String.trim;
+        restOfLine(false)       >>= s1  -> 
+        newline()               >>= _   ->
+        many(lineCont())        >>= ss  -> {
+            let ans = String.flatten(s1 :: ss) |> String.trim;
             point(ans)
         }
 
@@ -190,19 +195,22 @@ mod DirListing {
     
     def blankLine(): GenParser[ka, ust, ef, Unit] = newline()
     
-    pub def blankLines1(): GenParser[ka, ust, ef, Unit] = 
+    def nBlankLines(n: Int32): GenParser[ka, ust, ef, Unit] = 
+        count(n, blankLine()) |> GradedFunctor.ignore
+    
+    def blankLines(): GenParser[ka, ust, ef, Unit] = 
         many1(blankLine()) |> GradedFunctor.ignore
-  
 
     pub def dirListingFolder(): GenParser[ka, ust, ef, DirListingFolder] = 
         directoryDirective()                        >>= d1  -> 
-        (blankLines1() *> directoryHeadings())      >>= _   ->
-        manyTill(dirListingLine(), blankLines1())   >>= xs  ->
+        nBlankLines(2)                              >>= _   -> 
+        directoryHeadings()                         >>= _   ->
+        manyTill(dirListingLine(), blankLines())    >>= xs  ->
         point({path = d1, contents = xs}) 
 
     pub def directoryListing() : GenParser[ka, ust, ef, List[DirListingFolder]] = 
         byteOrderMark()     *>
-        blankLines1()       *>
+        nBlankLines(2)      *>
         manyTill(dirListingFolder(), endOfInput())
 
 
