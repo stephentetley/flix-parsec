@@ -22,14 +22,14 @@ mod FlixParsec.Token {
     use GradedApplicative.{point, *>, <*}
     use GradedMonad.{>>=}
     use GradedOr.{<|>}
-/*
+
     use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{fail};
-    use FlixParsec.Combinators.{alt, skipMany1, skipMany, between, 
-            sepBy, sepBy1, notFollowedBy, manyWith, sepByWith, sepBy1With}
-    use FlixParsec.Char.{string, char, oneOf, noneOf, satisfy}
+    use FlixParsec.Prim.{throwError}
+    use FlixParsec.Combinators.{alt, between, manyWith, skipMany, skipMany1, notFollowedBy, sepBy, sepBy1}
+    use FlixParsec.Char.{satisfy, char, string, oneOf, noneOf}
     
-    // use FlixParsec.Token.Status.{Done, More}
+    use FlixParsec.Token.Status.{Done, More}
+
 
 
     pub type alias LanguageDef[ka: Type, ust: Type, ef: Eff] = 
@@ -55,7 +55,7 @@ mod FlixParsec.Token {
     pub def parens(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
         between(symbol(langDef, "("), symbol(langDef, ")"), p)
 
-    pub def braces(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, a] =  
+    pub def braces(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
         between(symbol(langDef, "{"), symbol(langDef, "}"), p)
 
     pub def angles(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
@@ -83,16 +83,16 @@ mod FlixParsec.Token {
     pub def dot(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] =  
         symbol(langDef, ".")
 
-    pub def semiSep(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
+    pub def semiSep(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy(p, semi(langDef))
     
-    pub def commaSep(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
+    pub def commaSep(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy(p, comma(langDef))
 
-    pub def semiSep1(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
+    pub def semiSep1(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy1(p, semi(langDef))
     
-    pub def commaSep1(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, a]): GenParser[ka, ust, ef, List[a]] =  
+    pub def commaSep1(langDef: LanguageDef[ka, ust, ef], p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] =  
         sepBy1(p, comma(langDef))
 
 
@@ -154,7 +154,7 @@ mod FlixParsec.Token {
     def onelineComment(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         use FlixParsec.Text.{restOfLine};
         (string(langDef.commentLine) *> restOfLine(true)) 
-            |> ignore
+            |> GradedFunctor.ignore
 
     def multilineComment(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, Unit] = 
         string(langDef.commentStart) *> inComment(langDef)
@@ -222,7 +222,7 @@ mod FlixParsec.Token {
     def identifierHelper(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         ident(langDef) >>= name -> 
         if (isReservedName(langDef, name))
-            fail("reserved word: ${name}")
+            throwError("reserved word: ${name}")
         else 
             point(name) 
 
@@ -254,15 +254,15 @@ mod FlixParsec.Token {
     def operatorHelper(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
         oper(langDef) >>= name -> 
         if (isReservedOp(langDef, name))
-            fail("reserved word: ${name}")
+            throwError("reserved word: ${name}")
         else 
             point(name) 
 
     def oper(langDef: LanguageDef[ka, ust, ef]): GenParser[ka, ust, ef, String] = 
-        langDef.opStart                                             >>= c1 ->
+        langDef.opStart     >>= c1 ->
         manyWith((ac, x) -> "${ac}${x}", "${c1}", langDef.opLetter)
 
     def isReservedOp(langDef: LanguageDef[ka, ust, ef], name: String): Bool = 
         List.exists(x -> x == name, langDef.reservedOpNames)
-*/
+
 }

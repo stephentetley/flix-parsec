@@ -19,55 +19,61 @@ mod FlixParsec.Literal {
 
     use GradedFunctor.{map}
     use GradedApplicative.{point, *>}
+    use GradedMonad.{>>=}
     use GradedOr.{<|>}
-/*
+
     use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{flatMap}
-    use FlixParsec.Combinators.{alt, choice, between, manyWith}
-    use FlixParsec.Char.{char, string, satisfy}
-    // use FlixParsec.Regex.{lookingAts}
+    use FlixParsec.Prim.{throwError}
+    use FlixParsec.Combinators.{alt, between, choice, manyWith, many1With, liftOption}
+    use FlixParsec.Char.{char, string, satisfy, octDigit, hexDigit}
+    use FlixParsec.Regex.{lookingAt}
 
 
-    pub def stringLiteral(): GenParser[ka1, st, String] = 
+    pub def stringLiteral(): GenParser[ka, ust, ef, String] = 
         let step = (ac, x) -> match x { 
             case Some(c) => "${ac}${c}"
             case None    => ac
         };
         between( char('\u0022'),  char('\u0022'), manyWith(step, "", stringChar())) 
 
-    def stringChar(): GenParser[ka1, st, Option[Char]] = 
+    def stringChar(): GenParser[ka, ust, ef, Option[Char]] = 
         alt(stringLetter() |> map(Some), stringEscape())
 
     /// Greater than "SUB"...
-    def stringLetter(): GenParser[ka1, st, Char] = 
+    def stringLetter(): GenParser[ka, ust, ef, Char] = 
         satisfy(c -> (c != '\u0022') and (c != '\\') and (c > '\u001A'))
 
-    def stringEscape(): GenParser[ka1, st, Option[Char]] =
+    def stringEscape(): GenParser[ka, ust, ef, Option[Char]] =
         char('\\') *> (escapeCode() |> map(Some))
 
-    pub def charLiteral(): GenParser[ka1, st, Char] = 
+    pub def charLiteral(): GenParser[ka, ust, ef, Char] = 
         between( char('\''),  char('\''), chararacterChar())
 
-    def chararacterChar(): GenParser[ka1, st, Char] = alt(charLetter(), charEscape())
+    def chararacterChar(): GenParser[ka, ust, ef, Char] = alt(charLetter(), charEscape())
 
-    def charEscape(): GenParser[ka1, st, Char] =
+    def charEscape(): GenParser[ka, ust, ef, Char] =
         char('\\') *> escapeCode()
 
     /// Greater than "SUB"...
-    def charLetter(): GenParser[ka1, st, Char] = 
+    def charLetter(): GenParser[ka, ust, ef, Char] = 
         satisfy(c -> (c != '\'') and (c != '\\') and (c > '\u001A'))
 
-    def escapeCode(): GenParser[ka1, st, Char] = 
+    def escapeCode(): GenParser[ka, ust, ef, Char] = 
         choice(
             charUnicode() :: charEsc() :: Nil
         )
         /// charEsc <|> charNum <|> charAscii <|> charControl
 
-    def charUnicode(): GenParser[ka1, st, Char] = 
-        (char('u') <|> char('U')) *> map(Char.fromInt32, hexNumber())
+    def charUnicode(): GenParser[ka, ust, ef, Char] = 
+        (char('u') <|> char('U'))   >>= _ -> 
+        hexNumber()                 >>= n -> 
+        match CodePoint.toBmpChar(n) {
+            case Some(ch)   => point(ch)
+            case None       => throwError("charUnicode")
+        }
 
 
-    def hexNumber(): GenParser[ka1, st, Int32] =  
+    def hexNumber(): GenParser[ka, ust, ef, Int32] =  
         use FlixParsec.Combinators.{countWith};
         use FlixParsec.Char.{hexDigit};
         let step = (ac, ch) -> match Char.getNumericValue(ch) {
@@ -77,69 +83,64 @@ mod FlixParsec.Literal {
         countWith(step, 0, 4, hexDigit())
         
 
-    def charEsc(): GenParser[ka1, st, Char] = 
+    def charEsc(): GenParser[ka, ust, ef, Char] = 
         choice(
                 (char('t')  *> point('\u0009'))    /// tab
             :: (char('r')   *> point('\u000D'))    /// carriage return
             :: (char('n')   *> point('\u000A'))    /// line feed
             :: Nil
         )    
-*/
 
-/*
-    pub def int8(): GenParser[ka1, st, Int8] = 
-        lookingAts("-?\\d+")                    >>= s ->
-        liftOption(Int8.fromString(s), "int8")
+
+
+    pub def int8(): GenParser[ka, ust, ef, Int8] = 
+        lookingAt(regex"-?\\d+")        >>= s ->
+        liftOption("int8", Int8.fromString(s))
         
-    pub def int16(): GenParser[ka1, st, Int16] = 
-        lookingAts("-?\\d+")                    >>= s ->
-        liftOption(Int16.fromString(s), "int16")
+    pub def int16(): GenParser[ka, ust, ef, Int16] = 
+        lookingAt(regex"-?\\d+")        >>= s ->
+        liftOption("int16", Int16.fromString(s))
     
-    pub def int32(): GenParser[ka1, st, Int32] = 
-        lookingAts("-?\\d+")                    >>= s -> 
-        liftOption(Int32.fromString(s), "int32")
+    pub def int32(): GenParser[ka, ust, ef, Int32] = 
+        lookingAt(regex"-?\\d+")        >>= s -> 
+        liftOption("int32", Int32.fromString(s))
 
-    pub def int64(): GenParser[ka1, st, Int64] = 
-        lookingAts("-?\\d+")                    >>= s ->
-        liftOption(Int64.fromString(s), "int64")
+    pub def int64(): GenParser[ka, ust, ef, Int64] = 
+        lookingAt(regex"-?\\d+")        >>= s ->
+        liftOption("int64", Int64.fromString(s))
 
-
-    pub def bigInt(): GenParser[ka1, st, BigInt] = 
-        lookingAts("-?\\d+")                    >>= s ->
-        liftOption(BigInt.fromString(s), "bigInt")
-
-    /// TODO - handle exponent notation...
-    pub def float32(): GenParser[ka1, st, Float32] = 
-        lookingAts("-?\\d+\\.\\d+")             >>= s ->
-        liftOption(Float32.fromString(s), "float32")
+    pub def bigInt(): GenParser[ka, ust, ef, BigInt] = 
+        lookingAt(regex"-?\\d+")        >>= s ->
+        liftOption("bigInt", BigInt.fromString(s))
 
     /// TODO - handle exponent notation...
-    pub def float64(): GenParser[ka1, st, Float64] = 
-        lookingAts("-?\\d+\\.\\d+")             >>= s ->
-        liftOption(Float64.fromString(s), "float64")
-        
-    pub def hexInt32(): GenParser[ka1, st, Int32] = 
+    pub def float32(): GenParser[ka, ust, ef, Float32] = 
+        lookingAt(regex"-?\\d+\\.\\d+") >>= s ->
+        liftOption("float32", Float32.fromString(s))
+
+    /// TODO - handle exponent notation...
+    pub def float64(): GenParser[ka, ust, ef, Float64] = 
+        lookingAt(regex"-?\\d+\\.\\d+") >>= s ->
+        liftOption("float64", Float64.fromString(s))
+ 
+    pub def hexInt32(): GenParser[ka, ust, ef, Int32] = 
         alt(string("0X"), string("0x")) *> hexInt32Base()
         
-    pub def hexInt32Base(): GenParser[ka1, st, Int32] =  
-        use FlixParsec.Combinators.{many1With};
-        use FlixParsec.Char.{hexDigit};
+    pub def hexInt32Base(): GenParser[ka, ust, ef, Int32] = 
         let step = (ac, ch) -> match Char.getNumericValue(ch) {
             case Some(i) => ac * 16 + i
             case None => ac * 16
         };
         many1With(step, 0, hexDigit())
 
-    pub def octInt32(): GenParser[ka1, st, Int32] = 
+    pub def octInt32(): GenParser[ka, ust, ef, Int32] = 
         alt(string("0o"), string("0O")) *> octInt32Base()
         
-    pub def octInt32Base(): GenParser[ka1, st, Int32] =  
-        use FlixParsec.Combinators.{many1With};
-        use FlixParsec.Char.{octDigit};
-        let step = (ac, ch) -> match asciiDigitToInt32(ch) {
+    pub def octInt32Base(): GenParser[ka, ust, ef, Int32] = 
+        let step = (ac, ch) -> match Char.digit(radix = 8, ch) {
             case Some(i) => ac * 8 + i
-            case None => ac * 8
+            case None    => ac * 8
         };
         many1With(step, 0, octDigit())        
-*/
+
 }

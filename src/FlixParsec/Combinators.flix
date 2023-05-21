@@ -23,11 +23,22 @@ mod FlixParsec.Combinators {
     use GradedOr.{<|>}
 
     use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{bind, fail, lookahead, flatMapOr}
+    use FlixParsec.Prim.{bind, throwError, lookahead, flatMapOr}
 
     
     // pub def <!>(p1: GenParser[ka, st, ef, a], p2: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, a] =
     //     alt(p1, p2)
+
+
+    pub def liftOption(msg: String, x: Option[a]):  GenParser[ka, st, ef, a] = match x { 
+        case Some(x1) => point(x1)
+        case None     => throwError(msg)
+    }
+
+    pub def liftResult(x: Result[err, a]): GenParser[ka, st, ef, a] with ToString[err] = match x { 
+        case Ok(x1)   => point(x1)
+        case Err(msg) => throwError(ToString.toString(msg))
+    }
 
     
 
@@ -37,13 +48,13 @@ mod FlixParsec.Combinators {
 
 
     pub def notFollowedBy(p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, Unit] =
-        flatMapOr(p, _ -> fail("notFollowedBy"), _ -> point()) 
+        flatMapOr(p, _ -> throwError("notFollowedBy"), _ -> point()) 
         
 
     pub def choice(ps: List[GenParser[ka, st, ef, a]]): GenParser[ka, st, ef, a] =
         match ps {
             case p1 :: rs => flatMapOr(p1, point, _ -> choice(rs))
-            case Nil      => fail("choice")
+            case Nil      => throwError("choice")
         }
 
     pub def optional(p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, Option[a]] = 
@@ -64,7 +75,7 @@ mod FlixParsec.Combinators {
         if (test(ans))
             point(ans)
         else
-            fail("satisfies")
+            throwError("satisfies")
 
 
     /// `p` is run with `lookahead`, no text is consumed
