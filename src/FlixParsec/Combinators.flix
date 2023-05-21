@@ -45,13 +45,13 @@ mod FlixParsec.Combinators {
             case p1 :: rs => flatMapOr(p1, point, _ -> choice(rs))
             case Nil      => fail("choice")
         }
-/*
+
     pub def optional(p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, Option[a]] = 
         alt(map(Some, p), point(None))
 
-    pub def optionalWithDefault(p: GenParser[ka, st, ef, a], d: a): GenParser[ka, st, ef, a] = 
+    pub def optionalWithDefault(d: a, p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, a] = 
         alt(p, point(d))
-*/
+
 
 
     pub def between(openp: GenParser[ka, st, ef1, open], 
