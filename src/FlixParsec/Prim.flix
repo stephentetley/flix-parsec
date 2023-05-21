@@ -206,13 +206,15 @@ mod FlixParsec.Prim {
         GenParser(FlixParsec.Internal.ParserMonad.asks(env -> env.input))
     
 
-    def getCursorPosition(): GenParser[ka, ust, ef, Int32] =
+    pub def getCursorPosition(): GenParser[ka, ust, ef, Int32] =
         GenParser(FlixParsec.Internal.ParserMonad.gets(s -> s.pos))
 
-    def setCursorPosition(cpos: Int32): GenParser[ka, ust, ef, Unit] =
+    pub def setCursorPosition(cpos: Int32): GenParser[ka, ust, ef, Unit] =
         GenParser(FlixParsec.Internal.ParserMonad.update(s -> {pos = cpos | s}))
 
-    
+    pub def incrCursorPosition(n: Int32): GenParser[ka, ust, ef, Unit] =
+        GenParser(FlixParsec.Internal.ParserMonad.update(s -> {pos = s.pos + n | s}))
+
 
     pub def getSourcePosition(): GenParser[ka, ust, ef, SourcePosition] = 
         askInput()                  >>= input   ->
@@ -228,6 +230,12 @@ mod FlixParsec.Prim {
         (askInput() <$$> String.length)         >>= len ->
         getCursorPosition()                     >>= pos -> 
         if (pos >= len) point() else throwError("endOfInput - not at end")
+
+
+    pub def restOfInput(): GenParser[ka, ust, ef, String] =
+        askInput()              >>= input ->
+        getCursorPosition()     >>= pos -> 
+        point(String.sliceRight(start = pos, input))
 
 
     /// TODO - this is (likely) the wrong primitive to use with Java / UTF16 strings.
@@ -270,7 +278,7 @@ mod FlixParsec.Prim {
                 let maxlen = String.length(input);
                 let end = if (pos + n > maxlen) maxlen else pos + n;
                 let s1 = String.slice(start = pos, end = end, input);
-                setCursorPosition(pos + n) *> point(s1)
+                incrCursorPosition(String.length(s1)) *> point(s1)
             }
         }
     
@@ -293,8 +301,8 @@ mod FlixParsec.Prim {
         get()                       >>= st  -> {
             let str = String.slice(start = st.pos, end = st.pos + n, ctx.input);
             match runGenParser1(p, st.userState, offset = ctx.offset, tabSize = ctx.tabSize, str) {
-                case Ok((_, a)) => {setCursorPosition(st.pos + n) *> point(a)}
-                case Err(err)   => {setCursorPosition(st.pos + err.position) *> throwError(err.message)}
+                case Ok((_, a)) => {incrCursorPosition(n) *> point(a)}
+                case Err(err)   => {incrCursorPosition(err.position) *> throwError(err.message)}
             }
         }
 

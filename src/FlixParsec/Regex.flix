@@ -18,59 +18,20 @@
 
 mod FlixParsec.Regex {
 
+    use GradedApplicative.{*>, point}
+    use GradedMonad.{>>=}
+
     use FlixParsec.{GenParser};
-    use FlixParsec.GenParser.{GenParser};
-/*
-    pub def lookingAt(rgx: Regex): GenParser[ka1, ust, ef, String] =
-        GenParser((sk, fk, ctx, st, errs) ->
-            let ans = Text.Regex.boundedMatchPrefixContent({start = st.pos}, {end = String.length(ctx.input)}, patt, ctx.input);
-            match ans { 
-                case Some(s) => sk(s, fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
-                case None(_) => fk(st.pos, Chain.singleton("lookingAt failed"))
-            }
-        )
+    use FlixParsec.Prim.{restOfInput, throwError, incrCursorPosition}
 
+    pub def lookingAt(rgx: Regex): GenParser[ka, ust, ef, String] =
+        restOfInput()       >>= rest    -> 
+        match Regex.getPrefix(substr = rgx, rest) { 
+            case Some(s) => {incrCursorPosition(String.length(s)) *> point(s)}
+            case None    => throwError("lookingAt")
+        }
 
-    /// Version of `lookingAt` with a MatchEvaluator
-    // pub def evalLookingAt(patt: Text.Regex.Pattern, eval: MatchEvaluator[a]): GenParser[ka1, st, a] =
-    //     use Text.RegexEval.Regex.{boundedPrefix};
-    //     use Text.RegexEval.MatchEvaluator.{getLength};
-    //     let eval2 = Applicative.product(getLength(), eval);
-    //     GenParser((sk, fk, ctx, st, errs) ->
-    //         let ans = boundedPrefix({start = st.pos}, {end = String.length(ctx.input)}, patt, eval2, ctx.input);
-    //         match ans {
-    //             case Ok(len, x) => sk(x, fk, ctx, {pos = st.pos + len | st}, errs)
-    //             case Err(_) => fk(st.pos, Chain.singleton("evalLookingAt failed"))
-    //         }
-    //     )
+    pub def skippingAt(rgx: Regex): GenParser[ka, st, ef, Unit] = 
+        lookingAt(rgx) |> GradedFunctor.ignore
 
-    pub def skippingAt(patt: Text.Regex.Pattern): GenParser[ka1, st, Unit] = 
-        GenParser((sk, fk, ctx, st, errs) ->
-            let ans = Text.Regex.boundedMatchPrefixContent({start = st.pos}, {end = String.length(ctx.input)}, patt, ctx.input);
-            match ans { 
-                case Some(s) => sk((), fk, ctx, {pos = st.pos + String.length(s) | st}, errs)
-                case None => fk(st.pos, Chain.singleton("skippingAt failed"))
-            }
-        )
-
-    /// Parsing fails if regex does not compile.
-    pub def lookingAts(regex: String): GenParser[ka1, st, String] = 
-        use Text.Regex.Pattern.{compile};
-        use FlixParsec.Prim.{bind, liftResult1};
-        bind(liftResult1(compile(regex), _ -> "lookingAts"), lookingAt)
-
-
-    /// Parsing fails if regex does not compile.
-    // pub def evalLookingAts(regex: String, eval: MatchEvaluator[a]): GenParser[ka1, st, a] =
-    //     use Text.Regex.Pattern.{compile};
-    //     use FlixParsec.Prim.{bind, liftResult1};
-    //     bind(liftResult1(compile(regex), _ -> "evalLookingAts"), patt -> evalLookingAt(patt, eval))
-
-
-    /// Parsing fails if regex does not compile.
-    pub def skippingAts(regex: String): GenParser[ka1, st, Unit] = 
-        use Text.Regex.Pattern.{compile};
-        use FlixParsec.Prim.{bind, liftResult1};
-        bind(liftResult1(compile(regex), _ -> "skippingAts"), skippingAt)
-*/
 }
