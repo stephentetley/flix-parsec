@@ -30,8 +30,19 @@ mod FlixParsec {
         FlixParsec.Internal.ParserMonad[ka, ParseContext, ParseState[ust], InternalError, ef, a]
     )
 
+    pub type alias GenParser1[ust: Type, ef: Eff, a: Type] = GenParser[(ParseState[ust], a), ust, ef, a]
+
+
     /// No user state
     pub type alias Parser[ka: Type, ef: Eff, a: Type] = GenParser[ka, Unit, ef, a]
+
+    ///
+    /// This is exposed so client code can implement wrappers over `run` etc. without
+    /// knowing about the internal type `ParseState`.
+    ///
+    pub type alias Parser1[ef: Eff, a: Type] = Parser[(ParseState[Unit], a), ef, a]
+
+
 
     instance GradedFunctor[GenParser[ka, ust]] {
         pub def map(f: a -> b \ ef1, x: GenParser[ka1, ust, ef, a]): GenParser[ka1, ust, ef + ef1, b] = 
@@ -65,7 +76,7 @@ mod FlixParsec.Prim {
     use GradedFunctor.{<$$>}
     use GradedApplicative.{*>}
     use GradedMonad.{>>=}
-    use FlixParsec.{GenParser, Parser, ParseContext, ParseState}
+    use FlixParsec.{GenParser, Parser, GenParser1, Parser1, ParseContext, ParseState}
     use FlixParsec.GenParser.{GenParser}
     use FlixParsec.Internal.ParseError.{SourcePosition, InternalError}
     use FlixParsec.Internal.ParserMonad
@@ -75,14 +86,6 @@ mod FlixParsec.Prim {
         m1
 
 
-
-    ///
-    /// This is exposed so client code can implement wrappers over `run` etc. without
-    /// knowing about the internal type `ParseState`.
-    ///
-    pub type alias Parser1[ef: Eff, a: Type] = Parser[(ParseState[Unit], a), ef, a]
-
-    pub type alias GenParser1[ust: Type, ef: Eff, a: Type] = GenParser[(ParseState[ust], a), ust, ef, a]
 
     ///
     /// Run parser `p` on the string `input`.
@@ -124,7 +127,16 @@ mod FlixParsec.Prim {
     pub def parsesString(p: Parser1[ef, a], input: String): Result[String, a] \ ef = 
         parseString(p, (), input) 
 
-    
+    pub def parseFile(p: GenParser1[ust, ef, a], initState: ust, charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
+        Result.flatMap(
+            xs -> parseString(p, initState, String.unlines(xs)),
+            File.readLinesWith(charSet, path)
+        )
+
+    pub def parsesFile(p: Parser1[ef, a], charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
+        parseFile(p, (), charSet, path)
+
+
     pub def point(x: a): GenParser[ka, ust, ef, a] = 
         GenParser(FlixParsec.Internal.ParserMonad.point(x))
 

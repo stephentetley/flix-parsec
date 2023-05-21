@@ -22,8 +22,8 @@ mod FlixParsec.Text {
     use GradedApplicative.{point}
     use GradedMonad.{>>=}
 
-    use FlixParsec.{GenParser}
-    use FlixParsec.Prim.{GenParser1, bounded, lookahead, throwError}
+    use FlixParsec.{GenParser, GenParser1}
+    use FlixParsec.Prim.{bounded, lookahead, throwError}
     use FlixParsec.Regex.{lookingAt, skippingAt}
     
 

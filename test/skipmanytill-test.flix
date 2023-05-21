@@ -3,9 +3,9 @@ mod SkipManyTest {
 
     use GradedApplicative.{point}
     use GradedMonad.{>>=}
-    use FlixParsec.Parser
+    use FlixParsec.{Parser1}
 
-    def parser1(): Parser[ka, ef, Char] = 
+    def parser1(): Parser1[ef, Char] = 
         use FlixParsec.Char.{char, anyChar};
         FlixParsec.Combinators.skipManyTill(anyChar(), char('F'))   >>= _  ->
         anyChar()                                                   >>= c1 ->
