@@ -185,6 +185,10 @@ mod FlixParsec.Prim {
                                                             a -> getGenParser(mnext(a)),
                                                             err -> getGenParser(melse(err))))
 
+
+    pub def commit(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
+        GenParser(FlixParsec.Internal.ParserMonad.commit(getGenParser(ma)))
+
     pub def bind(ma: GenParser[ka, ust, ef, a], k: a -> GenParser[ka, ust, ef1, b] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, b] = 
         flatMap(k, ma)
 

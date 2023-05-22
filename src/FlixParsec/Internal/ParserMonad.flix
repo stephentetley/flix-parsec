@@ -23,7 +23,7 @@ mod FlixParsec.Internal {
     /// `ka` is the continuation answer type
     ///
     pub enum ParserMonad[ka: Type, env: Type, st: Type, err: Type, ef: Eff, a: Type](
-        env -> st -> (a -> st -> Result[err, ka] \ ef) -> Result[err, ka] \ ef)
+        env -> st -> (a -> st -> ParseResult[err, ka] \ ef) -> ParseResult[err, ka] \ ef)
 
     instance GradedFunctor[ParserMonad[ka, env, st, err]] { 
         pub def map(f: a -> b \ ef1, m: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, b] = 
@@ -54,7 +54,11 @@ mod FlixParsec.Internal {
     }
 
 
-
+    pub enum ParseResult[err: Type, a: Type]{
+        case ParseSuccess(a)
+        case ParseFailure(err)
+        case Commit(ParseResult[err, a])
+    }
 
 }
 
@@ -63,7 +67,8 @@ mod FlixParsec.Internal.ParserMonad {
 
     use FlixParsec.Internal.ParserMonad
     use FlixParsec.Internal.ParserMonad.{ParserMonad}
-
+    use FlixParsec.Internal.ParseResult
+    use FlixParsec.Internal.ParseResult.{ParseSuccess, ParseFailure, Commit}
 
     ///
     /// Helper function for the implementation of `map` and `ap` etc.
@@ -71,21 +76,39 @@ mod FlixParsec.Internal.ParserMonad {
     def apply1(ma: ParserMonad[ka, env, st, err, ef, a], 
                 e: env,
                 s: st, 
-                k: a -> st -> Result[err, ka] \ ef): Result[err, ka] \ ef =
+                k: a -> st -> ParseResult[err, ka] \ ef): ParseResult[err, ka] \ ef =
         let ParserMonad(ma1) = ma;
         ma1(e, s, k)
+
+
+    ///
+    /// Helper function for the implementation of `commit` etc.
+    ///
+    def commit1(ma: ParserMonad[ka, env, st, err, ef, a], 
+                e: env,
+                s: st, 
+                k: a -> st -> ParseResult[err, ka] \ ef): ParseResult[err, ka] \ ef =
+        let ParserMonad(ma1) = ma;
+        ma1(e, s, k) |> Commit
 
     def apply1WithHandler(ma: ParserMonad[ka, env, st, err, ef, a], 
                             e: env,
                             s: st, 
-                            k: a -> st -> Result[err, ka] \ ef, 
-                            handleK: err -> Result[err, ka] \ ef): Result[err, ka] \ ef =
+                            k: a -> st -> ParseResult[err, ka] \ ef, 
+                            handleK: err -> ParseResult[err, ka] \ ef): ParseResult[err, ka] \ ef =
         let ParserMonad(ma1) = ma;
         match ma1(e, s, k) {
-            case Err(err) => handleK(err)
-            case Ok(a)    => Ok(a)
+            case ParseFailure(err) => handleK(err)
+            case xr                => xr
         }
 
+    def toResult(pr: ParseResult[err, a]): Result[err, a] = 
+        def loop(r, k) = match r {
+            case ParseSuccess(a)   => k(Ok(a))
+            case ParseFailure(err) => k(Err(err))
+            case Commit(r1)        => loop(r1, k)
+        };
+        loop(pr, identity)
 
 
     ///
@@ -93,8 +116,8 @@ mod FlixParsec.Internal.ParserMonad {
     ///
     pub def runParserMonad(ma: ParserMonad[(st, a), env, st, err, ef, a], e: env, st: st): Result[err, (st, a)] \ ef =
         let ParserMonad(f) = ma;
-        let cont = (a, s1) -> checked_ecast (Ok(s1, a));
-        f(e, st, cont)
+        let cont = (a, s1) -> checked_ecast(ParseSuccess(s1, a));
+        f(e, st, cont) |> toResult
 
     pub def point(x: a): ParserMonad[ka, env, st, err, ef, a] = 
         ParserMonad((_, s, k) -> k(x, s))
@@ -128,24 +151,25 @@ mod FlixParsec.Internal.ParserMonad {
         )
 
     pub def throwError(err: err): ParserMonad[ka, env, st, err, ef, a] = 
-        ParserMonad((_, _, _) -> checked_ecast(Err(err)))
+        ParserMonad((_, _, _) -> checked_ecast(ParseFailure(err)))
 
     pub def catchError(ma: ParserMonad[ka, env, st, err, ef, a], 
                         hdlr: err -> ParserMonad[ka, env, st, err, ef1, a] \ ef2): ParserMonad[ka, env, st, err, ef + ef1 + ef2, a] = 
         ParserMonad((e, s, k) -> 
             let ParserMonad(ma1) = unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]);
             match ma1(e, s, k) {
-                case Ok(a)    => Ok(a)
-                case Err(err) => { 
+                case ParseFailure(err) => { 
                     let ParserMonad(hdlr1) = unchecked_cast(hdlr(err) as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]); 
                     hdlr1(e, s, k)
                 }
+                case xr                => xr
+                
             }
         )
 
     pub def mapError(f: err -> err \ ef1, ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, a] = 
         ParserMonad((e, s, k) -> 
-            apply1WithHandler(unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1, a]), e, s, k, err -> checked_ecast(Err(f(err))))
+            apply1WithHandler(unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1, a]), e, s, k, err -> checked_ecast(ParseFailure(f(err))))
         )
    
     pub def reifyError(ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef, Result[err, a]] = 
@@ -165,6 +189,12 @@ mod FlixParsec.Internal.ParserMonad {
                 err -> apply1(unchecked_cast(melse(err) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b]), e, s, k)
             )
        )
+
+
+    pub def commit(ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef, a] = 
+        ParserMonad((e, s, k) -> 
+            commit1(ma, e, s, (a, s1) -> k(a, s1))
+        )
 
 
     pub def liftAction(f: Unit -> a \ ef): ParserMonad[ka, env, st, err, ef, a] = 

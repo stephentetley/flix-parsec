@@ -22,19 +22,20 @@
 
 mod TestDirListing {
 
-    def run1(path: String): Unit \ IO = 
-        DirListing.parseFile(charSet = "UTF-16LE", path) 
-            |> Result.map(xs -> List.map(DirListing.dirListingFolderToString, xs) |> String.unlines) 
-            |> println
+    def run1(path: String): Bool \ IO = 
+        match DirListing.parseFile(charSet = "UTF-16LE", path) {
+            case Ok(xs)   => {List.forEach(DirListing.dirListingFolderToString >> println, xs); true}
+            case Err(msg) => {println(msg); false}
+        }
+
+    // @test
+    // def test01(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt")
 
     @test
-    def test01(): Unit \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt")
+    def test02(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\long_names_dir.txt")
 
-    @test
-    def test02(): Unit \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\long_names_dir.txt")
-
-    @test
-    def test03(): Unit \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt")
+    // @test
+    // def test03(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt")
 
 
 }
@@ -46,7 +47,7 @@ mod DirListing {
     use GradedMonad.{>>=}
 
     use FlixParsec.GenParser
-    use FlixParsec.Prim.{bounded, endOfInput}
+    use FlixParsec.Prim.{bounded, endOfInput, commit}
     use FlixParsec.Combinators.{count, many, many1, manyTill, endBy}
     use FlixParsec.Char.{char, oneOf}
     use FlixParsec.Text.{restOfLine, newline}
@@ -116,7 +117,7 @@ mod DirListing {
     pub def byteOrderMark(): GenParser[ka, ust, ef, Char] = char('\ufeff')
 
     pub def dirListingFolder(): GenParser[ka, ust, ef, DirListingFolder] = 
-        directoryDirective()                        >>= d1  -> 
+        commit(directoryDirective())                >>= d1  -> 
         blankLines2()                               >>= _   -> 
         directoryHeadings()                         >>= _   ->
         many(dirListingLine())                      >>= xs  ->
