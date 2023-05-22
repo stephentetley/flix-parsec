@@ -202,7 +202,7 @@ mod FlixParsec.Combinators {
         sepByWith(combine, acc, p, sep) >>= xs ->
         flatMapOr(sep, _ -> point(xs), _ -> point(xs))
 
-    // seperated and optionally terminated with sep.
+    // separated and optionally terminated with sep.
     pub def sepEndBy(p: GenParser[ka, st, ef, a], sep: GenParser[ka, st, ef1, sep]): GenParser[ka, st, ef + ef1, List[a]] = 
         use Chain.{empty, snoc, toList};
         map(toList, sepEndByWith(snoc, empty(), p, sep))

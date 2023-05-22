@@ -23,7 +23,7 @@
 mod TestDirListing {
 
     def run1(path: String): Unit \ IO = 
-        DirListing.parseDirListing(charSet = "UTF-16LE", path) 
+        DirListing.parseFile(charSet = "UTF-16LE", path) 
             |> Result.map(xs -> List.map(DirListing.dirListingFolderToString, xs) |> String.unlines) 
             |> println
 
@@ -47,10 +47,10 @@ mod DirListing {
 
     use FlixParsec.GenParser
     use FlixParsec.Prim.{bounded, endOfInput}
-    use FlixParsec.Combinators.{count, many, many1, manyTill}
+    use FlixParsec.Combinators.{count, many, many1, manyTill, endBy}
     use FlixParsec.Char.{char, oneOf}
     use FlixParsec.Text.{restOfLine, newline}
-    use FlixParsec.Regex.{lookingAt}
+    use FlixParsec.Regex.{lookingAt, skippingAt}
     use FlixParsec.TokenSimple.{int32, int64, symbol}
 
     use DirListing.DirListingLine.{FolderLine, FileLine}
@@ -100,27 +100,66 @@ mod DirListing {
         "${ Int32.toString(ts.day)}/${Int32.toString(ts.month)}/${ Int32.toString(ts.year)} ${ Int32.toString(ts.hour)}:${Int32.toString(ts.minute)}"
 
 
+
+    pub def parseFile(charSet: {charSet = String}, path: String): Result[String, List[DirListingFolder]] \ IO = 
+        FlixParsec.Prim.parsesFile(dirOutput(), charSet, path)
+
+    pub def dirOutput() : GenParser[ka, ust, ef, List[DirListingFolder]] = 
+        byteOrderMark()     *>
+        blankLines2()       *>
+        endBy(dirListingFolder(), blankLines2())
+
+
     ///
     /// Byte order mark '\ufeff'
     ///
     pub def byteOrderMark(): GenParser[ka, ust, ef, Char] = char('\ufeff')
 
+    pub def dirListingFolder(): GenParser[ka, ust, ef, DirListingFolder] = 
+        directoryDirective()                        >>= d1  -> 
+        blankLines2()                               >>= _   -> 
+        directoryHeadings()                         >>= _   ->
+        many(dirListingLine())                      >>= xs  ->
+        point({path = d1, contents = xs}) 
 
-    /// "28/02/2020     15:52"
-    pub def pUkTimeStamp(): GenParser[ka, ust, ef, TimeStamp] = 
-        int32()                     >>= dys  ->
-        prefixedInt32('/')          >>= mons ->
-        prefixedInt32('/')          >>= yrs  ->
-        int32()                     >>= hrs  ->
-        prefixedInt32(':')          >>= mins -> 
-        point({day = dys, month = mons, year = yrs, hour = hrs, minute = mins})
-
-    def prefixedInt32(ch: Char): GenParser[ka, ust, ef, Int32] = char(ch) *> int32()
+    pub def directoryDirective(): GenParser[ka, ust, ef, String] =       
+        count(4, char(' '))     *>
+        symbol("Directory:")    *>
+        multilineName(4)
 
 
+    /// mode is a common prefix
+    pub def dirListingLine(): GenParser[ka, ust, ef, DirListingLine] = 
+        pMode()                                 >>= mode ->
+        if (isDirectory(mode)) pFolder(mode) else pFile(mode)
+    
+    def pMode(): GenParser[ka, ust, ef, Mode] = 
+        bounded(13, mode1())
 
-    pub def fileStats(): GenParser[ka, ust, ef, (TimeStamp, Int64)] = 
-        product(pUkTimeStamp(), int64())
+    def mode1(): GenParser[ka, ust, ef, Mode] = 
+        lookingAt(regex"(\\-|\\p{Lower}){6}") >>= s ->
+        point(Mode(s))
+
+    pub def isDirectory (mode: Mode) : Bool = 
+        let Mode(str) = mode;
+        match String.toList(str) { 
+            case x :: _ => x == 'd'
+            case _      => false
+        }
+
+    def pFile(mode: Mode): GenParser[ka, ust, ef, DirListingLine] = 
+        bounded(36, fileStats())    >>= stats   -> 
+        multilineName(49)           >>= name    -> {
+            let (tstamp, sz) = stats;
+            point(FileLine(name, mode, tstamp, sz))
+        }
+
+
+    def pFolder(mode: Mode): GenParser[ka, ust, ef, DirListingLine] = 
+        bounded(36, pUkTimeStamp())     >>= tstamp  ->
+        multilineName(49)               >>= name    -> 
+        point(FolderLine(name, mode, tstamp))
+
 
     /// Note - Windows Dir Listing can run to muliple lines
     pub def multilineName(offset: Int32): GenParser[ka, ust, ef, String] = 
@@ -138,46 +177,11 @@ mod DirListing {
         }
 
 
-    def pFile(mode: Mode): GenParser[ka, ust, ef, DirListingLine] = 
-        bounded(36, fileStats())    >>= stats   -> 
-        multilineName(49)           >>= name    -> {
-            let (tstamp, sz) = stats;
-            point(FileLine(name, mode, tstamp, sz))
-        }
-
-
-    def pFolder(mode: Mode): GenParser[ka, ust, ef, DirListingLine] = 
-        bounded(36, pUkTimeStamp())     >>= tstamp  ->
-        multilineName(49)               >>= name    -> 
-        point(FolderLine(name, mode, tstamp))
-
-    // pub def ignoreLine(): Parser[Option[Unit]] = 
-    //     TextParser.map(_ -> None, restOfLine(true))
-
-    def mode1(): GenParser[ka, ust, ef, Mode] = 
-        lookingAt(regex"(\\-|\\p{Lower}){6}") >>= s ->
-        point(Mode(s))
-    
-    def pMode(): GenParser[ka, ust, ef, Mode] = 
-        bounded(13, mode1())
-
-    pub def isDirectory (mode: Mode) : Bool = 
-        let Mode(str) = mode;
-        match String.toList(str) { 
-            case x :: _ => x == 'd'
-            case _      => false
-        }
-
-    /// mode is a common prefix
-    pub def dirListingLine(): GenParser[ka, ust, ef, DirListingLine] = 
-        pMode()                                                 >>= mode ->
-        if (isDirectory(mode)) pFolder(mode) else pFile(mode)   >>= ans  -> 
-        point(ans)
-
-    pub def directoryDirective(): GenParser[ka, ust, ef, String] =       
-        count(4, char(' '))     *>
-        symbol("Directory:")    *>
-        multilineName(4)
+    pub def directoryHeadings(): GenParser[ka, ust, ef, Unit] = 
+        let underline = () -> many1(oneOf(List#{' ', '-'}));
+        directoryHeadings1()   *>
+        underline()            *>
+        newline()
 
 
     def directoryHeadings1(): GenParser[ka, ust, ef, Unit] = 
@@ -187,36 +191,26 @@ mod DirListing {
         symbol("Name")          *>
         point()
 
-    pub def directoryHeadings(): GenParser[ka, ust, ef, Unit] = 
-        let underline = () -> many1(oneOf(List#{' ', '-'}));
-        directoryHeadings1()   *>
-        underline()            *>
-        newline()
-    
-    def blankLine(): GenParser[ka, ust, ef, Unit] = newline()
-    
-    def nBlankLines(n: Int32): GenParser[ka, ust, ef, Unit] = 
-        count(n, blankLine()) |> GradedFunctor.ignore
-    
-    def blankLines(): GenParser[ka, ust, ef, Unit] = 
-        many1(blankLine()) |> GradedFunctor.ignore
 
-    pub def dirListingFolder(): GenParser[ka, ust, ef, DirListingFolder] = 
-        directoryDirective()                        >>= d1  -> 
-        nBlankLines(2)                              >>= _   -> 
-        directoryHeadings()                         >>= _   ->
-        manyTill(dirListingLine(), blankLines())    >>= xs  ->
-        point({path = d1, contents = xs}) 
+    pub def fileStats(): GenParser[ka, ust, ef, (TimeStamp, Int64)] = 
+        product(pUkTimeStamp(), int64())
+   
 
-    pub def directoryListing() : GenParser[ka, ust, ef, List[DirListingFolder]] = 
-        byteOrderMark()     *>
-        nBlankLines(2)      *>
-        manyTill(dirListingFolder(), endOfInput())
+    /// "28/02/2020     15:52"
+    pub def pUkTimeStamp(): GenParser[ka, ust, ef, TimeStamp] = 
+        int32()                     >>= dys  ->
+        prefixedInt32('/')          >>= mons ->
+        prefixedInt32('/')          >>= yrs  ->
+        int32()                     >>= hrs  ->
+        prefixedInt32(':')          >>= mins -> 
+        point({day = dys, month = mons, year = yrs, hour = hrs, minute = mins})
+
+    def prefixedInt32(ch: Char): GenParser[ka, ust, ef, Int32] = char(ch) *> int32()
 
 
+    def blankLines2(): GenParser[ka, ust, ef, Unit] = 
+        skippingAt(regex"\\R{2}")
 
-    pub def parseDirListing(charSet: {charSet = String}, path: String): Result[String, List[DirListingFolder]] \ IO = 
-        FlixParsec.Prim.parsesFile(directoryListing(), charSet, path)
 
 
 }
