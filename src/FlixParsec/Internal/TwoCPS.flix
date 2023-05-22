@@ -28,6 +28,16 @@ mod FlixParsec.Internal.TwoCPS {
         SuccessK[ka, env, st, err, ef, a] -> FailK[ka, st, err, ef] -> env -> st -> ka \ ef
     )
 
+
+    def apply1 (p: PM2[ka, env, st, err, ef, a], 
+                sk: SuccessK[ka, env, st, err, ef, a], 
+                fk: FailK[ka, st, err, ef], 
+                env: env, 
+                st: st): ka \ ef =
+        let PM2(pf) = p;
+        pf(sk, fk, env, st)
+
+
     pub def runPM2(p: PM2[Result[(st, err), (st, a)], env, st, err, ef, a], st: st, env: env) : Result[(st, err), (st, a)] \ ef =
         let fk = (st1, err) -> checked_ecast(Err((st1, err)));
         let sk = (a, _, _, st1) -> checked_ecast(Ok((st1, a)));
@@ -37,6 +47,17 @@ mod FlixParsec.Internal.TwoCPS {
 
     pub def point(x: a): PM2[ka, env, st, err, ef, a] = 
         PM2((sk, fk, env, st) -> sk(x, fk, env, st))
+
+    pub def map(f: a -> b \ ef1, p: PM2[ka, env, st, err, ef, a]): PM2[ka, env, st, err, ef + ef1, b] =
+        PM2((sk, fk, env, st) ->
+            let sk1 = (x, fk1, _, st1) -> sk(f(x), fk1, env, st1);
+            apply1(unchecked_cast(p as PM2[ka, env, st, err, ef + ef1, b]), 
+                    unchecked_cast(sk1 as SuccessK[ka, env, st, err, ef + ef1, b]), 
+                    unchecked_cast(fk as FailK[ka, st, err, ef + ef1]), 
+                    env, 
+                    st)
+        )
+
 
     pub def throwError(err: err) : PM2[ka, env, st, err, ef, a] =
         PM2((_, fk, _, st) -> fk(st, err))
