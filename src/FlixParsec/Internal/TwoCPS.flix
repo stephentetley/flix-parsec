@@ -28,15 +28,6 @@ mod FlixParsec.Internal.TwoCPS {
         SuccessK[ka, env, st, err, ef, a] -> FailK[ka, st, err, ef] -> env -> st -> ka \ ef
     )
 
-    /// TODO - if we inline apply1 we can have much less worrisome casting...
-    def apply1 (p: Parser[ka, env, st, err, ef, a], 
-                sk: SuccessK[ka, env, st, err, ef, a], 
-                fk: FailK[ka, st, err, ef], 
-                env: env, 
-                st: st): ka \ ef =
-        let Parser(pf) = p;
-        pf(sk, fk, env, st)
-
 
     pub def runParser(p: Parser[Result[(st, err), (st, a)], env, st, err, ef, a], 
                         st: st, 
@@ -52,124 +43,89 @@ mod FlixParsec.Internal.TwoCPS {
 
 
     pub def map(f: a -> b \ ef1, pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef + ef1, b] =
-        Parser((sk, fk, env, st) ->
+        Parser((sk, fk, env, st) -> {
             let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1, a]);
             let sk1 = (x, fk1, env1, st1) -> sk(f(x), fk1, env1, st1);
             paf(sk1, fk, env, st)
-        )
+        })
 
 
     pub def ap(pf: Parser[ka, env, st, err, ef1, a -> b \ ef2], 
                 pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef + ef1 + ef2, b] =
-        Parser((sk, fk, env, st) -> 
+        Parser((sk, fk, env, st) -> { 
+            let Parser(pff) = unchecked_cast(pf as Parser[ka, env, st, err, ef + ef1 + ef2, a -> b \ ef2]);
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2, a]);
             let sk1 = (f, fk1, env1, st1) -> {
                 let sk2 = (x, fk2, env2, st2) -> sk(f(x), fk2, env2, st2);
-                apply1(unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(sk2 as SuccessK[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(fk1 as FailK[ka, st, err, ef + ef1 + ef2]), 
-                        env1, 
-                        st1)
+                paf(sk2, fk1, env1, st1)
             };
-            apply1(unchecked_cast(pf as Parser[ka, env, st, err, ef + ef1 + ef2, b]), 
-                    unchecked_cast(sk1 as SuccessK[ka, env, st, err, ef + ef1 + ef2, b]), 
-                    unchecked_cast(fk as FailK[ka, st, err, ef + ef1 + ef2]), 
-                    env, 
-                    st)
-        )
+            pff(sk1, fk, env, st)
+        })
 
 
     pub def flatMap(k: a -> Parser[ka, env, st, err, ef1, b] \ ef2, 
-                    ma: Parser[ka, env, st, err, ef, a]):  Parser[ka, env, st, err, ef + ef1 + ef2, b] =
+                    pa: Parser[ka, env, st, err, ef, a]):  Parser[ka, env, st, err, ef + ef1 + ef2, b] =
         Parser((sk, fk, env, st) ->
-            let sk1 = (x, fk1, env1, st1) ->
-                apply1(unchecked_cast(k(x) as Parser[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(sk as SuccessK[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(fk1 as FailK[ka, st, err, ef + ef1 + ef2]), 
-                        env1, 
-                        st1);
-            apply1(unchecked_cast(ma as Parser[ka, env, st, err, ef + ef1 + ef2, b]), 
-                    unchecked_cast(sk1 as SuccessK[ka, env, st, err, ef + ef1 + ef2, b]), 
-                    unchecked_cast(fk as FailK[ka, st, err, ef + ef1 + ef2]), 
-                    env, 
-                    st)
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2, a]);
+            let sk1 = (x, fk1, env1, st1) -> {                
+                let Parser(kf) = unchecked_cast(k(x) as Parser[ka, env, st, err, ef + ef1 + ef2, b]);
+                kf(sk, fk1, env1, st1)
+            };
+            paf(sk1, fk, env, st)
         )
 
     pub def alt(pa: Parser[ka, env, st, err, ef1, a], pb: Parser[ka, env, st, err, ef2, a]): Parser[ka, env, st, err, ef1 + ef2, a] = 
-        Parser((sk, fk, env, st) ->
-            let fk1 = (_, _) -> apply1(unchecked_cast(pb as Parser[ka, env, st, err, ef1 + ef2, a]),
-                                        unchecked_cast(sk as SuccessK[ka, env, st, err, ef1 + ef2, a]), 
-                                        unchecked_cast(fk as FailK[ka, st, err, ef1 + ef2]),  
-                                        env, 
-                                        st);
-            apply1(unchecked_cast(pa as Parser[ka, env, st, err, ef1 + ef2, a]),
-                    unchecked_cast(sk as SuccessK[ka, env, st, err, ef1 + ef2, a]), 
-                    unchecked_cast(fk1 as FailK[ka, st, err, ef1 + ef2]),  
-                    env, 
-                    st)
+        Parser((sk, fk, env, st) ->        
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef1 + ef2, a]);
+            let Parser(pbf) = unchecked_cast(pb as Parser[ka, env, st, err, ef1 + ef2, a]);
+            let fk1 = (_, _) -> pbf(sk, fk, env, st);
+            paf(sk, fk1, env, st)
         )
 
     pub def throwError(err: err) : Parser[ka, env, st, err, ef, a] =
         Parser((_, fk, _, st) -> fk(err, st))
 
-    pub def catchError(ma: Parser[ka, env, st, err, ef, a], 
-                        k: err -> Parser[ka, env, st, err, ef1, a] \ ef2):  Parser[ka, env, st, err, ef + ef1 + ef2, a] =
+    pub def catchError(pa: Parser[ka, env, st, err, ef, a], 
+                        handler: err -> Parser[ka, env, st, err, ef1, a] \ ef2):  Parser[ka, env, st, err, ef + ef1 + ef2, a] =
         Parser((sk, fk, env, st) ->
-            let fk1 = (err, st1) ->
-                apply1(unchecked_cast(k(err) as Parser[ka, env, st, err, ef + ef1 + ef2, a]), 
-                        unchecked_cast(sk as SuccessK[ka, env, st, err, ef + ef1 + ef2, a]), 
-                        unchecked_cast(fk as FailK[ka, st, err, ef + ef1 + ef2]), 
-                        env, 
-                        st1);
-            apply1(unchecked_cast(ma as Parser[ka, env, st, err, ef + ef1 + ef2, a]), 
-                    unchecked_cast(sk as SuccessK[ka, env, st, err, ef + ef1 + ef2, a]), 
-                    unchecked_cast(fk1 as FailK[ka, st, err, ef + ef1 + ef2]), 
-                    env, 
-                    st)
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2, a]);
+            let fk1 = (err, st1) -> {
+                let Parser(kf) = unchecked_cast(handler(err) as Parser[ka, env, st, err, ef + ef1 + ef2, a]);
+                kf(sk, fk, env, st1)
+            };
+            paf(sk, fk1, env, st)
         )
 
     pub def mapError(f: err -> err \ ef1, pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef + ef1, a] = 
         Parser((sk, fk, env, st) ->
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1, a]);
             let fk1 = (err, st2) -> fk(f(err), st2);
-            apply1(unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1, a]),
-                    unchecked_cast(sk as SuccessK[ka, env, st, err, ef + ef1, a]), 
-                    unchecked_cast(fk1 as FailK[ka, st, err, ef + ef1]),  
-                    env, 
-                    st)
+            paf(sk, fk1, env, st)
         )
 
     pub def reifyError(pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef, Result[err, a]] = 
         Parser((sk, fk, env, st) ->
+            let Parser(paf) = pa;
             let fk2 = (err, st2) -> sk(Err(err), fk, env, st2);
             let sk1 = (x, fk1, env1, st1) -> sk(Ok(x), fk1, env1, st1); 
-            apply1(unchecked_cast(pa as Parser[ka, env, st, err, ef, Result[err, a]]),
-                    unchecked_cast(sk1 as SuccessK[ka, env, st, err, ef, Result[err, a]]), 
-                    unchecked_cast(fk2 as FailK[ka, st, err, ef]),  
-                    env, 
-                    st)
+            paf(sk1, fk2, env, st)
         )
 
 
     pub def flatMapOr(pa: Parser[ka, env, st, err, ef, a], 
                         pnext: a -> Parser[ka, env, st, err, ef1, b] \ ef2, 
-                        pelse: err -> Parser[ka, env, st, err, ef1, b] \ ef2): Parser[ka, env, st, err, ef + ef1 + ef2, b] =
+                        pelse: err -> Parser[ka, env, st, err, ef3, b] \ ef4): Parser[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, b] =
         Parser((sk, fk, env, st) ->
-            let fk2 = (err, st2) -> 
-                apply1(unchecked_cast(pelse(err) as Parser[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(sk as SuccessK[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(fk as FailK[ka, st, err, ef + ef1 + ef2]), 
-                        env, 
-                        st2);
-            let sk1 = (x, fk1, env1, st1) ->                
-                apply1(unchecked_cast(pnext(x) as Parser[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(sk as SuccessK[ka, env, st, err, ef + ef1 + ef2, b]), 
-                        unchecked_cast(fk1 as FailK[ka, st, err, ef + ef1 + ef2]), 
-                        env1, 
-                        st1);
-            apply1(unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2, b]), 
-                    unchecked_cast(sk1 as SuccessK[ka, env, st, err, ef + ef1 + ef2, b]), 
-                    unchecked_cast(fk2 as FailK[ka, st, err, ef + ef1 + ef2]), 
-                    env, 
-                    st)
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, a]);
+            let fk2 = (err, st2) -> {
+                let Parser(elsef) = unchecked_cast(pelse(err) as Parser[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, b]);
+                elsef(sk, fk, env, st2)
+            }; 
+            let sk1 = (x, fk1, env1, st1) ->  {
+                let Parser(nextf) = unchecked_cast(pnext(x) as Parser[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, b]);
+                nextf(sk, fk1, env1, st1)
+            };
+            paf(sk1, fk2, env, st)
         )
 
 
