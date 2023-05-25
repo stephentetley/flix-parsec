@@ -28,14 +28,14 @@ mod TestDirListing {
             case Err(msg) => {println(msg); false}
         }
 
-    // @test
-    // def test01(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt")
+    @test
+    def test01(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt")
 
     @test
     def test02(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\long_names_dir.txt")
 
-    // @test
-    // def test03(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt")
+    @test
+    def test03(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt")
 
 
 }
@@ -47,7 +47,7 @@ mod DirListing {
     use GradedMonad.{>>=}
 
     use FlixParsec.GenParser
-    use FlixParsec.Prim.{bounded, endOfInput, commit}
+    use FlixParsec.Prim.{bounded, endOfInput}
     use FlixParsec.Combinators.{count, many, many1, manyTill, endBy}
     use FlixParsec.Char.{char, oneOf}
     use FlixParsec.Text.{restOfLine, newline}
@@ -117,7 +117,7 @@ mod DirListing {
     pub def byteOrderMark(): GenParser[ka, ust, ef, Char] = char('\ufeff')
 
     pub def dirListingFolder(): GenParser[ka, ust, ef, DirListingFolder] = 
-        commit(directoryDirective())                >>= d1  -> 
+        directoryDirective()                        >>= d1  -> 
         blankLines2()                               >>= _   -> 
         directoryHeadings()                         >>= _   ->
         many(dirListingLine())                      >>= xs  ->

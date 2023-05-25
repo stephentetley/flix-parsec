@@ -30,7 +30,8 @@ mod FlixParsec {
         FlixParsec.Internal.ParserMonad[ka, ParseContext, ParseState[ust], InternalError, ef, a]
     )
 
-    pub type alias GenParser1[ust: Type, ef: Eff, a: Type] = GenParser[(ParseState[ust], a), ust, ef, a]
+    pub type alias GenParser1[ust: Type, ef: Eff, a: Type] = 
+        GenParser[Result[(ParseState[ust], InternalError), (ParseState[ust], a)], ust, ef, a]
 
 
     /// No user state
@@ -40,7 +41,8 @@ mod FlixParsec {
     /// This is exposed so client code can implement wrappers over `run` etc. without
     /// knowing about the internal type `ParseState`.
     ///
-    pub type alias Parser1[ef: Eff, a: Type] = Parser[(ParseState[Unit], a), ef, a]
+    pub type alias Parser1[ef: Eff, a: Type] = 
+        Parser[Result[(ParseState[Unit], InternalError), (ParseState[Unit], a)], ef, a]
 
 
 
@@ -110,6 +112,7 @@ mod FlixParsec.Prim {
         let state = {pos = 0, userState = initState};
         let GenParser(p1) = p;
         FlixParsec.Internal.ParserMonad.runParserMonad(p1, context, state)
+            |> Result.mapErr(snd)
 
     ///
     /// Run parser `p` on the string `input`.
@@ -154,7 +157,7 @@ mod FlixParsec.Prim {
 
 
     pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 + ef2, a] =
-        GenParser(FlixParsec.Internal.ParserMonad.orelse(getGenParser(ma), getGenParser(mb)))
+        GenParser(FlixParsec.Internal.ParserMonad.alt(getGenParser(ma), getGenParser(mb)))
 
 
     pub def throwError(message: String): GenParser[ka, ust, ef, a] =
@@ -185,10 +188,6 @@ mod FlixParsec.Prim {
                                                             a -> getGenParser(mnext(a)),
                                                             err -> getGenParser(melse(err))))
 
-
-    pub def commit(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
-        GenParser(FlixParsec.Internal.ParserMonad.commit(getGenParser(ma)))
-
     pub def bind(ma: GenParser[ka, ust, ef, a], k: a -> GenParser[ka, ust, ef1, b] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, b] = 
         flatMap(k, ma)
 
@@ -205,11 +204,11 @@ mod FlixParsec.Prim {
 
     /// `EnvStateError.update` currently not sufficiently polymorphic in effect...
     pub def setUserState(state: ust): GenParser[ka, ust, ef, Unit] =  
-        GenParser(FlixParsec.Internal.ParserMonad.update(s -> {userState = state | s}))
+        GenParser(FlixParsec.Internal.ParserMonad.puts(s -> checked_ecast({userState = state | s})))
 
 
     pub def updateUserState(modify: ust -> ust \ ef1): GenParser[ka, ust, ef1, Unit] =  
-        GenParser(FlixParsec.Internal.ParserMonad.update(s -> let us1 = modify(s.userState); {userState = us1 | s}))
+        GenParser(FlixParsec.Internal.ParserMonad.puts(s -> let us1 = modify(s.userState); {userState = us1 | s}))
 
     def ask(): GenParser[ka, ust, ef, ParseContext] =
         GenParser(FlixParsec.Internal.ParserMonad.ask())
@@ -219,23 +218,23 @@ mod FlixParsec.Prim {
 
 
     def askOffset(): GenParser[ka, ust, ef, Int32] =
-        GenParser(FlixParsec.Internal.ParserMonad.asks(env -> env.offset))
+        GenParser(FlixParsec.Internal.ParserMonad.asks(env -> checked_ecast(env.offset)))
 
     def askTabSize(): GenParser[ka, ust, ef, Int32] =
-        GenParser(FlixParsec.Internal.ParserMonad.asks(env -> env.tabSize))
+        GenParser(FlixParsec.Internal.ParserMonad.asks(env -> checked_ecast(env.tabSize)))
     
     def askInput(): GenParser[ka, ust, ef, String] =
-        GenParser(FlixParsec.Internal.ParserMonad.asks(env -> env.input))
+        GenParser(FlixParsec.Internal.ParserMonad.asks(env -> checked_ecast(env.input)))
     
 
     pub def getCursorPosition(): GenParser[ka, ust, ef, Int32] =
-        GenParser(FlixParsec.Internal.ParserMonad.gets(s -> s.pos))
+        GenParser(FlixParsec.Internal.ParserMonad.gets(s -> checked_ecast(s.pos)))
 
     pub def setCursorPosition(cpos: Int32): GenParser[ka, ust, ef, Unit] =
-        GenParser(FlixParsec.Internal.ParserMonad.update(s -> {pos = cpos | s}))
+        GenParser(FlixParsec.Internal.ParserMonad.puts(s -> checked_ecast({pos = cpos | s})))
 
     pub def incrCursorPosition(n: Int32): GenParser[ka, ust, ef, Unit] =
-        GenParser(FlixParsec.Internal.ParserMonad.update(s -> {pos = s.pos + n | s}))
+        GenParser(FlixParsec.Internal.ParserMonad.puts(s -> checked_ecast({pos = s.pos + n | s})))
 
 
     pub def getSourcePosition(): GenParser[ka, ust, ef, SourcePosition] = 

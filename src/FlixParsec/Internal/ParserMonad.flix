@@ -14,233 +14,178 @@
  * limitations under the License.
  */
 
+
+
 mod FlixParsec.Internal {
 
-    ///
-    /// The ParserMonad monad is in the codensity style to be stack safe.
-    /// 
-    /// ParserMonad is GradedLib's EnvStateError monad with polymorphic error type.
-    /// `ka` is the continuation answer type
-    ///
+
+
+    type alias FailK[ka: Type, st: Type, err: Type, ef: Eff] = err -> st -> ka \ ef
+
+    type alias SuccessK[ka: Type, env: Type, st: Type, err: Type, ef: Eff, a: Type] = a -> FailK[ka, st, err, ef] -> env -> st -> ka \ ef
+
     pub enum ParserMonad[ka: Type, env: Type, st: Type, err: Type, ef: Eff, a: Type](
-        env -> st -> (a -> st -> ParseResult[err, ka] \ ef) -> ParseResult[err, ka] \ ef)
-
-    instance GradedFunctor[ParserMonad[ka, env, st, err]] { 
-        pub def map(f: a -> b \ ef1, m: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, b] = 
-            FlixParsec.Internal.ParserMonad.map(f, m)
-    }
-
-    instance GradedApplicative[ParserMonad[ka, env, st, err]] { 
-        pub def point(x: a): ParserMonad[ka, env, st, err, ef, a] = 
-            FlixParsec.Internal.ParserMonad.point(x)
-
-        pub def ap(f: ParserMonad[ka, env, st, err, ef1, a -> b \ ef2], 
-                    m: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1 + ef2, b] = 
-            FlixParsec.Internal.ParserMonad.ap(f, m)
-    }
-
-    instance GradedMonad[ParserMonad[ka, env, st, err]] { 
-        pub def flatMap(k: a -> ParserMonad[ka, env, st, err, ef1, b] \ ef2, 
-                        m: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1 + ef2, b] = 
-            FlixParsec.Internal.ParserMonad.flatMap(k, m)
-    }
-
-    // Orelse available for ParserMonad because state is pure (so resetable).
-
-    instance GradedOr[ParserMonad[ka, env, st, err]] { 
-        pub def orelse(ma: ParserMonad[ka, env, st, err, ef1, a], 
-                        mb: ParserMonad[ka, env, st, err, ef2, a]): ParserMonad[ka, env, st, err, ef1 + ef2, a] =
-            FlixParsec.Internal.ParserMonad.orelse(ma, mb)
-    }
-
-
-    pub enum ParseResult[err: Type, a: Type]{
-        case ParseSuccess(a)
-        case ParseFailure(err)
-        case Commit(ParseResult[err, a])
-    }
+        SuccessK[ka, env, st, err, ef, a] -> FailK[ka, st, err, ef] -> env -> st -> ka \ ef
+    )
 
 }
 
 mod FlixParsec.Internal.ParserMonad {
 
-
-    use FlixParsec.Internal.ParserMonad
     use FlixParsec.Internal.ParserMonad.{ParserMonad}
-    use FlixParsec.Internal.ParseResult
-    use FlixParsec.Internal.ParseResult.{ParseSuccess, ParseFailure, Commit}
 
-    ///
-    /// Helper function for the implementation of `map` and `ap` etc.
-    ///
-    def apply1(ma: ParserMonad[ka, env, st, err, ef, a], 
-                e: env,
-                s: st, 
-                k: a -> st -> ParseResult[err, ka] \ ef): ParseResult[err, ka] \ ef =
-        let ParserMonad(ma1) = ma;
-        ma1(e, s, k)
+    pub def runParserMonad(p: ParserMonad[Result[(st, err), (st, a)], env, st, err, ef, a], 
+                            env: env, 
+                            st: st): Result[(st, err), (st, a)] \ ef =
+        let fk = (err, st2) -> checked_ecast(Err((st2, err)));
+        let sk = (a, _, _, st1) -> checked_ecast(Ok((st1, a)));
+        let ParserMonad(p1) = p;
+        p1(sk, fk, env, st)
 
-
-    ///
-    /// Helper function for the implementation of `commit` etc.
-    ///
-    def commit1(ma: ParserMonad[ka, env, st, err, ef, a], 
-                e: env,
-                s: st, 
-                k: a -> st -> ParseResult[err, ka] \ ef): ParseResult[err, ka] \ ef =
-        let ParserMonad(ma1) = ma;
-        ma1(e, s, k) |> Commit
-
-    def apply1WithHandler(ma: ParserMonad[ka, env, st, err, ef, a], 
-                            e: env,
-                            s: st, 
-                            k: a -> st -> ParseResult[err, ka] \ ef, 
-                            handleK: err -> ParseResult[err, ka] \ ef): ParseResult[err, ka] \ ef =
-        let ParserMonad(ma1) = ma;
-        match ma1(e, s, k) {
-            case ParseFailure(err) => handleK(err)
-            case xr                => xr
-        }
-
-    def toResult(pr: ParseResult[err, a]): Result[err, a] = 
-        def loop(r, k) = match r {
-            case ParseSuccess(a)   => k(Ok(a))
-            case ParseFailure(err) => k(Err(err))
-            case Commit(r1)        => loop(r1, k)
-        };
-        loop(pr, identity)
-
-
-    ///
-    /// Returns the result of applying `ma` to the state `s`.
-    ///
-    pub def runParserMonad(ma: ParserMonad[(st, a), env, st, err, ef, a], e: env, st: st): Result[err, (st, a)] \ ef =
-        let ParserMonad(f) = ma;
-        let cont = (a, s1) -> checked_ecast(ParseSuccess(s1, a));
-        f(e, st, cont) |> toResult
 
     pub def point(x: a): ParserMonad[ka, env, st, err, ef, a] = 
-        ParserMonad((_, s, k) -> k(x, s))
+        ParserMonad((sk, fk, env, st) -> sk(x, fk, env, st))
 
-    pub def map(f: a -> b \ ef1, ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, b] =
-        ParserMonad((e, s, k) ->
-            apply1(unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1, a]), e, s, (a, s1) -> {let b = f(a); k(b, s1)})
-        )
 
-    pub def ap(mf: ParserMonad[ka, env, st, err, ef1, a -> b \ ef2], 
-                ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1 + ef2, b] =
-        ParserMonad((e, s, k) ->
-            apply1(unchecked_cast(mf as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a -> b \ ef2]), e, s, (f, s1) ->
-                apply1(unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]), e, s1, (a, s2) ->
-                    k(f(a), s2)))
-        )
-
-    pub def flatMap(f: a -> ParserMonad[ka, env, st, err, ef1, b] \ ef2, 
-                    ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1 + ef2, b] =
-        ParserMonad((e, s, k) ->
-            apply1(unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]), e, s, (a, s1) ->
-                apply1(unchecked_cast(f(a) as ParserMonad[ka, env, st, err, ef + ef1 + ef2, b]), e, s1, (b, s2) ->
-                    k(b, s2)))
-        )
-
-    pub def orelse(ma: ParserMonad[ka, env, st, err, ef1, a], 
-                    mb: ParserMonad[ka, env, st, err, ef2, a]): ParserMonad[ka, env, st, err, ef1 + ef2, a] =
-        ParserMonad((e, s, k) ->
-            apply1WithHandler(unchecked_cast(ma as ParserMonad[ka, env, st, err, ef1 + ef2, a]), e, s, a ->  k(a), _ -> 
-                apply1(unchecked_cast(mb as ParserMonad[ka, env, st, err, ef1 + ef2, a]), e, s, b -> k(b)))
-        )
-
-    pub def throwError(err: err): ParserMonad[ka, env, st, err, ef, a] = 
-        ParserMonad((_, _, _) -> checked_ecast(ParseFailure(err)))
-
-    pub def catchError(ma: ParserMonad[ka, env, st, err, ef, a], 
-                        hdlr: err -> ParserMonad[ka, env, st, err, ef1, a] \ ef2): ParserMonad[ka, env, st, err, ef + ef1 + ef2, a] = 
-        ParserMonad((e, s, k) -> 
-            let ParserMonad(ma1) = unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]);
-            match ma1(e, s, k) {
-                case ParseFailure(err) => { 
-                    let ParserMonad(hdlr1) = unchecked_cast(hdlr(err) as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]); 
-                    hdlr1(e, s, k)
-                }
-                case xr                => xr
-                
-            }
-        )
-
-    pub def mapError(f: err -> err \ ef1, ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, a] = 
-        ParserMonad((e, s, k) -> 
-            apply1WithHandler(unchecked_cast(ma as ParserMonad[ka, env, st, err, ef + ef1, a]), e, s, k, err -> checked_ecast(ParseFailure(f(err))))
-        )
-   
-    pub def reifyError(ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef, Result[err, a]] = 
-        ParserMonad((e, s, k) -> 
-            apply1WithHandler(ma, e, s, a -> k(Ok(a)), err -> k(Err(err), s))
+    pub def map(f: a -> b \ ef1, pa: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, b] =
+        ParserMonad((sk, fk, env, st) -> 
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1, a]);
+            let sk1 = (x, fk1, env1, st1) -> sk(f(x), fk1, env1, st1);
+            paf(sk1, fk, env, st)
         )
 
 
-    // Failure is explicity trapped in `start` - if `start` is successful apply `mnext` to its answer ala `flatMap`.
-    // If `start` fails apply `melse` to the failure value.
-    pub def flatMapOr(start: ParserMonad[ka, env, st, err, ef, a], 
-                        mnext: a -> ParserMonad[ka, env, st, err, ef1, b] \ ef2, 
-                        melse: err -> ParserMonad[ka, env, st, err, ef3, b]): ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b] =
-       ParserMonad((e, s, k) -> 
-            apply1WithHandler(unchecked_cast(start as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, a]), e, s, 
-                (a, s1) -> apply1(unchecked_cast(mnext(a) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b]), e, s1, k),
-                err -> apply1(unchecked_cast(melse(err) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3, b]), e, s, k)
-            )
-       )
-
-
-    pub def commit(ma: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef, a] = 
-        ParserMonad((e, s, k) -> 
-            commit1(ma, e, s, (a, s1) -> k(a, s1))
+    pub def ap(pf: ParserMonad[ka, env, st, err, ef1, a -> b \ ef2], 
+                pa: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1 + ef2, b] =
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(pff) = unchecked_cast(pf as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a -> b \ ef2]);
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]);
+            let sk1 = (f, fk1, env1, st1) -> {
+                let sk2 = (x, fk2, env2, st2) -> sk(f(x), fk2, env2, st2);
+                paf(sk2, fk1, env1, st1)
+            };
+            pff(sk1, fk, env, st)
         )
+
+
+    pub def flatMap(k: a -> ParserMonad[ka, env, st, err, ef1, b] \ ef2, 
+                    pa: ParserMonad[ka, env, st, err, ef, a]):  ParserMonad[ka, env, st, err, ef + ef1 + ef2, b] =
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]);
+            let sk1 = (x, fk1, env1, st1) -> {                
+                let ParserMonad(kf) = unchecked_cast(k(x) as ParserMonad[ka, env, st, err, ef + ef1 + ef2, b]);
+                kf(sk, fk1, env1, st1)
+            };
+            paf(sk1, fk, env, st)
+        )
+
+    pub def alt(pa: ParserMonad[ka, env, st, err, ef1, a], pb: ParserMonad[ka, env, st, err, ef2, a]): ParserMonad[ka, env, st, err, ef1 + ef2, a] = 
+        ParserMonad((sk, fk, env, st) ->        
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef1 + ef2, a]);
+            let ParserMonad(pbf) = unchecked_cast(pb as ParserMonad[ka, env, st, err, ef1 + ef2, a]);
+            let fk1 = (_, _) -> pbf(sk, fk, env, st);
+            paf(sk, fk1, env, st)
+        )
+
+    pub def throwError(err: err) : ParserMonad[ka, env, st, err, ef, a] =
+        ParserMonad((_, fk, _, st) -> fk(err, st))
+
+    pub def catchError(pa: ParserMonad[ka, env, st, err, ef, a], 
+                        handler: err -> ParserMonad[ka, env, st, err, ef1, a] \ ef2):  ParserMonad[ka, env, st, err, ef + ef1 + ef2, a] =
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]);
+            let fk1 = (err, st1) -> {
+                let ParserMonad(kf) = unchecked_cast(handler(err) as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]);
+                kf(sk, fk, env, st1)
+            };
+            paf(sk, fk1, env, st)
+        )
+
+    pub def mapError(f: err -> err \ ef1, pa: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, a] = 
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1, a]);
+            let fk1 = (err, st2) -> fk(f(err), st2);
+            paf(sk, fk1, env, st)
+        )
+
+    pub def reifyError(pa: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef, Result[err, a]] = 
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(paf) = pa;
+            let fk2 = (err, st2) -> sk(Err(err), fk, env, st2);
+            let sk1 = (x, fk1, env1, st1) -> sk(Ok(x), fk1, env1, st1); 
+            paf(sk1, fk2, env, st)
+        )
+
+
+    pub def flatMapOr(pa: ParserMonad[ka, env, st, err, ef, a], 
+                        pnext: a -> ParserMonad[ka, env, st, err, ef1, b] \ ef2, 
+                        pelse: err -> ParserMonad[ka, env, st, err, ef3, b] \ ef4): ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, b] =
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, a]);
+            let fk2 = (err, st2) -> {
+                let ParserMonad(elsef) = unchecked_cast(pelse(err) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, b]);
+                elsef(sk, fk, env, st2)
+            }; 
+            let sk1 = (x, fk1, env1, st1) ->  {
+                let ParserMonad(nextf) = unchecked_cast(pnext(x) as ParserMonad[ka, env, st, err, ef + ef1 + ef2 + ef3 + ef4, b]);
+                nextf(sk, fk1, env1, st1)
+            };
+            paf(sk1, fk2, env, st)
+        )
+
+
+    // Restores state updated by first ParserMonad (Okasaki)
+    pub def lookahead(pa: ParserMonad[ka, env, st, err, ef, a], 
+                        k: a -> ParserMonad[ka, env, st, err, ef1, a] \ ef2): ParserMonad[ka, env, st, err, ef + ef1 + ef2, b] = 
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1 + ef2, a]);
+            let sk1 = (x, fk1, env1, _) -> { 
+                let ParserMonad(kf) = unchecked_cast(k(x) as ParserMonad[ka, env, st, err, ef + ef1 + ef2, b]);
+                kf(sk, fk1, env1, st)
+            };
+            paf(sk1, fk, env, st)
+        )
+
+    // restore state on failure (Leijen)
+    pub def tryParse(pa: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef, a] =  
+        ParserMonad((sk, fk, env, st) ->
+            let ParserMonad(paf) = pa;
+            let fk1 = (err, _) -> fk(err, st);
+            paf(sk, fk1, env, st)
+        )
+
+
+    pub def ask(): ParserMonad[ka, env, st, err, ef, env] = 
+        ParserMonad((sk, fk, env, st) -> sk(env, fk, env, st))
+
+
+    pub def asks(f: env -> a \ ef): ParserMonad[ka, env, st, err, ef, a] = 
+        ParserMonad((sk, fk, env, st) -> sk(f(env), fk, env, st))
+
+
+    pub def local(f: env -> env \ef1, pa: ParserMonad[ka, env, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, a] =
+        ParserMonad((sk, fk, env, st) ->       
+            let ParserMonad(paf) = unchecked_cast(pa as ParserMonad[ka, env, st, err, ef + ef1, a]);
+            let sk1 = (x, fk1, _, st1) -> sk(x, fk1, env, st1);     /// restore original env
+            paf(sk1, fk, f(env), st)
+        )
+
+    pub def get(): ParserMonad[ka, env, st, err, ef, st] = 
+        ParserMonad((sk, fk, env, st) -> sk(st, fk, env, st))
+
+    pub def gets(f: st -> a \ ef): ParserMonad[ka, env, st, err, ef, a] = 
+        ParserMonad((sk, fk, env, st) -> sk(f(st), fk, env, st))
+
+    pub def put(st: st): ParserMonad[ka, env, st, err, ef, Unit] = 
+        ParserMonad((sk, fk, env, _) -> sk((), fk, env, st))
+
+    pub def puts(f: st -> st \ ef): ParserMonad[ka, env, st, err, ef, Unit] = 
+        ParserMonad((sk, fk, env, st) -> sk((), fk, env, f(st)))
 
 
     pub def liftAction(f: Unit -> a \ ef): ParserMonad[ka, env, st, err, ef, a] = 
-        ParserMonad((_, s, k) ->
+        ParserMonad((sk, fk, env, st) ->
             let a = f(); 
-            k(a, s)  
-        )
-
-
-    pub def update(f: st -> st \ ef1): ParserMonad[ka, env, st, err, ef + ef1, Unit] = 
-        ParserMonad((_, s, k) -> 
-            k((), f(s))
-        )
-
-
-    pub def put(s: st): ParserMonad[ka, env, st, err, ef, Unit] = 
-        ParserMonad((_, _, k) -> 
-            k((), s)
-        )
-
-    // polymorphic `ef`...
-    pub def get(): ParserMonad[ka, env, st, err, ef, st] = 
-        ParserMonad((_, s, k) -> 
-            k(s, s)
-        )
-
-    
-    pub def gets(proj: st -> a \ ef1): ParserMonad[ka, env, st, err, ef + ef1, a] = 
-        ParserMonad((_, s, k) -> 
-            k(proj(s), s)
-        )
-
-    pub def ask(): ParserMonad[ka, env, st, err, ef, env] = 
-        ParserMonad((e, s, k) -> 
-            k(e, s)
-        )
-
-    pub def asks(proj: env -> a \ ef1): ParserMonad[ka, env, st, err, ef + ef1, a] = 
-        ParserMonad((e, s, k) -> 
-            k(proj(e), s)
-        )
-
-    pub def local(f: env -> env1 \ ef1, ma: ParserMonad[ka, env1, st, err, ef, a]): ParserMonad[ka, env, st, err, ef + ef1, a] = 
-        ParserMonad((e, s, k) -> 
-            apply1(unchecked_cast(ma as ParserMonad[ka, env1, st, err, ef + ef1, a]), f(e), s, (a1, s1) -> 
-                k(a1, s1)
-            )
+            sk(a, fk, env, st)  
         )
 }
