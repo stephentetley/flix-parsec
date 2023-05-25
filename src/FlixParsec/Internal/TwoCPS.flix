@@ -43,16 +43,16 @@ mod FlixParsec.Internal.TwoCPS {
 
 
     pub def map(f: a -> b \ ef1, pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef + ef1, b] =
-        Parser((sk, fk, env, st) -> {
+        Parser((sk, fk, env, st) -> 
             let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1, a]);
             let sk1 = (x, fk1, env1, st1) -> sk(f(x), fk1, env1, st1);
             paf(sk1, fk, env, st)
-        })
+        )
 
 
     pub def ap(pf: Parser[ka, env, st, err, ef1, a -> b \ ef2], 
                 pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef + ef1 + ef2, b] =
-        Parser((sk, fk, env, st) -> { 
+        Parser((sk, fk, env, st) ->
             let Parser(pff) = unchecked_cast(pf as Parser[ka, env, st, err, ef + ef1 + ef2, a -> b \ ef2]);
             let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2, a]);
             let sk1 = (f, fk1, env1, st1) -> {
@@ -60,7 +60,7 @@ mod FlixParsec.Internal.TwoCPS {
                 paf(sk2, fk1, env1, st1)
             };
             pff(sk1, fk, env, st)
-        })
+        )
 
 
     pub def flatMap(k: a -> Parser[ka, env, st, err, ef1, b] \ ef2, 
@@ -127,6 +127,55 @@ mod FlixParsec.Internal.TwoCPS {
             };
             paf(sk1, fk2, env, st)
         )
+
+
+    // Restores state updated by first parser (Okasaki)
+    pub def lookahead(pa: Parser[ka, env, st, err, ef, a], 
+                        k: a -> Parser[ka, env, st, err, ef1, a] \ ef2): Parser[ka, env, st, err, ef + ef1 + ef2, b] = 
+        Parser((sk, fk, env, st) ->
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1 + ef2, a]);
+            let sk1 = (x, fk1, env1, _) -> { 
+                let Parser(kf) = unchecked_cast(k(x) as Parser[ka, env, st, err, ef + ef1 + ef2, b]);
+                kf(sk, fk1, env1, st)
+            };
+            paf(sk1, fk, env, st)
+        )
+
+    // restore state on failure (Leijen)
+    pub def tryParse(pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef, a] =  
+        Parser((sk, fk, env, st) ->
+            let Parser(paf) = pa;
+            let fk1 = (err, _) -> fk(err, st);
+            paf(sk, fk1, env, st)
+        )
+
+
+    pub def ask(): Parser[ka, env, st, err, ef, env] = 
+        Parser((sk, fk, env, st) -> sk(env, fk, env, st))
+
+
+    pub def asks(f: env -> a \ ef): Parser[ka, env, st, err, ef, a] = 
+        Parser((sk, fk, env, st) -> sk(f(env), fk, env, st))
+
+
+    pub def local(f: env -> env \ef1, pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef + ef1, a] =
+        Parser((sk, fk, env, st) ->       
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1, a]);
+            let sk1 = (x, fk1, _, st1) -> sk(x, fk1, env, st1);     /// restore original env
+            paf(sk1, fk, f(env), st)
+        )
+
+    pub def get(): Parser[ka, env, st, err, ef, st] = 
+        Parser((sk, fk, env, st) -> sk(st, fk, env, st))
+
+    pub def gets(f: st -> a \ ef): Parser[ka, env, st, err, ef, a] = 
+        Parser((sk, fk, env, st) -> sk(f(st), fk, env, st))
+
+    pub def put(st: st): Parser[ka, env, st, err, ef, Unit] = 
+        Parser((sk, fk, env, _) -> sk((), fk, env, st))
+
+    pub def puts(f: st -> st \ ef): Parser[ka, env, st, err, ef, Unit] = 
+        Parser((sk, fk, env, st) -> sk((), fk, env, f(st)))
 
 
 }

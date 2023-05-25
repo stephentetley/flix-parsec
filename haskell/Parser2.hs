@@ -105,13 +105,13 @@ lookahead p k =
         pf sk1 fk env st
     )
 
--- restore state on failure (Okasaki)
+-- restore state on failure (Leijen)
 tryParse :: Parser ka env st err a -> Parser ka env st err a
 tryParse p = 
     Parser(\sk fk env st ->
         let Parser(pf) = p in
         let fk1 = \err _ -> fk err st in 
-        pf sk fk env st
+        pf sk fk1 env st
     )
 
 
