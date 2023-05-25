@@ -20,22 +20,37 @@
 /// Also note, a `dir` listing is flat without recursion and the results
 /// are therefore a list not a tree. 
 
+/// > java -jar ..\bin\flix.0.37.0.jar .\samples\DirListing.flix .\artifact\flix-parsec.fpkg .\lib\github\stephentetley\graded-lib\0.6.0\graded-lib-0.6.0.fpkg
+
+/// WARNING - this isn't a very good parser. dir listings are hard to parse due 
+/// to whitespace sensitivity and line continuations for long names. 
+/// This parser still has some problems...
+
+
+pub def main(): Int32 \ IO = 
+    TestDirListing.test01();
+    TestDirListing.test02();
+    TestDirListing.test03();
+    0
+
 mod TestDirListing {
 
     def run1(path: String): Bool \ IO = 
         match DirListing.parseFile(charSet = "UTF-16LE", path) {
-            case Ok(xs)   => {List.forEach(DirListing.dirListingFolderToString >> println, xs); true}
+            case Ok(xs)   => {
+                println(path);
+                println("Subdirs: ${List.length(xs)}");
+                List.forEach(DirListing.dirListingFolderToString >> println, xs); 
+                true
+            }
             case Err(msg) => {println(msg); false}
         }
 
-    @test
-    def test01(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt")
+    pub def test01(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\dir.txt")
 
-    @test
-    def test02(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\long_names_dir.txt")
+    pub def test02(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\long_names_dir.txt")
 
-    @test
-    def test03(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt")
+    pub def test03(): Bool \ IO = run1("e:\\coding\\flix\\flix-parsec\\testdata\\flix_dir.txt")
 
 
 }
@@ -47,7 +62,7 @@ mod DirListing {
     use GradedMonad.{>>=}
 
     use FlixParsec.GenParser
-    use FlixParsec.Prim.{bounded, endOfInput}
+    use FlixParsec.Prim.{bounded, endOfInput, tryParse, lookahead}
     use FlixParsec.Combinators.{count, many, many1, manyTill, endBy}
     use FlixParsec.Char.{char, oneOf}
     use FlixParsec.Text.{restOfLine, newline}
@@ -120,7 +135,7 @@ mod DirListing {
         directoryDirective()                        >>= d1  -> 
         blankLines2()                               >>= _   -> 
         directoryHeadings()                         >>= _   ->
-        many(dirListingLine())                      >>= xs  ->
+        manyTill(dirListingLine(), lookahead(blankLine()))     >>= xs  ->
         point({path = d1, contents = xs}) 
 
     pub def directoryDirective(): GenParser[ka, ust, ef, String] =       
@@ -172,7 +187,7 @@ mod DirListing {
         };
         restOfLine(false)       >>= s1  -> 
         newline()               >>= _   ->
-        many(lineCont())        >>= ss  -> {
+        many(tryParse(lineCont()))        >>= ss  -> {
             let ans = String.flatten(s1 :: ss) |> String.trim;
             point(ans)
         }
@@ -212,6 +227,8 @@ mod DirListing {
     def blankLines2(): GenParser[ka, ust, ef, Unit] = 
         skippingAt(regex"\\R{2}")
 
+    def blankLine(): GenParser[ka, ust, ef, Unit] = 
+        skippingAt(regex"\\R{1}")
 
 
 }

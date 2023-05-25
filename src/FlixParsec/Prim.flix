@@ -327,4 +327,12 @@ mod FlixParsec.Prim {
             }
         }
 
+    
+    ///
+    /// `tryParse` - run parser `p` consume input on success.
+    /// On fail, don't consume input.
+    ///
+    pub def tryParse(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =
+        GenParser(FlixParsec.Internal.ParserMonad.tryParse(getGenParser(p)))
+
 }
