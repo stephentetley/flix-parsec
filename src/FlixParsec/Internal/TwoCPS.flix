@@ -28,7 +28,7 @@ mod FlixParsec.Internal.TwoCPS {
         SuccessK[ka, env, st, err, ef, a] -> FailK[ka, st, err, ef] -> env -> st -> ka \ ef
     )
 
-
+    /// TODO - if we inline apply1 we can have much less worrisome casting...
     def apply1 (p: Parser[ka, env, st, err, ef, a], 
                 sk: SuccessK[ka, env, st, err, ef, a], 
                 fk: FailK[ka, st, err, ef], 
@@ -50,14 +50,12 @@ mod FlixParsec.Internal.TwoCPS {
     pub def point(x: a): Parser[ka, env, st, err, ef, a] = 
         Parser((sk, fk, env, st) -> sk(x, fk, env, st))
 
+
     pub def map(f: a -> b \ ef1, pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef + ef1, b] =
         Parser((sk, fk, env, st) ->
+            let Parser(paf) = unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1, a]);
             let sk1 = (x, fk1, env1, st1) -> sk(f(x), fk1, env1, st1);
-            apply1(unchecked_cast(pa as Parser[ka, env, st, err, ef + ef1, b]), 
-                    unchecked_cast(sk1 as SuccessK[ka, env, st, err, ef + ef1, b]), 
-                    unchecked_cast(fk as FailK[ka, st, err, ef + ef1]), 
-                    env, 
-                    st)
+            paf(sk1, fk, env, st)
         )
 
 
@@ -138,6 +136,18 @@ mod FlixParsec.Internal.TwoCPS {
                     env, 
                     st)
         )
+
+    pub def reifyError(pa: Parser[ka, env, st, err, ef, a]): Parser[ka, env, st, err, ef, Result[err, a]] = 
+        Parser((sk, fk, env, st) ->
+            let fk2 = (err, st2) -> sk(Err(err), fk, env, st2);
+            let sk1 = (x, fk1, env1, st1) -> sk(Ok(x), fk1, env1, st1); 
+            apply1(unchecked_cast(pa as Parser[ka, env, st, err, ef, Result[err, a]]),
+                    unchecked_cast(sk1 as SuccessK[ka, env, st, err, ef, Result[err, a]]), 
+                    unchecked_cast(fk2 as FailK[ka, st, err, ef]),  
+                    env, 
+                    st)
+        )
+
 
     pub def flatMapOr(pa: Parser[ka, env, st, err, ef, a], 
                         pnext: a -> Parser[ka, env, st, err, ef1, b] \ ef2, 
