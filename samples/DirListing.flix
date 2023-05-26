@@ -22,9 +22,13 @@
 
 /// > java -jar ..\bin\flix.0.37.0.jar .\samples\DirListing.flix .\artifact\flix-parsec.fpkg .\lib\github\stephentetley\graded-lib\0.6.0\graded-lib-0.6.0.fpkg
 
-/// WARNING - this isn't a very good parser. dir listings are hard to parse due 
-/// to whitespace sensitivity and line continuations for long names. 
-/// This parser still has some problems...
+/// WARNING - this isn't a very good parser and it seems to still have some 
+/// problems...
+///
+/// dir listings are hard to parse due to whitespace sensitivity and line 
+/// continuations for long names. The parser would potentially be better as 
+/// a separate lexer and parser...
+/// 
 
 
 pub def main(): Int32 \ IO = 

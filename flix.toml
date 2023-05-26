@@ -8,4 +8,3 @@ authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 
 [dependencies]
 "github:stephentetley/graded-lib"                = "0.6.0"
-"github:stephentetley/interop-base"              = "0.6.0"

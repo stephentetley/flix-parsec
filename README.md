@@ -6,7 +6,6 @@ FlixParsec is implemented by moving a cursor within a constant string - it
 should not tax the garbage collector by generating intermediate input strings, 
 but the original string will remain in memory until parsing has finished. 
 
-May 2023 - Flix-Parsec rewritten use a new Graded Parser Monad that works with 
-effects. However even though the new parser is written in a codensity CPS
-style it does not work for large input with recursion in the grammar, I plan on 
-moving back to "2-CPS".
+26 May 2023 - Flix-Parsec has reverted to a "2-CPS" parser monad after 
+experimenting with a codensity-error monad. The codensity-error monad was
+failing on a sample input file of 1MB in size.
