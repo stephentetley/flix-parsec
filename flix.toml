@@ -1,10 +1,10 @@
 [package]
 name        = "flix-parsec"
 description = "A Parsec-like parser combinator library for Flix."
-version     = "0.1.0"
-flix        = "0.37.0"
+version     = "0.2.0"
+flix        = "0.40.0"
 license     = "Apache-2.0"
 authors     = ["Stephen Tetley <stephen.tetley@gmail.com>"]
 
 [dependencies]
-"github:stephentetley/graded-lib"                = "0.6.0"
+"github:stephentetley/graded-lib"                = "0.8.0"

@@ -133,7 +133,7 @@ mod FlixParsec.Prim {
     pub def parseFile(p: GenParser1[ust, ef, a], initState: ust, charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
         Result.flatMap(
             xs -> parseString(p, initState, String.unlines(xs)),
-            File.readLinesWith(charSet, path)
+            Files.readLinesWith(charSet, path)
         )
 
     pub def parsesFile(p: Parser1[ef, a], charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
