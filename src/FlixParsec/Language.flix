@@ -18,7 +18,7 @@
 
 pub mod FlixParsec.Language {
 
-    use FlixParsec.Prim.{GenParser};
+    use FlixParsec.GenParser.{GenParser};
     use FlixParsec.Combinators.{alt};
     use FlixParsec.Char.{letter, alphaNum, oneOf, char};
     use FlixParsec.Token.{LanguageDef};

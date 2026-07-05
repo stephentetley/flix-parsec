@@ -1,0 +1,281 @@
+/*
+ * Copyright 2021 Stephen Tetley
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+pub mod FlixParsec.GenParser {
+
+    use Monad.{>>=}
+
+    use FlixParsec.Internal.ParseError.InternalError
+
+    use FlixParsec.Internal.ParseError.{SourcePosition, InternalError}
+    use FlixParsec.Internal.ParserMonad
+
+    /// Parser is env x state x failure
+
+    type alias ParseContext = {offset = Int32, input = String, tabSize = Int32}
+
+    type alias ParseState[ust: Type] = {pos = Int32, userState = ust}
+
+    
+    pub type alias GenParser[ka: Type, ust: Type, a: Type] =
+        FlixParsec.Internal.ParserMonad[ka, ParseContext, ParseState[ust], InternalError, a]
+    
+
+    pub type alias GenParser1[ust: Type, a: Type] = 
+        GenParser[Result[(ParseState[ust], InternalError), (ParseState[ust], a)], ust, a]
+
+
+    /// No user state
+    pub type alias Parser[ka: Type, a: Type] = GenParser[ka, Unit, a]
+
+    ///
+    /// This is exposed so client code can implement wrappers over `run` etc. without
+    /// knowing about the internal type `ParseState`.
+    ///
+    pub type alias Parser1[a: Type] = 
+        Parser[Result[(ParseState[Unit], InternalError), (ParseState[Unit], a)], a]
+
+
+
+
+    ///
+    /// Run parser `p` on the string `input`.
+    ///
+    pub def evalParser1(p: Parser1[a], tabSize: Int32, input: String) : Result[InternalError, a]  =
+        evalGenParser1(p, (), tabSize, input)
+
+
+        
+    ///
+    /// Run parser `p` on the string `input`.
+    ///
+    /// This allows running "nested" parsers - `offset` represents the start position
+    /// of the input (sub-) String. 
+    ///
+    def runGenParser1(p: GenParser1[ust, a], 
+                        initState: ust, 
+                        offset: {offset = Int32}, 
+                        tabSize: {tabSize = Int32}, 
+                        input: String) : Result[InternalError, (ParseState[ust], a)] =
+        let context = {offset = offset#offset, input = input, tabSize = tabSize#tabSize};
+        let state = {pos = 0, userState = initState};
+        FlixParsec.Internal.ParserMonad.runParserMonad(p, context, state)
+            |> Result.mapErr(snd)
+
+    ///
+    /// Run parser `p` on the string `input`.
+    ///
+    pub def evalGenParser1(p: GenParser1[ust, a], initState: ust, tabSize: Int32, input: String) : Result[InternalError, a] =
+        runGenParser1(p, initState, offset = 0, tabSize = tabSize, input)
+            |> Result.map(snd)
+
+    pub def parseString(p: GenParser1[ust, a], initState: ust, input: String): Result[String, a] =
+        use FlixParsec.Internal.ParseError.{makeParseError, showParseError};
+        evalGenParser1(p, initState, 4, input) 
+            |> Result.mapErr(err -> makeParseError(tabSize = 4, err, input) |> showParseError)
+
+    /// ...
+    pub def parsesString(p: Parser1[a], input: String): Result[String, a] = 
+        parseString(p, (), input) 
+
+    // pub def parseFile(p: GenParser1[ust, a], initState: ust, charSet: {charSet = String}, path: String): Result[String, a] \ IO =
+    //     Result.flatMap(
+    //         xs -> parseString(p, initState, String.unlines(xs)),
+    //         Files.readLinesWith(charSet, path)
+    //     )
+
+    // pub def parsesFile(p: Parser1[ef, a], charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
+    //     parseFile(p, (), charSet, path)
+
+
+
+    // pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 + ef2, a] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.alt(getGenParser(ma), getGenParser(mb)))
+
+
+    pub def throwError(message: String): GenParser[ka, ust, a] =
+        getCursorPosition() >>= pos -> 
+        FlixParsec.Internal.ParserMonad.throwError({position = pos, message = message})
+    
+    pub def mapError(f: InternalError -> InternalError \ ef, ma: GenParser[ka, ust, a]): GenParser[ka, ust, a] \ ef = 
+        FlixParsec.Internal.ParserMonad.mapError(f, ma)
+
+    // pub def catchError(ma: GenParser[ka, ust, a], 
+    //                     hdlr: InternalError -> GenParser[ka, ust, ef1, a] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, a] = 
+    //         GenParser(FlixParsec.Internal.ParserMonad.catchError(getGenParser(ma), msg -> getGenParser(hdlr(msg))))
+
+    // pub def reifyError(ma: GenParser[ka, ust, a]): GenParser[ka, ust, Result[InternalError, a]] = 
+    //     GenParser(FlixParsec.Internal.ParserMonad.reifyError(getGenParser(ma)))
+
+    // pub def swapError(err: InternalError, ma: GenParser[ka, ust, a]): GenParser[ka, ust, a] = 
+    //     mapError(_ -> err, ma)
+
+    pub def swapErrorMessage(msg: String, ma: GenParser[ka, ust, a]): GenParser[ka, ust, a] = 
+        mapError(e -> {message = msg | e}, ma)
+
+
+    pub def flatMapOr(start: GenParser[ka, ust, a], 
+                        mnext: a -> GenParser[ka, ust, b] \ ef, 
+                        melse: InternalError -> GenParser[ka, ust, b] \ ef): GenParser[ka, ust, b] \ ef =
+        FlixParsec.Internal.ParserMonad.flatMapOr(start, mnext, melse)
+
+    // pub def bind(ma: GenParser[ka, ust, a], k: a -> GenParser[ka, ust, ef1, b] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, b] = 
+    //     flatMap(k, ma)
+
+    // pub def fail(message: String): GenParser[ka, ust, a] = 
+    //     throwError(message)
+
+
+
+    // /// `EnvStateError.gets` currently not sufficiently polymorphic in effect...
+    // pub def getUserState(): GenParser[ka1, ust, ust] =  
+    //     GenParser(FlixParsec.Internal.ParserMonad.get()) <$$> s -> s.userState
+
+    // /// `EnvStateError.update` currently not sufficiently polymorphic in effect...
+    // pub def setUserState(state: ust): GenParser[ka, ust, Unit] =  
+    //     GenParser(FlixParsec.Internal.ParserMonad.puts(s -> checked_ecast({userState = state | s})))
+
+
+    // pub def updateUserState(modify: ust -> ust \ ef1): GenParser[ka, ust, ef1, Unit] =  
+    //     GenParser(FlixParsec.Internal.ParserMonad.puts(s -> let us1 = modify(s.userState); {userState = us1 | s}))
+
+    // def ask(): GenParser[ka, ust, ParseContext] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.ask())
+
+    // def get(): GenParser[ka, ust, ParseState[ust]] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.get())
+
+
+    // def askOffset(): GenParser[ka, ust, Int32] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.asks(env -> checked_ecast(env.offset)))
+
+    // def askTabSize(): GenParser[ka, ust, Int32] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.asks(env -> checked_ecast(env.tabSize)))
+    
+    // def askInput(): GenParser[ka, ust, String] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.asks(env -> checked_ecast(env.input)))
+    
+
+    // pub def getCursorPosition(): GenParser[ka, ust, Int32] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.gets(s -> checked_ecast(s.pos)))
+
+    // pub def setCursorPosition(cpos: Int32): GenParser[ka, ust, Unit] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.puts(s -> checked_ecast({pos = cpos | s})))
+
+    pub def incrCursorPosition(n: Int32): GenParser[ka, ust, Unit] =
+        FlixParsec.Internal.ParserMonad.puts(s -> {pos = s.pos + n | s})    
+
+
+    pub def getSourcePosition(): GenParser[ka, ust, SourcePosition] = 
+        askInput()                  >>= input   ->
+        askOffset()                 >>= offset  -> 
+        getCursorPosition()         >>= pos     ->
+        askTabSize()                >>= tabw    -> {
+            let ans = FlixParsec.Internal.ParseError.sourcePosition(tabSize = tabw, position = offset + pos, input);
+            point(ans)
+        }
+
+
+    // pub def endOfInput(): GenParser[ka, ust, Unit] =
+    //     (askInput() <$$> String.length)         >>= len ->
+    //     getCursorPosition()                     >>= pos -> 
+    //     if (pos >= len) point() else throwError("endOfInput - not at end")
+
+
+    pub def restOfInput(): GenParser[ka, ust, String] =
+        askInput()              >>= input ->
+        getCursorPosition()     >>= pos -> 
+        point(String.sliceRight(start = pos, input))
+
+
+    // /// TODO - this is (likely) the wrong primitive to use with Java / UTF16 strings.
+    // /// Woudl it be right if it returned a codepoint(Int32)?
+    // pub def takeCodePoint(): GenParser[ka, ust, Int32] =
+    //     askInput()                  >>= input   ->
+    //     getCursorPosition()         >>= pos     -> {
+    //         let len = String.length(input);
+    //         if (pos < len) {
+    //             match String.nthCodePoint(pos, input) {
+    //                 case Some(cp) => {let cc = CodePoint.charCount(cp); setCursorPosition(pos+cc) *> point(cp)}
+    //                 case None     => throwError("takeCodePoint - eof")
+    //             }
+    //         } else {
+    //             throwError("takeCodePoint - eof")
+    //         }
+    //     }
+
+    // pub def takeChar(): GenParser[ka, ust, Char] =
+    //     askInput()                  >>= input   ->
+    //     getCursorPosition()         >>= pos     -> {
+    //         let len = String.length(input);
+    //         if (pos < len) {
+    //             match String.nth(pos, input) {
+    //                 case Some(c)  => {setCursorPosition(pos+1) *> point(c)}
+    //                 case None     => throwError("takeChar - eof")
+    //             }
+    //         } else {
+    //             throwError("takeChar - eof")
+    //         }
+    //     }
+
+    // // `n` is "atmost", if eof is found return upto eof.
+    // pub def take(n: Int32): GenParser[ka, ust, String] =
+    //     if (n < 0) {
+    //         throwError("take - invalid size")
+    //     } else {
+    //         askInput()                  >>= input   ->
+    //         getCursorPosition()         >>= pos     -> {
+    //             let maxlen = String.length(input);
+    //             let end = if (pos + n > maxlen) maxlen else pos + n;
+    //             let s1 = String.slice(start = pos, end = end, input);
+    //             incrCursorPosition(String.length(s1)) *> point(s1)
+    //         }
+    //     }
+    
+    ///
+    /// `lookahead` - run parser `p` but don't consume input on success
+    /// On fail, fail.
+    ///
+    pub def lookahead(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] =
+        getCursorPosition()     >>= pos ->
+        p                       >>= ans ->
+        setCursorPosition(pos)  >>= _   ->
+        point(ans)
+
+
+    ///
+    /// Run parser `p` within a bounded window of length `n`
+    ///
+    pub def bounded(n: Int32, p: GenParser1[ust, a]): GenParser[ka, ust, a] =
+        ask()                       >>= ctx ->
+        get()                       >>= st  -> {
+            let str = String.slice(start = st.pos, end = st.pos + n, ctx.input);
+            match runGenParser1(p, st.userState, offset = ctx.offset, tabSize = ctx.tabSize, str) {
+                case Ok((_, a)) => {incrCursorPosition(n) *> point(a)}
+                case Err(err)   => {incrCursorPosition(err.position) *> throwError(err.message)}
+            }
+        }
+
+    
+    // ///
+    // /// `tryParse` - run parser `p` consume input on success.
+    // /// On fail, don't consume input.
+    // ///
+    // pub def tryParse(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.tryParse(getGenParser(p)))
+
+}

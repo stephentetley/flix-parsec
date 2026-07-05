@@ -19,9 +19,9 @@ pub mod FlixParsec.Literal {
 
 
 
-    use FlixParsec.Prim.{GenParser}
-    use FlixParsec.Prim.{throwError}
-    use FlixParsec.Combinators.{alt, between, choice, manyWith, many1With, liftOption}
+    use FlixParsec.GenParser.{GenParser}
+    use FlixParsec.GenParser.{throwError}
+    use FlixParsec.Combinators.{alt, between, pchoice, manyWith, many1With, liftOption}
     use FlixParsec.Char.{char, string, satisfy, octDigit, hexDigit}
     use FlixParsec.Regex.{lookingAt}
 
@@ -80,13 +80,11 @@ pub mod FlixParsec.Literal {
         countWith(step, 0, 4, hexDigit())
         
 
-    def charEsc(): GenParser[ka, ust, ef, Char] = 
-        choice(
-                (char('t')  *> point('\u0009'))    /// tab
-            :: (char('r')   *> point('\u000D'))    /// carriage return
-            :: (char('n')   *> point('\u000A'))    /// line feed
-            :: Nil
-        )    
+    def charEsc(): GenParser[ka, ust, ef, Char] =
+        let ptab = (char('t')  *> point('\u0009'));
+        let pcarriage_return = (char('r')  *> point('\u000D'));  
+        let pline_feed = (char('n')   *> point('\u000A')); 
+        pchoice(List#{ ptab, pcarriage_return, pline_feed })
 
 
 

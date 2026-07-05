@@ -19,8 +19,8 @@
 pub mod FlixParsec.Regex {
 
 
-    use FlixParsec.Prim.{GenParser};
-    use FlixParsec.Prim.{restOfInput, throwError, incrCursorPosition}
+    use FlixParsec.GenParser.{GenParser};
+    use FlixParsec.GenParser.{restOfInput, throwError, incrCursorPosition}
 
     pub def lookingAt(rgx: Regex): GenParser[ka, ust, ef, String] =
         restOfInput()       >>= rest    -> 
@@ -30,6 +30,6 @@ pub mod FlixParsec.Regex {
         }
 
     pub def skippingAt(rgx: Regex): GenParser[ka, st, ef, Unit] = 
-        lookingAt(rgx) |> GradedFunctor.ignore
+        lookingAt(rgx) |> Functor.ignore
 
 }

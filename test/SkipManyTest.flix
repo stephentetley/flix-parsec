@@ -1,7 +1,7 @@
 
 pub mod SkipManyTest {
 
-    use FlixParsec.Prim.{Parser1}
+    use FlixParsec.GenParser.{Parser1}
 
     def parser1(): Parser1[ef, Char] = 
         use FlixParsec.Char.{char, anyChar};

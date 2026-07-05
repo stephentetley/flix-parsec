@@ -20,8 +20,8 @@ pub mod FlixParsec.Token {
 
 
 
-    use FlixParsec.Prim.{GenParser}
-    use FlixParsec.Prim.{throwError}
+    use FlixParsec.GenParser.{GenParser}
+    use FlixParsec.GenParser.{throwError}
     use FlixParsec.Combinators.{alt, between, manyWith, skipMany, skipMany1, notFollowedBy, sepBy, sepBy1}
     use FlixParsec.Char.{satisfy, char, string, oneOf, noneOf}
     

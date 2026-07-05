@@ -23,7 +23,7 @@ pub mod FlixParsec.TokenSimple {
 
 
 
-    use FlixParsec.Prim.{GenParser}
+    use FlixParsec.GenParser.{GenParser}
     use FlixParsec.Combinators.{between, sepBy, sepBy1, sepByWith}
     use FlixParsec.Char.{string}
     use FlixParsec.Text.{whiteSpace}

@@ -18,8 +18,8 @@
 pub mod FlixParsec.Combinators {
 
 
-    use FlixParsec.Prim.{GenParser}
-    use FlixParsec.Prim.{bind, throwError, lookahead, flatMapOr}
+    use FlixParsec.GenParser.{GenParser}
+    use FlixParsec.Internal.ParserMonad.{throwError, lookahead, flatMapOr}
 
     
     // pub def <!>(p1: GenParser[ka, st, ef, a], p2: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, a] =
@@ -47,10 +47,10 @@ pub mod FlixParsec.Combinators {
         flatMapOr(p, _ -> throwError("notFollowedBy"), _ -> point()) 
         
 
-    pub def choice(ps: List[GenParser[ka, st, ef, a]]): GenParser[ka, st, ef, a] =
+    pub def pchoice(ps: List[GenParser[ka, st, ef, a]]): GenParser[ka, st, ef, a] =
         match ps {
-            case p1 :: rs => flatMapOr(p1, point, _ -> choice(rs))
-            case Nil      => throwError("choice")
+            case p1 :: rs => flatMapOr(p1, point, _ -> pchoice(rs))
+            case Nil      => throwError("pchoice")
         }
 
     pub def optional(p: GenParser[ka, st, ef, a]): GenParser[ka, st, ef, Option[a]] = 

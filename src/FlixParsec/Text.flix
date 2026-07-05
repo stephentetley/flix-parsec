@@ -18,8 +18,8 @@
 pub mod FlixParsec.Text {
 
 
-    use FlixParsec.Prim.{GenParser, GenParser1}
-    use FlixParsec.Prim.{bounded, lookahead, throwError}
+    use FlixParsec.GenParser.{GenParser, GenParser1}
+    use FlixParsec.GenParser.{bounded, lookahead, throwError}
     use FlixParsec.Regex.{lookingAt, skippingAt}
     
 

@@ -18,8 +18,8 @@
 mod FlixParsec.Char {
 
     use Monad.{>>=}
-    use FlixParsec.Prim.{GenParser}
-    use FlixParsec.Prim.{fail, swapErrorMessage}
+    use FlixParsec.GenParser.{GenParser}
+    use FlixParsec.GenParser.{throwError, swapErrorMessage}
 
     pub def anyChar(): GenParser[ka, ust, ef, Char] = FlixParsec.Prim.takeChar()
 
@@ -28,7 +28,7 @@ mod FlixParsec.Char {
         if (test(ans))
             point(ans)
         else
-            fail("satisfy")
+            throwError("satisfy")
 
     pub def oneOf(cs: List[Char]): GenParser[ka, ust, ef, Char] = 
         satisfy(c -> List.memberOf(c, cs))
