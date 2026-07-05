@@ -20,7 +20,7 @@ pub mod FlixParsec.Trace {
 
     
     use FlixParsec.Prim.{GenParser}
-    use FlixParsec.Prim.{getSourcePosition, liftAction}
+    use FlixParsec.Prim.{getSourcePosition}
     use FlixParsec.Internal.ParseError.{showSourcePosition}
 
     pub def trace(message: String, p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + IO, a] = 

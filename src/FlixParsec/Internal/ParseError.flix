@@ -40,24 +40,24 @@ pub mod FlixParsec.Internal.ParseError {
         }
 
     pub def makeParseError(tabSize: {tabSize = Int32}, err: InternalError, input: String): ParseError = 
-        let (before, after) = getTextBeforeAndAfter(err.position, input);
-        { message    = err.message
-        , position   = sourcePosition(tabSize, position = err.position, input)
+        let (before, after) = getTextBeforeAndAfter(err#position, input);
+        { message    = err#message
+        , position   = sourcePosition(tabSize, position = err#position, input)
         , textBefore = before
         , textAfter  = after
         }
 
 
     pub def showSourcePosition(pos: SourcePosition): String = 
-        "Line=${pos.lineNumber}, Col=${pos.column}"
+        "Line=${pos#lineNumber}, Col=${pos#column}"
 
     pub def samePosition(pos1: SourcePosition, pos2: SourcePosition): Bool =
-        pos1.lineNumber == pos2.lineNumber and pos1.column == pos2.column
+        pos1#lineNumber == pos2#lineNumber and pos1#column == pos2#column
 
     pub def showParseError(err: ParseError): String = 
-        String.unlines(err.message :: showSourcePosition(err.position) 
-                            :: "Seen:" :: "-----" :: err.textBefore 
-                            :: "Pending:" :: "--------" :: err.textAfter :: Nil)
+        String.unlines(err#message :: showSourcePosition(err#position) 
+                            :: "Seen:" :: "-----" :: err#textBefore 
+                            :: "Pending:" :: "--------" :: err#textAfter :: Nil)
 
 
     pub def fileNotFoundError(path: String): ParseError = 
@@ -75,7 +75,7 @@ pub mod FlixParsec.Internal.ParseError {
         }
 
     pub def sourcePosition(tabSize: {tabSize = Int32}, position: {position = Int32}, s: String): SourcePosition = 
-        match textPosHelper(String.length(s), position.position, tabSize.tabSize, s, 1, 1, 0) {
+        match textPosHelper(String.length(s), position#position, tabSize#tabSize, s, 1, 1, 0) {
             case Some(sp)   => sp
             case None       => {lineNumber = 0, column = 0}
         }

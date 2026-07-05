@@ -17,7 +17,7 @@
 
 mod FlixParsec.Char {
 
-
+    use Monad.{>>=}
     use FlixParsec.Prim.{GenParser}
     use FlixParsec.Prim.{fail, swapErrorMessage}
 

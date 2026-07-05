@@ -21,7 +21,7 @@ pub mod FlixParsec.Prim {
 
     use FlixParsec.Internal.ParseError.{SourcePosition, InternalError}
     use FlixParsec.Internal.ParserMonad
-        
+
     /// Parser is env x state x failure
 
     type alias ParseContext = {offset = Int32, input = String, tabSize = Int32}
@@ -29,23 +29,23 @@ pub mod FlixParsec.Prim {
     type alias ParseState[ust: Type] = {pos = Int32, userState = ust}
 
     
-    pub enum GenParser[ka: Type, ust: Type, ef: Eff, a: Type](
-        FlixParsec.Internal.ParserMonad[ka, ParseContext, ParseState[ust], InternalError, ef, a]
-    )
+    pub type alias GenParser[ka: Type, ust: Type, a: Type] =
+        FlixParsec.Internal.ParserMonad.ParserMonad[ka, ParseContext, ParseState[ust], InternalError, a]
+    
 
-    pub type alias GenParser1[ust: Type, ef: Eff, a: Type] = 
-        GenParser[Result[(ParseState[ust], InternalError), (ParseState[ust], a)], ust, ef, a]
+    pub type alias GenParser1[ust: Type, a: Type] = 
+        GenParser[Result[(ParseState[ust], InternalError), (ParseState[ust], a)], ust, a]
 
 
     /// No user state
-    pub type alias Parser[ka: Type, ef: Eff, a: Type] = GenParser[ka, Unit, ef, a]
+    pub type alias Parser[ka: Type, a: Type] = GenParser[ka, Unit, a]
 
     ///
     /// This is exposed so client code can implement wrappers over `run` etc. without
     /// knowing about the internal type `ParseState`.
     ///
-    pub type alias Parser1[ef: Eff, a: Type] = 
-        Parser[Result[(ParseState[Unit], InternalError), (ParseState[Unit], a)], ef, a]
+    pub type alias Parser1[a: Type] = 
+        Parser[Result[(ParseState[Unit], InternalError), (ParseState[Unit], a)], a]
 
 
 
@@ -75,18 +75,10 @@ pub mod FlixParsec.Prim {
 
 
 
-
-
-    def getGenParser(m: GenParser[ka, ust, ef, a]): ParserMonad[ka, ParseContext, ParseState[ust], InternalError, ef, a] = 
-        let GenParser(m1) = m;
-        m1
-
-
-
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def evalParser1(p: Parser1[ef, a], tabSize: Int32, input: String) : Result[InternalError, a] \ ef =
+    pub def evalParser1(p: Parser1[a], tabSize: Int32, input: String) : Result[InternalError, a]  =
         evalGenParser1(p, (), tabSize, input)
 
 
@@ -97,82 +89,67 @@ pub mod FlixParsec.Prim {
     /// This allows running "nested" parsers - `offset` represents the start position
     /// of the input (sub-) String. 
     ///
-    def runGenParser1(p: GenParser1[ust, ef, a], 
+    def runGenParser1(p: GenParser1[ust, a], 
                         initState: ust, 
                         offset: {offset = Int32}, 
                         tabSize: {tabSize = Int32}, 
                         input: String) : Result[InternalError, (ParseState[ust], a)] \ ef =
-        let context = {offset = offset.offset, input = input, tabSize = tabSize.tabSize};
+        let context = {offset = offset#offset, input = input, tabSize = tabSize#tabSize};
         let state = {pos = 0, userState = initState};
-        let GenParser(p1) = p;
+        let ParserMonad(p1) = p;
         FlixParsec.Internal.ParserMonad.runParserMonad(p1, context, state)
             |> Result.mapErr(snd)
 
     ///
     /// Run parser `p` on the string `input`.
     ///
-    pub def evalGenParser1(p: GenParser1[ust, ef, a], initState: ust, tabSize: Int32, input: String) : Result[InternalError, a] \ ef =
+    pub def evalGenParser1(p: GenParser1[ust, a], initState: ust, tabSize: Int32, input: String) : Result[InternalError, a] =
         runGenParser1(p, initState, offset = 0, tabSize = tabSize, input)
             |> Result.map(snd)
 
-    pub def parseString(p: GenParser1[ust, ef, a], initState: ust, input: String): Result[String, a] \ ef =
+    pub def parseString(p: GenParser1[ust, a], initState: ust, input: String): Result[String, a] =
         use FlixParsec.Internal.ParseError.{makeParseError, showParseError};
         evalGenParser1(p, initState, 4, input) 
             |> Result.mapErr(err -> makeParseError(tabSize = 4, err, input) |> showParseError)
 
-    /// 
-    pub def parsesString(p: Parser1[ef, a], input: String): Result[String, a] \ ef = 
+    /// ...
+    pub def parsesString(p: Parser1[a], input: String): Result[String, a] = 
         parseString(p, (), input) 
 
-    pub def parseFile(p: GenParser1[ust, ef, a], initState: ust, charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
-        Result.flatMap(
-            xs -> parseString(p, initState, String.unlines(xs)),
-            Files.readLinesWith(charSet, path)
-        )
+    // pub def parseFile(p: GenParser1[ust, a], initState: ust, charSet: {charSet = String}, path: String): Result[String, a] \ IO =
+    //     Result.flatMap(
+    //         xs -> parseString(p, initState, String.unlines(xs)),
+    //         Files.readLinesWith(charSet, path)
+    //     )
 
-    pub def parsesFile(p: Parser1[ef, a], charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
-        parseFile(p, (), charSet, path)
-
-
-    pub def point(x: a): GenParser[ka, ust, ef, a] = 
-        GenParser(FlixParsec.Internal.ParserMonad.point(x))
-
-    
-
-    pub def map(f: a -> b \ ef1, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1, b] =
-        GenParser(FlixParsec.Internal.ParserMonad.map(f, getGenParser(ma)))
-
-    pub def ap(mf: GenParser[ka, ust, ef1, a -> b \ ef2], ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1 + ef2, b] =
-        GenParser(FlixParsec.Internal.ParserMonad.ap(getGenParser(mf), getGenParser(ma)))
+    // pub def parsesFile(p: Parser1[ef, a], charSet: {charSet = String}, path: String): Result[String, a] \ {ef, IO} =
+    //     parseFile(p, (), charSet, path)
 
 
-    pub def flatMap(k: a -> GenParser[ka, ust, ef1, b] \ ef2, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1 + ef2, b] = 
-        GenParser(FlixParsec.Internal.ParserMonad.flatMap(a -> getGenParser(k(a)), getGenParser(ma)))
+
+    // pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 + ef2, a] =
+    //     GenParser(FlixParsec.Internal.ParserMonad.alt(getGenParser(ma), getGenParser(mb)))
 
 
-    pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 + ef2, a] =
-        GenParser(FlixParsec.Internal.ParserMonad.alt(getGenParser(ma), getGenParser(mb)))
-
-
-    pub def throwError(message: String): GenParser[ka, ust, ef, a] =
+    pub def throwError(message: String): GenParser[ka, ust, a] =
         getCursorPosition() >>= pos -> 
         GenParser(FlixParsec.Internal.ParserMonad.throwError({position = pos, message = message}))
     
-    pub def mapError(f: InternalError -> InternalError \ ef1, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1, a] = 
-        GenParser(FlixParsec.Internal.ParserMonad.mapError(f, getGenParser(ma)))
+    // pub def mapError(f: InternalError -> InternalError \ ef1, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1, a] = 
+    //     GenParser(FlixParsec.Internal.ParserMonad.mapError(f, getGenParser(ma)))
 
-    pub def catchError(ma: GenParser[ka, ust, ef, a], 
-                        hdlr: InternalError -> GenParser[ka, ust, ef1, a] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, a] = 
-            GenParser(FlixParsec.Internal.ParserMonad.catchError(getGenParser(ma), msg -> getGenParser(hdlr(msg))))
+    // pub def catchError(ma: GenParser[ka, ust, ef, a], 
+    //                     hdlr: InternalError -> GenParser[ka, ust, ef1, a] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, a] = 
+    //         GenParser(FlixParsec.Internal.ParserMonad.catchError(getGenParser(ma), msg -> getGenParser(hdlr(msg))))
 
-    pub def reifyError(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, Result[InternalError, a]] = 
-        GenParser(FlixParsec.Internal.ParserMonad.reifyError(getGenParser(ma)))
+    // pub def reifyError(ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, Result[InternalError, a]] = 
+    //     GenParser(FlixParsec.Internal.ParserMonad.reifyError(getGenParser(ma)))
 
-    pub def swapError(err: InternalError, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
-        mapError(_ -> err, ma)
+    // pub def swapError(err: InternalError, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
+    //     mapError(_ -> err, ma)
 
-    pub def swapErrorMessage(msg: String, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
-        mapError(e -> {message = msg | e}, ma)
+    // pub def swapErrorMessage(msg: String, ma: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
+    //     mapError(e -> {message = msg | e}, ma)
 
 
     pub def flatMapOr(start: GenParser[ka, ust, ef, a], 
@@ -182,15 +159,13 @@ pub mod FlixParsec.Prim {
                                                             a -> getGenParser(mnext(a)),
                                                             err -> getGenParser(melse(err))))
 
-    pub def bind(ma: GenParser[ka, ust, ef, a], k: a -> GenParser[ka, ust, ef1, b] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, b] = 
-        flatMap(k, ma)
+    // pub def bind(ma: GenParser[ka, ust, ef, a], k: a -> GenParser[ka, ust, ef1, b] \ ef2): GenParser[ka, ust, ef + ef1 + ef2, b] = 
+    //     flatMap(k, ma)
 
-    pub def fail(message: String): GenParser[ka, ust, ef, a] = 
-        throwError(message)
+    // pub def fail(message: String): GenParser[ka, ust, ef, a] = 
+    //     throwError(message)
 
 
-    pub def liftAction(f: Unit -> a \ ef): GenParser[ka, ust, ef, a] = 
-        GenParser(FlixParsec.Internal.ParserMonad.liftAction(f))
 
     /// `EnvStateError.gets` currently not sufficiently polymorphic in effect...
     pub def getUserState(): GenParser[ka1, ust, ef, ust] =  

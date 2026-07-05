@@ -23,7 +23,7 @@ pub mod FlixParsec.Internal.SimpleCollator {
     import java.text.{Collator => JCollator}
 
     /// Compare with the default collator (this will be locale specific)
-    def caseInsenstiveEquals(s1: String, s2: String): Bool \ IO = unsafe IO {
+    def caseInsenstiveEquals(s1: String, s2: String): Bool  = unsafe IO {
         let collator = JCollator.getInstance();
         collator.equals(s1, s2)
     }
