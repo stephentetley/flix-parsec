@@ -19,12 +19,11 @@
 /// combinators derived with it see whitespace as the the usual space characters: 
 /// space, tab, carriage return and line feed.
 
-mod FlixParsec.TokenSimple {
+pub mod FlixParsec.TokenSimple {
 
 
-    use GradedApplicative.{point, <*}
 
-    use FlixParsec.{GenParser}
+    use FlixParsec.Prim.{GenParser}
     use FlixParsec.Combinators.{between, sepBy, sepBy1, sepByWith}
     use FlixParsec.Char.{string}
     use FlixParsec.Text.{whiteSpace}

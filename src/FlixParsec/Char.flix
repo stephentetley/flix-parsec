@@ -17,11 +17,8 @@
 
 mod FlixParsec.Char {
 
-    use GradedApplicative.{point}
-    use GradedMonad.{>>=}
-    use GradedError.{swapError}
 
-    use FlixParsec.{GenParser}
+    use FlixParsec.Prim.{GenParser}
     use FlixParsec.Prim.{fail, swapErrorMessage}
 
     pub def anyChar(): GenParser[ka, ust, ef, Char] = FlixParsec.Prim.takeChar()

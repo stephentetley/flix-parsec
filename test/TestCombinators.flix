@@ -16,26 +16,26 @@
 
 
 
-mod TestCombinators {
+pub mod TestCombinators {
 /*
     /////////////////////////////////////////////////////////////////////////////
     // many                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def many01(): Bool =
         use FlixParsec.Prim.{parsesString, endOfInput};
         use FlixParsec.Char.{char};
         use FlixParsec.Combinators.{many};
         parsesString(many(char('a')), "") |> Result.isOk
 
-    @test
+    @Test
     def many02(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{many};
         runs(many(char('a')), "a") |> Result.isOk
 
-    @test
+    @Test
     def many03(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{many};
@@ -45,19 +45,19 @@ mod TestCombinators {
     // manyTill                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def manyTill01(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{manyTill};
         runs(manyTill(char('a'), endOfInput()), "") |> Result.isOk
 
-    @test
+    @Test
     def manyTill02(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{manyTill};
         runs(manyTill(char('a'), endOfInput()), "a") |> Result.isOk
 
-    @test
+    @Test
     def manyTill03(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{manyTill};
@@ -67,19 +67,19 @@ mod TestCombinators {
     // many1Till                                                               //
     /////////////////////////////////////////////////////////////////////////////
 
-    @test
+    @Test
     def many1Till01(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{many1Till};
         runs(many1Till(char('a'), endOfInput()), "") |> Result.isErr
 
-    @test
+    @Test
     def many1Till02(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{many1Till};
         runs(many1Till(char('a'), endOfInput()), "a") |> Result.isOk
 
-    @test
+    @Test
     def many1Till03(): Bool & Impure =
         use TextParser.{runs, char, endOfInput};
         use TextParser.Combinators.{many1Till};

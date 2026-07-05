@@ -16,7 +16,7 @@
 
 
 
-mod FlixParsec.Internal.ParseError {
+pub mod FlixParsec.Internal.ParseError {
 
     ///
     /// Note `SourcePosition` is derived when there is a parse error. 

@@ -15,10 +15,13 @@
  */
 
 
-mod FlixParsec {
+pub mod FlixParsec.Prim {
 
     use FlixParsec.Internal.ParseError.InternalError
-    
+
+    use FlixParsec.Internal.ParseError.{SourcePosition, InternalError}
+    use FlixParsec.Internal.ParserMonad
+        
     /// Parser is env x state x failure
 
     type alias ParseContext = {offset = Int32, input = String, tabSize = Int32}
@@ -46,42 +49,33 @@ mod FlixParsec {
 
 
 
-    instance GradedFunctor[GenParser[ka, ust]] {
-        pub def map(f: a -> b \ ef1, x: GenParser[ka1, ust, ef, a]): GenParser[ka1, ust, ef + ef1, b] = 
-            FlixParsec.Prim.map(f, x)
-    }
+    // instance GradedFunctor[GenParser[ka, ust]] {
+    //     pub def map(f: a -> b \ ef1, x: GenParser[ka1, ust, ef, a]): GenParser[ka1, ust, ef + ef1, b] = 
+    //         FlixParsec.Prim.map(f, x)
+    // }
 
-    instance GradedApplicative[GenParser[ka, ust]] {
-        pub def point(x: a): GenParser[ka, ust, ef, a] = 
-            FlixParsec.Prim.point(x)
+    // instance GradedApplicative[GenParser[ka, ust]] {
+    //     pub def point(x: a): GenParser[ka, ust, ef, a] = 
+    //         FlixParsec.Prim.point(x)
 
-        pub def ap(f: GenParser[ka, ust, ef1, a -> b \ ef2], m: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1 + ef2, b] = 
-            FlixParsec.Prim.ap(f, m)
-    }
-
-
-    instance GradedMonad[GenParser[ka, ust]] {
-        pub def flatMap(f: a -> GenParser[ka, ust, ef1, b] \ ef2, m: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1 + ef2, b] = 
-            FlixParsec.Prim.flatMap(f, m)
-    }
-
-    instance GradedOr[GenParser[ka, ust]] { 
-        pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 + ef2, a] =
-            FlixParsec.Prim.orelse(ma, mb)
-    }
+    //     pub def ap(f: GenParser[ka, ust, ef1, a -> b \ ef2], m: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1 + ef2, b] = 
+    //         FlixParsec.Prim.ap(f, m)
+    // }
 
 
-}
+    // instance GradedMonad[GenParser[ka, ust]] {
+    //     pub def flatMap(f: a -> GenParser[ka, ust, ef1, b] \ ef2, m: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + ef1 + ef2, b] = 
+    //         FlixParsec.Prim.flatMap(f, m)
+    // }
 
-mod FlixParsec.Prim {
+    // instance GradedOr[GenParser[ka, ust]] { 
+    //     pub def orelse(ma: GenParser[ka, ust, ef1, a], mb: GenParser[ka, ust, ef2, a]): GenParser[ka, ust, ef1 + ef2, a] =
+    //         FlixParsec.Prim.orelse(ma, mb)
+    // }
 
-    use GradedFunctor.{<$$>}
-    use GradedApplicative.{*>}
-    use GradedMonad.{>>=}
-    use FlixParsec.{GenParser, Parser, GenParser1, Parser1, ParseContext, ParseState}
-    use FlixParsec.GenParser.{GenParser}
-    use FlixParsec.Internal.ParseError.{SourcePosition, InternalError}
-    use FlixParsec.Internal.ParserMonad
+
+
+
 
     def getGenParser(m: GenParser[ka, ust, ef, a]): ParserMonad[ka, ParseContext, ParseState[ust], InternalError, ef, a] = 
         let GenParser(m1) = m;

@@ -15,14 +15,11 @@
  */
 
 
-mod FlixParsec.Literal {
+pub mod FlixParsec.Literal {
 
-    use GradedFunctor.{map}
-    use GradedApplicative.{point, *>}
-    use GradedMonad.{>>=}
-    use GradedOr.{<|>}
 
-    use FlixParsec.{GenParser}
+
+    use FlixParsec.Prim.{GenParser}
     use FlixParsec.Prim.{throwError}
     use FlixParsec.Combinators.{alt, between, choice, manyWith, many1With, liftOption}
     use FlixParsec.Char.{char, string, satisfy, octDigit, hexDigit}

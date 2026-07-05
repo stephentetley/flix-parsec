@@ -1,16 +1,16 @@
 
-mod Test01 {
+pub mod Test01 {
 /*
     use GradedApplicative.{*>}
     use GradedApplicative.{point}
 
-    @test
+    @Test
     def test01(): Unit & Impure =     
         let parser = FlixParsec.Combinators.many(FlixParsec.Char.anyChar());
         FlixParsec.Prim.parsesString(parser, "ABC") |> println;
         ()
 
-    @test
+    @Test
     def test02(): Unit & Impure =     
         let parser = FlixParsec.Literal.charLiteral();
         FlixParsec.Prim.parsesString(parser, "'+'") |> println;
@@ -21,14 +21,14 @@ mod Test01 {
         FlixParsec.Prim.parsesString(parser, "'\t'") |> println;            /// tab
         ()
 
-    @test
+    @Test
     def test03(): Unit & Impure =     
         let dquote = '\u0022';
         let parser = FlixParsec.Literal.stringLiteral();
         FlixParsec.Prim.parsesString(parser, "${dquote}abc${dquote}") |> println;
         ()
 
-    @test
+    @Test
     def test04(): Unit & Impure =
         use FlixParsec.Combinators.{alt};
         use FlixParsec.Char.{char};
@@ -38,7 +38,7 @@ mod Test01 {
         FlixParsec.Prim.parsesString(parser, "abc") |> println;
         ()
 
-    @test
+    @Test
     def test05(): Unit & Impure =     
         let langDef = FlixParsec.Language.emptyDef();
         let parens = FlixParsec.Token.parens(langDef);

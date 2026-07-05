@@ -16,7 +16,7 @@
 
 /*
 
-mod TestText {
+pub mod TestText {
 
 def whenOk(x: Result[a, e], test: a -> Bool): Bool = match x {
     case Ok(a) => test(a)
@@ -27,19 +27,19 @@ def whenOk(x: Result[a, e], test: a -> Bool): Bool = match x {
 // restOfLine                                                              //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def restOfLine01(): Bool & Impure =
     use TextParser.{run};
     use TextParser.Text.{restOfLine};
     run(restOfLine(true), "").whenOk(ans -> ans == "")
 
-@test
+@Test
 def restOfLine02(): Bool & Impure =
     use TextParser.{run};
     use TextParser.Text.{restOfLine};
     run(restOfLine(true), "abc").whenOk(ans -> ans == "abc")
 
-@test
+@Test
 def restOfLine03(): Bool & Impure =
     use TextParser.{run};
     use TextParser.Text.{restOfLine};
@@ -50,19 +50,19 @@ def restOfLine03(): Bool & Impure =
 // restOfLineLength                                                        //
 /////////////////////////////////////////////////////////////////////////////
 
-@test
+@Test
 def restOfLineLength01(): Bool & Impure =
     use TextParser.{run};
     use TextParser.Text.{restOfLineLength};
     run(restOfLineLength(), "").whenOk(ans -> ans == 0)
 
-@test
+@Test
 def restOfLineLength02(): Bool & Impure =
     use TextParser.{run};
     use TextParser.Text.{restOfLineLength};
     run(restOfLineLength(), "abc").whenOk(ans -> ans == 3)
 
-@test
+@Test
 def restOfLineLength03(): Bool & Impure =
     use TextParser.{run};
     use TextParser.Text.{restOfLineLength};

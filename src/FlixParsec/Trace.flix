@@ -16,12 +16,10 @@
 
 
 
-mod FlixParsec.Trace {
+pub mod FlixParsec.Trace {
 
-    use GradedApplicative.{point}
-    use GradedMonad.{>>=}
     
-    use FlixParsec.{GenParser}
+    use FlixParsec.Prim.{GenParser}
     use FlixParsec.Prim.{getSourcePosition, liftAction}
     use FlixParsec.Internal.ParseError.{showSourcePosition}
 

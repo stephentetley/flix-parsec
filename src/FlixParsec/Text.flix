@@ -15,14 +15,10 @@
  */
 
 
-mod FlixParsec.Text {
+pub mod FlixParsec.Text {
 
 
-    use GradedFunctor.{<$$>}
-    use GradedApplicative.{point}
-    use GradedMonad.{>>=}
-
-    use FlixParsec.{GenParser, GenParser1}
+    use FlixParsec.Prim.{GenParser, GenParser1}
     use FlixParsec.Prim.{bounded, lookahead, throwError}
     use FlixParsec.Regex.{lookingAt, skippingAt}
     

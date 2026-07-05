@@ -34,21 +34,21 @@ def runTests(path: String): Unit & Impure =
 
     }
 
-@test
+@Test
 def test01(): Unit & Impure = 
     runTests("e:\coding\flix\text-parser\testdata\long_names_dir.txt")
 
 
 // Note - takes > 5 minutes, stoppped execution.
-@test
+@Test
 def test02Bad(): Unit & Impure = 
     runTests("e:\coding\flix\text-parser\testdata\flix_dir.txt")
 
-@test
+@Test
 def test02a(): Unit & Impure = 
     runlineCount01("e:\coding\flix\text-parser\testdata\flix_dir.txt")
 
-@test
+@Test
 def test02b(): Unit & Impure = 
     runlineCount03("e:\coding\flix\text-parser\testdata\flix_dir.txt")
 

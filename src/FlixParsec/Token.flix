@@ -16,14 +16,11 @@
 
 
 
-mod FlixParsec.Token {
+pub mod FlixParsec.Token {
 
-    use GradedFunctor.{ignore}
-    use GradedApplicative.{point, *>, <*}
-    use GradedMonad.{>>=}
-    use GradedOr.{<|>}
 
-    use FlixParsec.{GenParser}
+
+    use FlixParsec.Prim.{GenParser}
     use FlixParsec.Prim.{throwError}
     use FlixParsec.Combinators.{alt, between, manyWith, skipMany, skipMany1, notFollowedBy, sepBy, sepBy1}
     use FlixParsec.Char.{satisfy, char, string, oneOf, noneOf}

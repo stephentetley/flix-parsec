@@ -15,14 +15,10 @@
  */
 
 
-mod FlixParsec.Combinators {
+pub mod FlixParsec.Combinators {
 
-    use GradedFunctor.{map}
-    use GradedApplicative.{point, <*, *>}
-    use GradedMonad.{>>=}
-    use GradedOr.{<|>}
 
-    use FlixParsec.{GenParser}
+    use FlixParsec.Prim.{GenParser}
     use FlixParsec.Prim.{bind, throwError, lookahead, flatMapOr}
 
     

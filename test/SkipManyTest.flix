@@ -1,9 +1,7 @@
 
-mod SkipManyTest {
+pub mod SkipManyTest {
 
-    use GradedApplicative.{point}
-    use GradedMonad.{>>=}
-    use FlixParsec.{Parser1}
+    use FlixParsec.Prim.{Parser1}
 
     def parser1(): Parser1[ef, Char] = 
         use FlixParsec.Char.{char, anyChar};
@@ -11,12 +9,12 @@ mod SkipManyTest {
         anyChar()                                                   >>= c1 ->
         point(c1) 
 
-    @test    
+    @Test    
     def test01(): Unit \ IO =     
         FlixParsec.Prim.parsesString(parser1(), "ABCDEFG") |> println;
         ()
 
-    @test
+    @Test
     def test02(): Unit \ IO =
         let input = String.repeat(20000, "AAAAAAAAAA") + "FGHI";
         FlixParsec.Prim.parsesString(parser1(), input) |> println;

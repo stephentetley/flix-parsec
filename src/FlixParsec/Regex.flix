@@ -16,12 +16,10 @@
 
 
 
-mod FlixParsec.Regex {
+pub mod FlixParsec.Regex {
 
-    use GradedApplicative.{*>, point}
-    use GradedMonad.{>>=}
 
-    use FlixParsec.{GenParser};
+    use FlixParsec.Prim.{GenParser};
     use FlixParsec.Prim.{restOfInput, throwError, incrCursorPosition}
 
     pub def lookingAt(rgx: Regex): GenParser[ka, ust, ef, String] =
