@@ -18,18 +18,21 @@
 
 pub mod FlixParsec.Regex {
 
-
+    use Applicative.{*>}
+    use Applicative.{point}
+    use Monad.{>>=}
+    
     use FlixParsec.GenParser.{GenParser};
     use FlixParsec.GenParser.{restOfInput, throwError, incrCursorPosition}
 
-    pub def lookingAt(rgx: Regex): GenParser[ka, ust, ef, String] =
+    pub def lookingAt(rgx: Regex): GenParser[ka, ust, String] =
         restOfInput()       >>= rest    -> 
-        match Regex.getPrefix(substr = rgx, rest) { 
+        match Regex.getPrefix(rgx, rest) { 
             case Some(s) => {incrCursorPosition(String.length(s)) *> point(s)}
             case None    => throwError("lookingAt")
         }
 
-    pub def skippingAt(rgx: Regex): GenParser[ka, st, ef, Unit] = 
+    pub def skippingAt(rgx: Regex): GenParser[ka, st, Unit] = 
         lookingAt(rgx) |> Functor.ignore
 
 }

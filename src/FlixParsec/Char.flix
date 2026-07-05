@@ -17,65 +17,66 @@
 
 mod FlixParsec.Char {
 
+    use Applicative.{point}
     use Monad.{>>=}
     use FlixParsec.GenParser.{GenParser}
     use FlixParsec.GenParser.{throwError, swapErrorMessage}
 
-    pub def anyChar(): GenParser[ka, ust, ef, Char] = FlixParsec.Prim.takeChar()
+    pub def anyChar(): GenParser[ka, ust, Char] = FlixParsec.GenParser.takeChar()
 
-    pub def satisfy(test: Char -> Bool \ ef1): GenParser[ka, ust, ef + ef1, Char] = 
+    pub def satisfy(test: Char -> Bool \ ef): GenParser[ka, ust, Char] \ ef = 
         anyChar()       >>= ans ->
         if (test(ans))
             point(ans)
         else
             throwError("satisfy")
 
-    pub def oneOf(cs: List[Char]): GenParser[ka, ust, ef, Char] = 
+    pub def oneOf(cs: List[Char]): GenParser[ka, ust, Char] = 
         satisfy(c -> List.memberOf(c, cs))
 
-    pub def noneOf(cs: List[Char]): GenParser[ka, ust, ef, Char] = 
+    pub def noneOf(cs: List[Char]): GenParser[ka, ust, Char] = 
         satisfy(c -> not List.memberOf(c, cs))
 
-    pub def char(c: Char): GenParser[ka, ust, ef, Char] = 
+    pub def char(c: Char): GenParser[ka, ust, Char] = 
         swapErrorMessage("char('${c}')", satisfy(x -> x == c))
 
-    pub def string(s: String): GenParser[ka, ust, ef, String] =
-        FlixParsec.Prim.take(String.length(s)) >>= s1 ->
+    pub def string(s: String): GenParser[ka, ust, String] =
+        FlixParsec.GenParser.take(String.length(s)) >>= s1 ->
         if (s1 == s)
             point(s)
         else
-            fail("string")
+            throwError("string")
 
 
-    pub def upper(): GenParser[ka, ust, ef, Char] = 
+    pub def upper(): GenParser[ka, ust, Char] = 
         satisfy(Char.isUpperCase)
 
-    pub def lower(): GenParser[ka, ust, ef, Char] = 
+    pub def lower(): GenParser[ka, ust, Char] = 
         satisfy(Char.isLowerCase)
 
-    pub def letter(): GenParser[ka, ust, ef, Char] = 
+    pub def letter(): GenParser[ka, ust, Char] = 
         satisfy(Char.isLetter)
 
-    pub def alphaNum(): GenParser[ka, ust, ef, Char] = 
+    pub def alphaNum(): GenParser[ka, ust, Char] = 
         satisfy(c -> Char.isLetter(c) or Char.isAsciiDigit(c))
 
-    pub def digit(): GenParser[ka, ust, ef, Char] = 
+    pub def digit(): GenParser[ka, ust, Char] = 
         satisfy(Char.isAsciiDigit)
 
-    pub def octDigit(): GenParser[ka, ust, ef, Char] = 
+    pub def octDigit(): GenParser[ka, ust, Char] = 
         satisfy(Char.isOctDigit)
 
-    pub def hexDigit(): GenParser[ka, ust, ef, Char] = 
+    pub def hexDigit(): GenParser[ka, ust, Char] = 
         satisfy(Char.isHexDigit)
 
 
-    pub def carriageReturn(): GenParser[ka, ust, ef, Char] = char('\u000D')
+    pub def carriageReturn(): GenParser[ka, ust, Char] = char('\u000D')
 
-    pub def linefeed(): GenParser[ka, ust, ef, Char] = char('\u000A')
+    pub def linefeed(): GenParser[ka, ust, Char] = char('\u000A')
 
-    pub def newline(): GenParser[ka, ust, ef, Char] = linefeed()
+    pub def newline(): GenParser[ka, ust, Char] = linefeed()
 
-    pub def tab(): GenParser[ka, ust, ef, Char] = char('\u0009')
+    pub def tab(): GenParser[ka, ust, Char] = char('\u0009')
 
     /// [ \t\n\x0B\f\r] 
     /// \t is tab 
@@ -83,7 +84,7 @@ mod FlixParsec.Char {
     /// \x0B is vertical tab
     /// \f is form feed
     /// \r is carriage return
-    pub def space(): GenParser[ka, ust, ef, Char] = 
+    pub def space(): GenParser[ka, ust, Char] = 
         satisfy(c -> c == ' ' or c == '\u0009' or c == '\u000A' or c == '\u000B' or c == '\u000C' or c == '\u000D')        
 
 }

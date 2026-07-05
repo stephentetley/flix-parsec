@@ -154,7 +154,7 @@ mod FlixParsec.Internal.ParserMonad {
         let ParserMonad(g) = pa;
         unchecked_cast(ParserMonad((sk, fk, env, st) -> {
             let sk1 = (x, fk1, env1, _) -> { 
-                let ParserMonad(h) = k(x);
+                let ParserMonad(h) = unchecked_cast(k(x) as _ \ {});
                 h(sk, fk1, env1, st)
             };
             g(sk1, fk, env, st)
@@ -163,38 +163,38 @@ mod FlixParsec.Internal.ParserMonad {
     // restore state on failure (Leijen)
     pub def tryParse(pa: ParserMonad[ka, env, st, err, a]): ParserMonad[ka, env, st, err, a] =  
         let ParserMonad(g) = pa;
-        ParseMonad((sk, fk, env, st) -> {
+        ParserMonad((sk, fk, env, st) -> {
             def fk1(err, _) = fk(err, st);
             g(sk, fk1, env, st)
         })
 
 
     pub def ask(): ParserMonad[ka, env, st, err, env] = 
-        ParseMonad((sk, fk, env, st) -> sk(env, fk, env, st))
+        ParserMonad((sk, fk, env, st) -> sk(env, fk, env, st))
 
 
     pub def asks(f: env -> a \ ef): ParserMonad[ka, env, st, err, a] \ ef = 
-        unchecked_cast(ParseMonad((sk, fk, env, st) -> 
-            sk(f(env), fk, env, st)
+        unchecked_cast(ParserMonad((sk, fk, env, st) -> 
+            sk(unchecked_cast(f(env) as _ \ {}), fk, env, st)
         ) as _ \ ef)
 
     pub def local(f: env -> env \ef, pa: ParserMonad[ka, env, st, err, a]): ParserMonad[ka, env, st, err, a] \ ef =
         let ParserMonad(g) = pa;
-        unchecked_cast(ParseMonad((sk, fk, env, st) -> {
+        unchecked_cast(ParserMonad((sk, fk, env, st) -> {
             def sk1(x, fk1, _, st1) = sk(x, fk1, env, st1);
-            g(sk1, fk, f(env), st)
+            g(sk1, fk, unchecked_cast(f(env) as _ \ {}), st)
         }) as _ \ ef)
 
     pub def get(): ParserMonad[ka, env, st, err, st] = 
-        ParseMonad((sk, fk, env, st) -> sk(st, fk, env, st))
+        ParserMonad((sk, fk, env, st) -> sk(st, fk, env, st))
 
     pub def gets(f: st -> a \ ef): ParserMonad[ka, env, st, err, a] \ ef = 
-        unchecked_cast(ParseMonad((sk, fk, env, st) -> 
-            sk(f(st), fk, env, st)
+        unchecked_cast(ParserMonad((sk, fk, env, st) -> 
+            sk(unchecked_cast(f(st) as _ \ {}), fk, env, st)
         ) as _ \ ef)
 
     pub def put(st: st): ParserMonad[ka, env, st, err, Unit] = 
-        ParseMonad((sk, fk, env, _) -> sk((), fk, env, st))
+        ParserMonad((sk, fk, env, _) -> sk((), fk, env, st))
 
     pub def puts(f: st -> st \ ef): ParserMonad[ka, env, st, err, Unit] \ ef = 
         unchecked_cast(ParserMonad((sk, fk, env, st) -> 

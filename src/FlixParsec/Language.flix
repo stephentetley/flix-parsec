@@ -23,7 +23,7 @@ pub mod FlixParsec.Language {
     use FlixParsec.Char.{letter, alphaNum, oneOf, char};
     use FlixParsec.Token.{LanguageDef};
 
-    pub def emptyDef(): LanguageDef[ka, ust, ef] = 
+    pub def emptyDef(): LanguageDef[ka, ust] = 
         let opLetterP = oneOf(
             ':' :: '!' :: '#' :: '$' :: '%' :: '&' :: '*' :: '+' 
             :: '.' :: '/' :: '<' :: '=' :: '>' :: '?' :: '@' :: '\\' 

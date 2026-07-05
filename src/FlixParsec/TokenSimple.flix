@@ -21,7 +21,7 @@
 
 pub mod FlixParsec.TokenSimple {
 
-
+    use Applicative.{<*}
 
     use FlixParsec.GenParser.{GenParser}
     use FlixParsec.Combinators.{between, sepBy, sepBy1, sepByWith}
@@ -30,82 +30,86 @@ pub mod FlixParsec.TokenSimple {
 
     
 
-    pub def lexeme(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = p <* whiteSpace()
+    pub def lexeme(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] = p <* whiteSpace()
 
-    pub def symbol(s: String): GenParser[ka, ust, ef, String] = lexeme(string(s))
+    pub def symbol(s: String): GenParser[ka, ust, String] = lexeme(string(s))
 
-    pub def parens(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = between(symbol("("), symbol(")"), p)
+    pub def parens(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] = 
+        between(symbol("("), symbol(")"), p)
 
-    pub def braces(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = between(symbol("{"), symbol("}"), p)
+    pub def braces(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] = 
+        between(symbol("{"), symbol("}"), p)
 
-    pub def angles(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = between(symbol("<"), symbol(">"), p)
+    pub def angles(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] = 
+        between(symbol("<"), symbol(">"), p)
 
-    pub def brackets(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = between(symbol("["), symbol("]"), p)
+    pub def brackets(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] = 
+        between(symbol("["), symbol("]"), p)
 
-    pub def squotes(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] =  
+    pub def squotes(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] =  
         between(symbol("'"), symbol("'"), p)
 
-    pub def dquotes(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, a] = 
+    pub def dquotes(p: GenParser[ka, ust, a]): GenParser[ka, ust, a] = 
         let dquote = Char.toString('\u0022');
         between(symbol(dquote), symbol(dquote), p)
 
-    pub def semi(): GenParser[ka, ust, ef, String] = symbol(";")
+    pub def semi(): GenParser[ka, ust, String] = symbol(";")
 
-    pub def comma(): GenParser[ka, ust, ef, String] = symbol(",")
+    pub def comma(): GenParser[ka, ust, String] = symbol(",")
 
-    pub def colon(): GenParser[ka, ust, ef, String] = symbol(":")
+    pub def colon(): GenParser[ka, ust, String] = symbol(":")
 
-    pub def dot(): GenParser[ka, ust, ef, String] = symbol(".")
+    pub def dot(): GenParser[ka, ust, String] = symbol(".")
 
-    pub def semiSep(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] = sepBy(p, semi())
+    pub def semiSep(p: GenParser[ka, ust, a]): GenParser[ka, ust, List[a]] = sepBy(p, semi())
 
-    pub def commaSep(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] = sepBy(p, comma())
+    pub def commaSep(p: GenParser[ka, ust, a]): GenParser[ka, ust, List[a]] = sepBy(p, comma())
 
-    pub def semiSep1(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] = sepBy1(p, semi())
+    pub def semiSep1(p: GenParser[ka, ust, a]): GenParser[ka, ust, List[a]] = sepBy1(p, semi())
 
-    pub def commaSep1(p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, List[a]] = sepBy1(p, comma())
+    pub def commaSep1(p: GenParser[ka, ust, a]): GenParser[ka, ust, List[a]] = sepBy1(p, comma())
 
     /// TODO - fill out the with versions, but don't include `tupled` etc
     /// as they lead to hiding left recursion.
-    pub def commaSepWith(combine: (ac, a) -> ac, ac: ac, p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef, ac] = 
+    pub def commaSepWith(combine: (ac, a) -> ac, ac: ac, p: GenParser[ka, ust, a]): GenParser[ka, ust, ac] = 
         sepByWith(combine, ac, p, comma())
 
 
-    pub def charLiteral(): GenParser[ka, ust, ef, Char] =  
+    pub def charLiteral(): GenParser[ka, ust, Char] =  
         lexeme(FlixParsec.Literal.charLiteral())
 
-    pub def stringLiteral(): GenParser[ka, ust, ef, String] =  
+    pub def stringLiteral(): GenParser[ka, ust, String] =  
         lexeme(FlixParsec.Literal.stringLiteral())
 
 
 
-    pub def int8(): GenParser[ka, ust, ef, Int8] = 
+    pub def int8(): GenParser[ka, ust, Int8] = 
         lexeme(FlixParsec.Literal.int8())
 
-    pub def int16(): GenParser[ka, ust, ef, Int16] = 
+    pub def int16(): GenParser[ka, ust, Int16] = 
         lexeme(FlixParsec.Literal.int16())
     
-    pub def int32(): GenParser[ka, ust, ef, Int32] = 
+    pub def int32(): GenParser[ka, ust, Int32] = 
         lexeme(FlixParsec.Literal.int32())
     
 
-    pub def int64(): GenParser[ka, ust, ef, Int64] = 
+    pub def int64(): GenParser[ka, ust, Int64] = 
         lexeme(FlixParsec.Literal.int64())
 
-    pub def bigInt(): GenParser[ka, ust, ef, BigInt] = 
+    pub def bigInt(): GenParser[ka, ust, BigInt] = 
         lexeme(FlixParsec.Literal.bigInt())
 
-    pub def float32(): GenParser[ka, ust, ef, Float32] = 
+    pub def float32(): GenParser[ka, ust, Float32] = 
         lexeme(FlixParsec.Literal.float32())
 
-    pub def float64(): GenParser[ka, ust, ef, Float64] = 
+    pub def float64(): GenParser[ka, ust, Float64] = 
         lexeme(FlixParsec.Literal.float64())
 
 
-    pub def hexInt32(): GenParser[ka, ust, ef, Int32] = 
+    pub def hexInt32(): GenParser[ka, ust, Int32] = 
         lexeme(FlixParsec.Literal.hexInt32())
 
-    pub def octInt32(): GenParser[ka, ust, ef, Int32] = 
+    pub def octInt32(): GenParser[ka, ust, Int32] = 
         lexeme(FlixParsec.Literal.octInt32())
 
 

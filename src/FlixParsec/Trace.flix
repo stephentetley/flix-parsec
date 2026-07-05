@@ -18,23 +18,25 @@
 
 pub mod FlixParsec.Trace {
 
-    
+    use Monad.{>>=}
+    use Applicative.{point}
+
     use FlixParsec.GenParser.{GenParser}
     use FlixParsec.GenParser.{getSourcePosition}
     use FlixParsec.Internal.ParseError.{showSourcePosition}
 
-    pub def trace(message: String, p: GenParser[ka, ust, ef, a]): GenParser[ka, ust, ef + IO, a] = 
+    pub def trace(message: String, p: GenParser[ka, ust, a]): GenParser[ka, ust, a] \ IO = 
         let mkMessage = (spos, epos) -> "// ${message}. Start <<${showSourcePosition(spos)}>>, End <<${showSourcePosition(epos)}>>";
         getSourcePosition()                             >>= pos1 -> 
         p                                               >>= ans  ->
         getSourcePosition()                             >>= pos2 ->
-        liftAction(_ -> println(mkMessage(pos1, pos2))) >>= _ -> 
+        {println(mkMessage(pos1, pos2)); point(())}     >>= _ -> 
         point(ans)
 
-    pub def tell(message: String): GenParser[ka, ust, IO, Unit] = 
-        let mkMessage = pos -> "// ${message}. Position <<${showSourcePosition(pos)}>>";
-        getSourcePosition()                         >>= spos -> 
-        liftAction(_ -> println(mkMessage(spos)))   >>= _    ->
-        point()
+    // pub def tell(message: String): GenParser[ka, ust, Unit] = 
+    //     let mkMessage = pos -> "// ${message}. Position <<${showSourcePosition(pos)}>>";
+    //     getSourcePosition()                                 >>= spos -> 
+    //     {let s = mkMessage(spos); println(s); point(())}    >>= _    ->
+    //     point()
 
 }
